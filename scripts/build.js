@@ -9,6 +9,9 @@ const fs = require('fs');
 const path = require('path');
 
 const RAIZ = path.join(__dirname, '..');
+// Versão mostrada nos apps (boas-vindas, PIN, Ajustes → Sobre): vem só do package.json.
+const VERSAO = require(path.join(RAIZ, 'package.json')).version;
+if (!/^\d+\.\d+\.\d+$/.test(VERSAO || '')) throw new Error('package.json precisa de "version" no formato 1.2.3');
 const APPS = ['carteira', 'emissor'];
 const INCLUI = /^[ \t]*<!-- @inclui (\S+) -->\n/gm;
 
@@ -37,7 +40,7 @@ let desatualizados = 0;
 for (const app of APPS) {
   const saida = path.join(RAIZ, `${app}-systekna.html`);
   const pagina = path.join(RAIZ, 'src', app, 'pagina.html');
-  const html = aplicaCsp(monta(pagina), path.relative(RAIZ, pagina));
+  const html = aplicaCsp(monta(pagina).replaceAll('{{versao}}', VERSAO), path.relative(RAIZ, pagina));
   const atual = fs.existsSync(saida) ? fs.readFileSync(saida, 'utf8') : null;
   if (conferir) {
     if (html !== atual) { desatualizados++; console.error(`✗ ${path.basename(saida)} está diferente de src/. Rode: npm run build`); }

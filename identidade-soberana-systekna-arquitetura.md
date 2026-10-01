@@ -26,6 +26,8 @@ npm test             # confere que os HTML estão em dia com src/ e roda todos o
 
 Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo indicado. O resultado continua sendo um HTML único que abre sem servidor.
 
+**Versão:** o campo `version` do `package.json` é a única fonte. O build troca `{{versao}}` pelo número, e ele aparece discretamente nas boas-vindas, no PIN, no rodapé enquanto o app inicia e em Ajustes → Sobre, nos dois apps. Sobe a cada fase entregue; o `0.` indica que ainda não é produção (falta a F0, domínio próprio).
+
 ## 1. App instalável (PWA)
 
 - Cada serviço é um app próprio, com manifesto (`carteira.webmanifest`, `emissor.webmanifest`), ícones em `icons/` e escopo limitado ao seu HTML. Os dois podem ser instalados lado a lado.

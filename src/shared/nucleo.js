@@ -57,6 +57,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const APP_VERSION='{{versao}}';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -562,7 +563,8 @@ function mountCommonSettings(el){
   <div class="list glass flat">
     <button class="tx" data-cs="how"><span class="dot" data-ic="shield"></span><span class="t"><b>Como funciona</b></span>${ic('chev')}</button>
     <button class="tx danger" data-cs="wipe"><span class="dot" style="background:rgba(194,65,47,.1);color:var(--out)" data-ic="trash"></span><span class="t"><b>Apagar tudo deste aparelho</b><small>Recuperável só com as 12 palavras e um backup</small></span></button>
-  </div>`;
+  </div>
+  <p class="ver" id="csVer">${APP.label} · versão ${APP_VERSION}</p>`;
   paintIcons(el);refreshInstall();refreshBio();
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};

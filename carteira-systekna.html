@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0oIq67fCsRujylBfBYXEQibxCNBttbE91EL86gRcpHg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-CH4taqLDCpN2UjfXHPeoSEZlPzBs6xhTj0/Yfxc0vO0='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -87,6 +87,10 @@ h3{font:300 22px/1.2 var(--font);margin:0 0 6px}
 .lead{color:var(--soft);max-width:34ch;margin:0 auto 30px}
 .sub{color:var(--soft);font-size:14px;margin:0 0 18px}
 .fine{font-size:12px;color:var(--faint);margin:18px 0 0}
+/* Versão: discreta nas boas-vindas, no PIN e em Sobre; no rodapé só enquanto o app inicia. */
+.ver{font-size:11px;color:var(--faint);opacity:.75;margin:22px 0 0;letter-spacing:.02em}
+.ver.boot{display:none;position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center;margin:0;pointer-events:none}
+body[data-screen=""] .ver.boot{display:block}
 .warn-t{color:var(--out);font-weight:500}
 .back{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--accent);font:600 14px var(--font);cursor:pointer;padding:6px 0;margin:0 0 16px}
 
@@ -359,6 +363,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
+<p class="ver boot" aria-hidden="true">Versão 0.6.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -370,6 +375,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
+    <p class="ver">Versão 0.6.0</p>
   </div>
 </section>
 
@@ -417,6 +423,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
+    <p class="ver">Versão 0.6.0</p>
   </div>
 </section>
 
@@ -557,6 +564,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const APP_VERSION='0.6.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1062,7 +1070,8 @@ function mountCommonSettings(el){
   <div class="list glass flat">
     <button class="tx" data-cs="how"><span class="dot" data-ic="shield"></span><span class="t"><b>Como funciona</b></span>${ic('chev')}</button>
     <button class="tx danger" data-cs="wipe"><span class="dot" style="background:rgba(194,65,47,.1);color:var(--out)" data-ic="trash"></span><span class="t"><b>Apagar tudo deste aparelho</b><small>Recuperável só com as 12 palavras e um backup</small></span></button>
-  </div>`;
+  </div>
+  <p class="ver" id="csVer">${APP.label} · versão ${APP_VERSION}</p>`;
   paintIcons(el);refreshInstall();refreshBio();
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};

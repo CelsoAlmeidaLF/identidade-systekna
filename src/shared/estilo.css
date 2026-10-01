@@ -68,6 +68,10 @@ h3{font:300 22px/1.2 var(--font);margin:0 0 6px}
 .lead{color:var(--soft);max-width:34ch;margin:0 auto 30px}
 .sub{color:var(--soft);font-size:14px;margin:0 0 18px}
 .fine{font-size:12px;color:var(--faint);margin:18px 0 0}
+/* Versão: discreta nas boas-vindas, no PIN e em Sobre; no rodapé só enquanto o app inicia. */
+.ver{font-size:11px;color:var(--faint);opacity:.75;margin:22px 0 0;letter-spacing:.02em}
+.ver.boot{display:none;position:fixed;left:0;right:0;bottom:calc(14px + env(safe-area-inset-bottom,0px));text-align:center;margin:0;pointer-events:none}
+body[data-screen=""] .ver.boot{display:block}
 .warn-t{color:var(--out);font-weight:500}
 .back{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--accent);font:600 14px var(--font);cursor:pointer;padding:6px 0;margin:0 0 16px}
 
