@@ -4,6 +4,13 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
+<link rel="manifest" href="carteira.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/carteira-192.png">
+<link rel="apple-touch-icon" href="icons/carteira-apple-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carteira">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Carteira de Identidade Systekna</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -354,6 +361,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <p class="lead">Sua identidade soberana. As chaves nascem de 12 palavras, as credenciais ficam cifradas no aparelho e um PIN de 6 dígitos abre a carteira.</p>
     <button class="btn" id="goCreate">Criar minha carteira</button>
     <button class="btn ghost" id="goRecover">Recuperar com 12 palavras</button>
+    <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
   </div>
@@ -883,6 +891,8 @@ function pinSetup(ent,lang,from){
     if(pin!==first){first=null;T.textContent='Crie um PIN de 6 dígitos';return a.reset('Os PINs não conferem. Comece de novo.',true)}
     a.say('Protegendo as chaves…');
     await writeLock(ent,pin);await DB.set('guard',{fails:0,until:0});
+    // Sem isso, o navegador pode apagar os dados quando faltar espaço no aparelho.
+    if(navigator.storage&&navigator.storage.persist)navigator.storage.persist().catch(()=>{});
     await startSession(ent,lang);draft=null;
     await openAnim();enterApp();toast(from==='sRecover'?'Identidade recuperada':APP.createdMsg);
   }});
@@ -944,12 +954,16 @@ function mountCommonSettings(el){
     <button class="tx" data-cs="export"><span class="dot" data-ic="copy"></span><span class="t"><b>Copiar backup cifrado</b><small>Só abre com as 12 palavras</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="import"><span class="dot" data-ic="restore"></span><span class="t"><b>Restaurar backup</b><small>${APP.importHint}</small></span>${ic('chev')}</button>
   </div>
+  <div class="sec-h" data-install hidden>Aplicativo</div>
+  <div class="list glass flat" data-install hidden>
+    <button class="tx" data-cs="install"><span class="dot" data-ic="plus"></span><span class="t"><b>Instalar no celular</b><small>Abre como app, inclusive sem internet</small></span>${ic('chev')}</button>
+  </div>
   <div class="sec-h">Sobre</div>
   <div class="list glass flat">
     <button class="tx" data-cs="how"><span class="dot" data-ic="shield"></span><span class="t"><b>Como funciona</b></span>${ic('chev')}</button>
     <button class="tx danger" data-cs="wipe"><span class="dot" style="background:rgba(194,65,47,.1);color:var(--out)" data-ic="trash"></span><span class="t"><b>Apagar tudo deste aparelho</b><small>Recuperável só com as 12 palavras e um backup</small></span></button>
   </div>`;
-  paintIcons(el);
+  paintIcons(el);refreshInstall();
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};
 }
@@ -1010,6 +1024,7 @@ const CS={
       const msg=await APP.importData(d.data);closeSheet();toast(msg);
     };
   },
+  install(){promptInstall()},
   how(){openSheet(`<h3>Como funciona</h3><div class="prose">${APP.howHtml}</div><button class="btn ghost" id="howClose">Entendi</button>`);$('#howClose').onclick=closeSheet},
   async wipe(){
     if(!await confirmSheet('Apagar tudo deste aparelho','A identidade, as chaves e todos os dados somem daqui. Para voltar, você precisará das 12 palavras e de um backup.','Apagar tudo',true))return;
@@ -1021,8 +1036,32 @@ const CS={
 async function supports(){
   try{if(!window.isSecureContext||!S)return false;await S.generateKey({name:'Ed25519'},false,['sign','verify']);await S.generateKey({name:'X25519'},false,['deriveBits']);return true}catch{return false}
 }
+/* ================= app instalável (PWA) ================= */
+let installEvt=null;
+const isStandalone=()=>matchMedia('(display-mode: standalone)').matches||navigator.standalone===true;
+const isIOS=()=>/iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+function refreshInstall(){
+  const can=!isStandalone()&&(!!installEvt||isIOS());
+  document.querySelectorAll('[data-install]').forEach(e=>e.hidden=!can);
+}
+addEventListener('beforeinstallprompt',e=>{e.preventDefault();installEvt=e;refreshInstall()});
+addEventListener('appinstalled',()=>{installEvt=null;refreshInstall();toast('Aplicativo instalado')});
+async function promptInstall(){
+  if(installEvt){
+    const e=installEvt;installEvt=null;
+    await e.prompt();await e.userChoice.catch(()=>null);refreshInstall();return;
+  }
+  openSheet(`<h3>Instalar no iPhone ou iPad</h3><div class="prose">
+    <p>1. No Safari, toque em <b>Compartilhar</b>, o quadrado com a seta para cima.</p>
+    <p>2. Escolha <b>Adicionar à Tela de Início</b> e confirme.</p>
+    <p>No iPhone, o app instalado guarda os dados separado do Safari. Crie ou recupere a identidade <b>dentro do app</b>, depois de instalar.</p></div>
+    <button class="btn ghost" id="insClose">Entendi</button>`);
+  $('#insClose').onclick=closeSheet;
+}
+$('#goInstall').onclick=promptInstall;
 async function boot(){
-  applyTheme();
+  applyTheme();refreshInstall();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
   if(!await supports()){$('#unsupported').hidden=false;$('#goCreate').disabled=true;$('#goRecover').disabled=true;return show('sWelcome')}
   try{await DB.db()}catch{DB._mem=new Map();toast('Armazenamento indisponível: os dados vão durar só esta sessão',true)}
   const meta=await DB.get('meta'),lock=await DB.get('lock');

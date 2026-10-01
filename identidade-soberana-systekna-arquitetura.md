@@ -9,7 +9,16 @@ Ambiente de teste com dois serviços independentes, em HTML/JS únicos e sem ser
 
 Os serviços não compartilham armazenamento. Tudo o que passa de um para o outro é texto assinado, copiado e colado. Em produção, esse transporte seria QR Code, link ou API.
 
-## 1. Base comum (núcleo compartilhado)
+## 1. App instalável (PWA)
+
+- Cada serviço é um app próprio, com manifesto (`carteira.webmanifest`, `cartorio.webmanifest`), ícones em `icons/` e escopo limitado ao seu HTML. Os dois podem ser instalados lado a lado.
+- `sw.js` guarda o site para uso sem internet. Páginas: rede primeiro, para que cada `git push` chegue logo; sem rede, usa a última cópia. Fontes: cache primeiro.
+- **Instalar no celular** aparece na tela inicial e nos Ajustes quando o navegador permite. No iPhone, mostra o passo a passo do Safari.
+- Ao criar ou recuperar a identidade, o app pede armazenamento persistente, para o navegador não apagar os dados quando faltar espaço.
+- No iPhone, o app instalado tem armazenamento separado do Safari: a identidade precisa ser criada ou recuperada dentro do app.
+- Ícones gerados por `node scripts/gerar-icones.js`.
+
+## 1.1 Base comum (núcleo compartilhado)
 
 - **12 palavras BIP39** (PT ou EN, 128 bits) → semente PBKDF2-SHA512 → HKDF → três chaves:
   - Ed25519 (assinatura e DID),
@@ -101,7 +110,7 @@ A apresentação é aprovada quando nenhuma checagem falha.
 
 ## 7. Critérios de aceite (automatizados, Chrome 154)
 
-Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, e as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` (Playwright, Chrome do sistema):
+Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` e o PWA em `tests/e2e/pwa.spec.js` (Playwright, Chrome do sistema):
 
 ```
 npm install
