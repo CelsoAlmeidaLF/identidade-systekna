@@ -494,6 +494,8 @@ body[data-screen="sApp"] .dock{display:grid}
       </div>
       <div class="sec-h">Emissores confiáveis <button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></div>
       <div class="list glass flat" id="gTrust"></div>
+      <div class="sec-h">Política de verificação</div>
+      <div class="list glass flat"><button class="tx" id="gPol"><span class="dot" data-ic="shield"></span><span class="t"><b>Status não verificável</b><small>Credencial de outro emissor, sem como conferir a revogação</small></span><span class="rv" id="gPolV"></span></button></div>
       <div class="sec-h">Credenciais emitidas <small id="gIssN"></small></div>
       <div class="list glass flat" id="gIssued"></div>
       <div id="commonSet"></div>
@@ -676,6 +678,21 @@ async function readLock(pin){
   return unseal(dk,inner,'device',true);
 }
 const getGuard=async()=>(await DB.get('guard'))||{fails:0,until:0};
+/* A tentativa é contada antes de testar o PIN: fechar a aba durante a conferência não a devolve. */
+async function unlockWithPin(pin){
+  const g=await getGuard();
+  if(Date.now()<g.until)return{wait:Math.ceil((g.until-Date.now())/1000)};
+  g.fails++;
+  if(g.fails>=SOFT_FAILS)g.until=Date.now()+30000*2**(g.fails-SOFT_FAILS);
+  await DB.set('guard',g);
+  try{const ent=await readLock(pin);await DB.set('guard',{fails:0,until:0});return{ent}}
+  catch(e){
+    if(!(e instanceof PinError))throw e;
+    if(g.fails>=MAX_FAILS){await DB.clear();return{wiped:true}}
+    return{fails:g.fails};
+  }
+}
+const pinFailMsg=f=>{const left=MAX_FAILS-f;return f>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(f-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.'};
 const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p)||/^(\d\d)\1\1$/.test(p)||/^(\d{3})\1$/.test(p);
 const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
@@ -713,9 +730,10 @@ function didToEdKey(did){
   if(b.length!==34||b[0]!==0xed||b[1]!==0x01)throw new Error('O did:key não é uma chave Ed25519.');
   return S.importKey('raw',b.slice(2),{name:'Ed25519'},false,['verify']);
 }
-async function verifyJWT(tok){
+async function verifyJWT(tok,typ){
   const{header,payload,parts}=decodeJWT(tok);
   if(header.alg!=='EdDSA')throw new Error(`Algoritmo ${header.alg} não suportado. Use EdDSA.`);
+  if(typ&&header.typ!==typ)throw new Error(`O token é do tipo ${header.typ||'sem tipo'}, mas aqui se espera ${typ}.`);
   const did=String(header.kid||payload.iss||'').split('#')[0];
   if(payload.iss&&payload.iss!==did)throw new Error('O emissor declarado não confere com a chave que assinou.');
   const ok=await S.verify({name:'Ed25519'},await didToEdKey(did),b64u.dec(parts[2]),te.encode(parts[0]+'.'+parts[1]));
@@ -916,22 +934,14 @@ async function showLock(msg){
   $('#pinSub').textContent=meta?shortDid(meta.did):'';
   $('#pinLink').textContent='Esqueci meu PIN';$('#pinLink').onclick=()=>goRecover('lock');
   const pad=makePad($('#pinPad'),{onPin:async(pin,a)=>{
-    const g=await getGuard();
-    if(Date.now()<g.until)return a.reset(`Aguarde ${Math.ceil((g.until-Date.now())/1000)} s para tentar de novo.`,true);
     a.say('Abrindo…');
-    let ent;
-    try{ent=await readLock(pin)}
-    catch(e){
-      if(!(e instanceof PinError))return a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true);
-      g.fails++;
-      if(g.fails>=MAX_FAILS){await DB.clear();toast('Dados apagados após 10 tentativas erradas',true);return show('sWelcome')}
-      if(g.fails>=SOFT_FAILS)g.until=Date.now()+30000*2**(g.fails-SOFT_FAILS);
-      await DB.set('guard',g);
-      const left=MAX_FAILS-g.fails;
-      return a.reset(g.fails>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(g.fails-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.',true);
-    }
-    await DB.set('guard',{fails:0,until:0});
-    await startSession(ent,meta.lang);
+    let r;
+    try{r=await unlockWithPin(pin)}
+    catch{return a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true)}
+    if(r.wait)return a.reset(`Aguarde ${r.wait} s para tentar de novo.`,true);
+    if(r.wiped){toast('Dados apagados após 10 tentativas erradas',true);return show('sWelcome')}
+    if(!r.ent)return a.reset(pinFailMsg(r.fails),true);
+    await startSession(r.ent,meta.lang);
     await openAnim();enterApp();
   }});
   if(msg)pad.say(msg);
@@ -983,10 +993,23 @@ function mountCommonSettings(el){
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};
 }
+/* PIN pedido com a sessão aberta: usa o mesmo contador de tentativas do desbloqueio. */
+async function sessionPin(pin,a){
+  a.say('Conferindo…');
+  let r;
+  try{r=await unlockWithPin(pin)}catch{a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true);return false}
+  if(r.wait){a.reset(`Aguarde ${r.wait} s para tentar de novo.`,true);return false}
+  if(r.wiped){
+    closeSheet();if(ses&&ses.ent)ses.ent.fill(0);ses=null;APP.onLock();
+    show('sWelcome');toast('Dados apagados após 10 tentativas erradas',true);return false;
+  }
+  if(!r.ent){a.reset(pinFailMsg(r.fails),true);return false}
+  r.ent.fill(0);return true;
+}
 function reauth(title){
   return new Promise(res=>{
     openSheet(`<div style="text-align:center"><h3>${title}</h3><p class="sub">Confirme com seu PIN.</p><div id="raPad"></div></div>`,()=>res(false));
-    makePad($('#raPad'),{onPin:async(pin,a)=>{a.say('Conferindo…');try{await readLock(pin);res(true)}catch{a.reset('PIN incorreto.',true)}}});
+    makePad($('#raPad'),{onPin:async(pin,a)=>{if(await sessionPin(pin,a))res(true)}});
   });
 }
 const CS={
@@ -1002,7 +1025,7 @@ const CS={
     openSheet(`<div style="text-align:center"><h3 id="cpT">Digite o PIN atual</h3><p class="sub" id="cpS">Para trocar, confirme quem você é.</p><div id="cpPad"></div></div>`);
     makePad($('#cpPad'),{onPin:async(pin,a)=>{
       const T=$('#cpT');
-      if(step===0){a.say('Conferindo…');try{await readLock(pin)}catch{return a.reset('PIN incorreto.',true)}step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
+      if(step===0){if(!await sessionPin(pin,a))return;step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
       if(step===1){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;step=2;T.textContent='Repita o novo PIN';return a.reset()}
       if(pin!==first){step=1;first=null;T.textContent='Novo PIN';return a.reset('Os PINs não conferem. Digite o novo PIN de novo.',true)}
       a.say('Salvando…');await writeLock(ses.ent,pin);closeSheet();toast('PIN alterado');
@@ -1080,7 +1103,7 @@ const APP={
   }
 };
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
-const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',registro:'file',confianca:'shield',nome:'note'};
+const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',registro:'file',confianca:'shield',nome:'note',politica:'shield'};
 async function ato(act,text,ref){
   const prev=st.book.length?st.book[st.book.length-1].hash:'0'.repeat(64);
   const e={n:st.book.length+1,at:Date.now(),act,text,ref:ref||null,prev};
@@ -1102,6 +1125,10 @@ async function checkBook(){
 const atoRow=(e,full)=>`<div class="ato"><span class="n">${e.n}</span><span class="dot">${ic(ATO_IC[e.act]||'book')}</span><div class="t"><b>${esc(e.text)}</b><small>${fmtTime(e.at)}</small>${full?`<br><code>${e.hash}</code>`:''}</div></div>`;
 const issStatus=i=>i.revoked?['no','Revogada']:(i.exp&&i.exp<now())?['warn','Expirada']:['ok','Ativa'];
 const trustedName=did=>did===ses.did?st.name:(st.trust.find(t=>t.did===did)||{}).name;
+const CLOCK_SKEW=60;
+// Credencial de outro emissor: a revogação não pode ser conferida aqui. A política decide (padrão: recusar).
+const unverifiableStatus=()=>st.acceptUnverifiable?null:false;
+const unverifiableMsg='Emitida por outro cartório: o status não pode ser conferido aqui.';
 
 /* ================= painel ================= */
 async function renderPanel(){
@@ -1197,15 +1224,17 @@ async function checkVP(tok){
   const vcTok=p.vp&&p.vp.verifiableCredential&&p.vp.verifiableCredential[0];
   if(!vcTok){add(false,'Credencial','A apresentação não contém credencial.');return{checks,ch}}
   let vc;
-  try{vc=await verifyJWT(vcTok)}catch(e){add(false,'Assinatura do emissor',esc(e.message));return{checks,ch}}
+  try{vc=await verifyJWT(vcTok,'vc+jwt')}catch(e){add(false,'Credencial',esc(e.message));return{checks,ch}}
   const q=vc.payload,t=vcType(q);
   add(vc.ok,'Assinatura do emissor',vc.ok?`Assinada por ${esc(vcIssuerName(q))}.`:'A credencial foi alterada depois de emitida.');
   add(q.sub===vp.did,'Credencial pertence ao titular',q.sub===vp.did?'O DID da credencial é o mesmo de quem apresentou.':'A credencial é de outra pessoa.');
   const tn=trustedName(vc.did);
   add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na lista de confiança deste cartório.');
   if(vc.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Não revogada',!rec?'Não consta no registro de emissões.':rec.revoked?`Revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativa no registro de emissões.')}
-  else add(null,'Não revogada','Emitida por outro cartório: o status não pode ser conferido aqui.');
-  add(!q.exp||q.exp>now(),'Dentro da validade',q.exp?(q.exp>now()?`Válida até ${fmtDate(q.exp*1000)}.`:`Expirou em ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
+  else add(unverifiableStatus(),'Não revogada',unverifiableMsg);
+  // 1.2: além do exp, confere o nbf (com folga de relógio entre aparelhos).
+  const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
+  add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Expirou em ${fmtDate(q.exp*1000)}.`:`Válida até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
   if(ch&&ch.type!=='any')add(t===ch.type,'Tipo exigido',t===ch.type?`${esc(vcLabel(t))}, como pedido.`:`O desafio pedia ${esc(vcLabel(ch.type))} e veio ${esc(vcLabel(t))}.`);
   return{checks,ch,q,holder:vp.did,chOk};
 }
@@ -1251,11 +1280,12 @@ $('#cGo').onclick=async()=>{
   if(!cInfo){toast('Escolha o arquivo',true);return}
   if(!$('#cT').value.trim()){shake($('#cF'));return}
   try{
-    const r=await verifyJWT($('#cT').value),q=r.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
+    const r=await verifyJWT($('#cT').value,'vc+jwt'),q=r.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
     if(vcType(q)!=='DocumentRegistrationCredential')throw new Error('Este token não é um certificado de registro de documento.');
     add(r.ok,'Assinatura do cartório',r.ok?`Assinado por ${esc(vcIssuerName(q))}.`:'O certificado foi alterado.');
     const tn=trustedName(r.did);add(!!tn,'Cartório confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este cartório não está na lista de confiança.');
     if(r.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Registro ativo',!rec?'Não consta no registro.':rec.revoked?`Cancelado: ${esc(rec.reason)}.`:`Registro nº ${esc(cs.registro)} ativo.`)}
+    else add(unverifiableStatus(),'Registro ativo',unverifiableMsg);
     add(cs.sha256===cInfo.sha256,'Arquivo idêntico',cs.sha256===cInfo.sha256?'A impressão digital confere byte a byte.':'O arquivo é diferente do registrado. Basta um byte para mudar a impressão.');
     const ok=checks.every(c=>c.ok!==false);
     out.innerHTML=verdictHtml(ok,ok?'Documento autêntico':'Documento não confere',ok?`“${esc(cs.documento)}”, registrado para ${esc(cs.requerente)} em ${fmtDate(q.iat*1000)}.`:'Veja abaixo o que não passou.')+`<div class="list glass flat mt">${checks.map(chkRow).join('')}</div>`;
@@ -1266,6 +1296,7 @@ $('#cGo').onclick=async()=>{
 function renderGov(){
   if(!st)return;
   $('#gName').value=st.name;$('#gDid').textContent=ses.did;
+  $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
   $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este cartório</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
   const list=st.issued.slice().reverse();
@@ -1278,6 +1309,13 @@ $('#gNameS').onclick=async()=>{
   st.name=n;await ato('nome',`Nome público alterado para ${n}`);await save();$('#whoLabel').textContent=n;toast('Nome salvo');
 };
 $('#gDidC').onclick=()=>copy(ses.did,'DID copiado');
+$('#gPol').onclick=async()=>{
+  const accept=!st.acceptUnverifiable;
+  if(accept&&!await confirmSheet('Aceitar status não verificável','Credenciais de emissores confiáveis passam a ser aprovadas mesmo sem conferir se foram revogadas. Uma credencial revogada por outro cartório pode passar.','Aceitar',true))return;
+  st.acceptUnverifiable=accept;
+  await ato('politica',accept?'Política: aceitar credenciais de outros emissores sem status verificável':'Política: recusar credenciais de outros emissores sem status verificável');
+  await save();renderGov();toast('Política alterada');
+};
 $('#gTrustAdd').onclick=()=>{
   openSheet(`<h3>Adicionar emissor confiável</h3><p class="sub">Credenciais assinadas por este DID passam a ser aceitas nas verificações deste cartório.</p>
     <label class="f" id="tnF"><span>Nome</span><input id="tn" autocomplete="off" placeholder="Ex.: Cartório de Campinas"></label>

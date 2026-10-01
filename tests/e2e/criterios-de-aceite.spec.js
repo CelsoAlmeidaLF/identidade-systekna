@@ -4,11 +4,7 @@
 // armazenamento compartilhado). Os tokens passam de um para o outro pelo
 // valor das caixas de texto, como no copiar e colar manual.
 const { test, expect } = require('@playwright/test');
-
-const PIN = '135790';
-// Frases BIP39 de teste com checksum válido: as identidades ficam iguais a cada execução.
-const WORDS_CARTEIRA = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
-const WORDS_CARTORIO = 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong';
+const { WORDS, instituir, bloquearEDesbloquear, aba, toast, fecharSheet } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -18,26 +14,6 @@ let didCarteira = '';
 let pedido = '';
 let credencial = '';
 let apresentacao = '';
-
-async function digitarPin(page) {
-  await page.keyboard.type(PIN);
-}
-
-/** Entra pelo caminho "Recuperar com 12 palavras" e cria o PIN. */
-async function instituir(page, arquivo, palavras) {
-  await page.goto(`/${arquivo}`);
-  await page.click('#goRecover');
-  await page.fill('#recWords', palavras);
-  await page.click('#recGo');
-  await expect(page.locator('#pinTitle')).toHaveText('Crie um PIN de 6 dígitos');
-  await digitarPin(page);
-  await expect(page.locator('#pinTitle')).toHaveText('Repita o PIN');
-  await digitarPin(page);
-  await expect(page.locator('#sApp')).toBeVisible();
-}
-
-const aba = (page, view) => page.click(`.dock [data-v="${view}"]`);
-const toast = page => page.locator('#toast span');
 
 async function acaoCarteira(acao) {
   await carteira.click('#dockAdd');
@@ -80,17 +56,11 @@ async function conferirApresentacao(token) {
   return cartorio.locator('#vpOut');
 }
 
-async function fecharSheet(page) {
-  // Toca no canto de cima, fora da folha, como o usuário faria.
-  await page.click('#scrim', { position: { x: 10, y: 10 } });
-  await expect(page.locator('#sheet')).not.toHaveClass(/open/);
-}
-
 test.beforeAll(async ({ browser }) => {
   carteira = await (await browser.newContext()).newPage();
   cartorio = await (await browser.newContext()).newPage();
-  await instituir(cartorio, 'cartorio-systekna.html', WORDS_CARTORIO);
-  await instituir(carteira, 'carteira-systekna.html', WORDS_CARTEIRA);
+  await instituir(cartorio, 'cartorio-systekna.html', WORDS.cartorio);
+  await instituir(carteira, 'carteira-systekna.html', WORDS.carteira);
   didCarteira = await carteira.evaluate(() => ses.did);
 });
 
@@ -234,10 +204,7 @@ test('12 · bloquear e desbloquear preserva todos os atos', async () => {
   const antes = await cartorio.evaluate(() => st.book.map(e => e.hash));
   expect(antes.length).toBeGreaterThan(5);
 
-  await cartorio.click('#lockBtn');
-  await expect(cartorio.locator('#pinTitle')).toHaveText('Digite seu PIN');
-  await digitarPin(cartorio);
-  await expect(cartorio.locator('#sApp')).toBeVisible();
+  await bloquearEDesbloquear(cartorio);
 
   const depois = await cartorio.evaluate(() => st.book.map(e => e.hash));
   expect(depois).toEqual(antes);

@@ -19,10 +19,10 @@ Os serviços não compartilham armazenamento. Tudo o que passa de um para o outr
 - **PIN de 6 dígitos**: destrava a entropia guardada em duas camadas:
   - PBKDF2-SHA256 com 600.000 iterações;
   - chave do aparelho não exportável (IndexedDB).
-- **Tentativas**: espera crescente a partir do 5º erro; o 10º erro apaga os dados locais.
+- **Tentativas**: espera crescente a partir do 5º erro; o 10º erro apaga os dados locais. A tentativa é gravada antes de o PIN ser conferido, e o mesmo contador vale para desbloquear, ver as 12 palavras e trocar o PIN.
 - **Bloqueio automático** configurável. Recarregar a página sempre bloqueia.
 - **Backup** `scb1.<iv>.<ct>` cifrado com a chave derivada das 12 palavras.
-- Todos os tokens são **JWT EdDSA** com `kid = did#chave`. A verificação lê a chave pública direto do DID, sem consultar servidor.
+- Todos os tokens são **JWT EdDSA** com `kid = did#chave`. A verificação lê a chave pública direto do DID, sem consultar servidor, e exige o `typ` esperado em cada etapa.
 
 ## 2. Protocolo entre os serviços
 
@@ -52,18 +52,18 @@ Carteira: escolhe a credencial e assina ──(apresentação)──> Cartório:
 2. **Assinatura do titular** na apresentação.
 3. **Desafio deste cartório**: nonce gerado aqui, `aud` correto e nunca usado antes (bloqueia repetição).
 4. **Prazo** do desafio e da apresentação.
-5. **Assinatura do emissor** na credencial.
+5. **Assinatura do emissor** na credencial, que precisa ter `typ = vc+jwt`.
 6. **Credencial pertence ao titular**: `vc.sub` igual a `vp.iss`.
 7. **Emissor confiável**: o próprio cartório ou um DID da lista de confiança.
-8. **Não revogada**: confere o registro de emissões. Para outro emissor, o resultado é marcado como "não verificável".
-9. **Validade** (`exp`).
+8. **Não revogada**: confere o registro de emissões. Para outro emissor, o status não pode ser conferido: a política do cartório decide se isso recusa (padrão) ou passa como "não verificável".
+9. **Validade**: `nbf` e `exp`, com folga de 60 s para diferença de relógio entre aparelhos.
 10. **Tipo exigido** pelo desafio.
 
 A apresentação é aprovada quando nenhuma checagem falha.
 
 ## 4. Carteira de Identidade
 
-- **Credenciais**: crachás por tipo, com detalhe, JWT bruto, Apresentar e Remover.
+- **Credenciais**: crachás por tipo, com detalhe, JWT bruto, Apresentar e Remover. Ao receber, recusa token sem `typ = vc+jwt`, emitido para outro DID, já expirado ou que ainda não entrou em vigor.
 - **Cofre**: senhas (com gerador), notas e documentos. Cada item é cifrado com AES-GCM e o `id` do item como AAD.
 - **Identidade**: DID, chave X25519, documento DID e mensagens cifradas (X25519 efêmero + HKDF + AES-GCM, formato `smsg1`).
 - **Ajustes**: ver palavras (pede PIN), trocar PIN, bloqueio automático, backup, restauração e apagar tudo.
@@ -81,6 +81,7 @@ A apresentação é aprovada quando nenhuma checagem falha.
 - **Governança**:
   - nome público do cartório;
   - lista de emissores confiáveis (adicionar e remover);
+  - política para status não verificável (recusar ou aceitar), registrada no livro;
   - credenciais emitidas, com revogação por motivo;
   - ajustes de segurança e backup.
 - **Livro de registros**: cada ato traz `{n, data, tipo, texto, ref, hash anterior}`, o SHA-256 desses campos e a assinatura Ed25519 do cartório. "Conferir integridade" refaz a corrente e aponta o primeiro ato quebrado.
@@ -93,12 +94,14 @@ A apresentação é aprovada quando nenhuma checagem falha.
 - RN04: A carteira só aceita credenciais cujo `sub` é o seu DID.
 - RN05: A revogação é irreversível e fica registrada no livro com o motivo.
 - RN06: O cartório guarda apenas o hash dos documentos, nunca o arquivo.
-- RN07: Mudanças de confiança e de nome também são atos do livro.
+- RN07: Mudanças de confiança, de nome e de política também são atos do livro.
 - RN08: O PIN tem 6 dígitos e rejeita repetições e sequências. O 10º erro consecutivo apaga os dados locais.
+- RN09: Por padrão, o cartório recusa credencial de outro emissor cuja revogação não pode conferir.
+- RN10: O cofre não guarda cartões. Itens desse tipo são apagados ao abrir a carteira e ignorados ao restaurar backup.
 
 ## 7. Critérios de aceite (automatizados, Chrome 154)
 
-Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js` (Playwright, Chrome do sistema):
+Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, e as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` (Playwright, Chrome do sistema):
 
 ```
 npm install

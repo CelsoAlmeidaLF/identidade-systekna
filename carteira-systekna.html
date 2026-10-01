@@ -638,6 +638,21 @@ async function readLock(pin){
   return unseal(dk,inner,'device',true);
 }
 const getGuard=async()=>(await DB.get('guard'))||{fails:0,until:0};
+/* A tentativa é contada antes de testar o PIN: fechar a aba durante a conferência não a devolve. */
+async function unlockWithPin(pin){
+  const g=await getGuard();
+  if(Date.now()<g.until)return{wait:Math.ceil((g.until-Date.now())/1000)};
+  g.fails++;
+  if(g.fails>=SOFT_FAILS)g.until=Date.now()+30000*2**(g.fails-SOFT_FAILS);
+  await DB.set('guard',g);
+  try{const ent=await readLock(pin);await DB.set('guard',{fails:0,until:0});return{ent}}
+  catch(e){
+    if(!(e instanceof PinError))throw e;
+    if(g.fails>=MAX_FAILS){await DB.clear();return{wiped:true}}
+    return{fails:g.fails};
+  }
+}
+const pinFailMsg=f=>{const left=MAX_FAILS-f;return f>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(f-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.'};
 const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p)||/^(\d\d)\1\1$/.test(p)||/^(\d{3})\1$/.test(p);
 const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
@@ -675,9 +690,10 @@ function didToEdKey(did){
   if(b.length!==34||b[0]!==0xed||b[1]!==0x01)throw new Error('O did:key não é uma chave Ed25519.');
   return S.importKey('raw',b.slice(2),{name:'Ed25519'},false,['verify']);
 }
-async function verifyJWT(tok){
+async function verifyJWT(tok,typ){
   const{header,payload,parts}=decodeJWT(tok);
   if(header.alg!=='EdDSA')throw new Error(`Algoritmo ${header.alg} não suportado. Use EdDSA.`);
+  if(typ&&header.typ!==typ)throw new Error(`O token é do tipo ${header.typ||'sem tipo'}, mas aqui se espera ${typ}.`);
   const did=String(header.kid||payload.iss||'').split('#')[0];
   if(payload.iss&&payload.iss!==did)throw new Error('O emissor declarado não confere com a chave que assinou.');
   const ok=await S.verify({name:'Ed25519'},await didToEdKey(did),b64u.dec(parts[2]),te.encode(parts[0]+'.'+parts[1]));
@@ -878,22 +894,14 @@ async function showLock(msg){
   $('#pinSub').textContent=meta?shortDid(meta.did):'';
   $('#pinLink').textContent='Esqueci meu PIN';$('#pinLink').onclick=()=>goRecover('lock');
   const pad=makePad($('#pinPad'),{onPin:async(pin,a)=>{
-    const g=await getGuard();
-    if(Date.now()<g.until)return a.reset(`Aguarde ${Math.ceil((g.until-Date.now())/1000)} s para tentar de novo.`,true);
     a.say('Abrindo…');
-    let ent;
-    try{ent=await readLock(pin)}
-    catch(e){
-      if(!(e instanceof PinError))return a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true);
-      g.fails++;
-      if(g.fails>=MAX_FAILS){await DB.clear();toast('Dados apagados após 10 tentativas erradas',true);return show('sWelcome')}
-      if(g.fails>=SOFT_FAILS)g.until=Date.now()+30000*2**(g.fails-SOFT_FAILS);
-      await DB.set('guard',g);
-      const left=MAX_FAILS-g.fails;
-      return a.reset(g.fails>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(g.fails-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.',true);
-    }
-    await DB.set('guard',{fails:0,until:0});
-    await startSession(ent,meta.lang);
+    let r;
+    try{r=await unlockWithPin(pin)}
+    catch{return a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true)}
+    if(r.wait)return a.reset(`Aguarde ${r.wait} s para tentar de novo.`,true);
+    if(r.wiped){toast('Dados apagados após 10 tentativas erradas',true);return show('sWelcome')}
+    if(!r.ent)return a.reset(pinFailMsg(r.fails),true);
+    await startSession(r.ent,meta.lang);
     await openAnim();enterApp();
   }});
   if(msg)pad.say(msg);
@@ -945,10 +953,23 @@ function mountCommonSettings(el){
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};
 }
+/* PIN pedido com a sessão aberta: usa o mesmo contador de tentativas do desbloqueio. */
+async function sessionPin(pin,a){
+  a.say('Conferindo…');
+  let r;
+  try{r=await unlockWithPin(pin)}catch{a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true);return false}
+  if(r.wait){a.reset(`Aguarde ${r.wait} s para tentar de novo.`,true);return false}
+  if(r.wiped){
+    closeSheet();if(ses&&ses.ent)ses.ent.fill(0);ses=null;APP.onLock();
+    show('sWelcome');toast('Dados apagados após 10 tentativas erradas',true);return false;
+  }
+  if(!r.ent){a.reset(pinFailMsg(r.fails),true);return false}
+  r.ent.fill(0);return true;
+}
 function reauth(title){
   return new Promise(res=>{
     openSheet(`<div style="text-align:center"><h3>${title}</h3><p class="sub">Confirme com seu PIN.</p><div id="raPad"></div></div>`,()=>res(false));
-    makePad($('#raPad'),{onPin:async(pin,a)=>{a.say('Conferindo…');try{await readLock(pin);res(true)}catch{a.reset('PIN incorreto.',true)}}});
+    makePad($('#raPad'),{onPin:async(pin,a)=>{if(await sessionPin(pin,a))res(true)}});
   });
 }
 const CS={
@@ -964,7 +985,7 @@ const CS={
     openSheet(`<div style="text-align:center"><h3 id="cpT">Digite o PIN atual</h3><p class="sub" id="cpS">Para trocar, confirme quem você é.</p><div id="cpPad"></div></div>`);
     makePad($('#cpPad'),{onPin:async(pin,a)=>{
       const T=$('#cpT');
-      if(step===0){a.say('Conferindo…');try{await readLock(pin)}catch{return a.reset('PIN incorreto.',true)}step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
+      if(step===0){if(!await sessionPin(pin,a))return;step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
       if(step===1){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;step=2;T.textContent='Repita o novo PIN';return a.reset()}
       if(pin!==first){step=1;first=null;T.textContent='Novo PIN';return a.reset('Os PINs não conferem. Digite o novo PIN de novo.',true)}
       a.say('Salvando…');await writeLock(ses.ent,pin);closeSheet();toast('PIN alterado');
@@ -1009,6 +1030,8 @@ async function boot(){
 }
 
 /* ================= serviço ================= */
+// Tipos que o cofre não guarda mais: são apagados ao abrir e ignorados ao restaurar backup.
+const REMOVED_TYPES=['cartao'];
 const TYPES={
   senha:{label:'Senha',plural:'Senhas',icon:'key',fields:[['user','Usuário ou e-mail'],['pass','Senha','secret'],['url','Site ou app']]},
   nota:{label:'Nota',plural:'Notas',icon:'note',fields:[['text','Texto','area']]},
@@ -1026,8 +1049,12 @@ const APP={
   async load(){
     ses.items=[];
     for(const r of (await DB.get('items'))||[]){try{ses.items.push({rec:r,data:await unseal(ses.vaultKey,r,r.id)})}catch{}}
+    const n=ses.items.length;
+    ses.items=ses.items.filter(i=>!REMOVED_TYPES.includes(i.data.type));
+    ses.purged=n-ses.items.length;
+    if(ses.purged)await persistItems();
   },
-  enter(){renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão removido':'cartões removidos'} do cofre`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
   onView(v){if(v==='vCreds')renderCreds();if(v==='vVault')renderVault()},
   onLock(){
     ['#cList','#vList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
@@ -1037,7 +1064,7 @@ const APP={
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
     let n=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});n++}catch{}}
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});n++}catch{}}
     await persistItems();renderCreds();renderVault();
     return `${n} ${n===1?'item restaurado':'itens restaurados'}`;
   }
@@ -1054,6 +1081,7 @@ $('#dockAdd').onclick=()=>actionMenu();
 
 /* ================= credenciais ================= */
 const creds=()=>ses.items.filter(i=>i.data.type==='cred').sort((a,b)=>b.data.created-a.data.created);
+const CLOCK_SKEW=60;
 const credState=d=>d.exp&&d.exp<now()?['no','Expirada']:['ok',d.exp?'Até '+fmtDate(d.exp*1000):'Sem validade'];
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
@@ -1111,9 +1139,12 @@ function receiveCred(){
     const H=$('#rcH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#rcF'))};
     let r;try{r=await verifyJWT($('#rcT').value)}catch(e){return fail(e.message)}
     const p=r.payload;
-    if(!p.vc)return fail(r.header.typ==='desafio+jwt'?'Isto é um desafio. Use Apresentar credencial.':'Isto não é uma credencial verificável.');
+    if(!p.vc||r.header.typ!=='vc+jwt')return fail(r.header.typ==='desafio+jwt'?'Isto é um desafio. Use Apresentar credencial.':'Isto não é uma credencial verificável.');
     if(!r.ok)return fail('A assinatura não confere: a credencial foi alterada ou não foi emitida por quem diz.');
     if(p.sub!==ses.did)return fail('Esta credencial foi emitida para outro DID.');
+    const t0=now();
+    if(p.exp&&p.exp<=t0)return fail(`Esta credencial expirou em ${fmtDate(p.exp*1000)}. Peça uma nova ao cartório.`);
+    if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Esta credencial só vale a partir de ${fmtDate(p.nbf*1000)}.`);
     if(creds().some(c=>c.data.jti===p.jti))return fail('Esta credencial já está na carteira.');
     const t=vcType(p),ts=Date.now();
     await saveItem({type:'cred',title:vcLabel(t),vtype:t,jwt:r.tok,jti:p.jti,issuerName:vcIssuerName(p),issuerDid:r.did,iat:p.iat,exp:p.exp||0,created:ts,updated:ts});
