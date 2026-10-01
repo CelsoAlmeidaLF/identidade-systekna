@@ -26,7 +26,7 @@ async function digitarPin(page, pin = PIN) {
 
 /** Entra pelo caminho "Recuperar com 12 palavras" e cria o PIN. */
 async function instituir(page, arquivo, palavras) {
-  await page.goto(`/${arquivo}`);
+  await page.goto(arquivo);
   await page.click('#goRecover');
   await page.fill('#recWords', palavras);
   await page.click('#recGo');

@@ -106,6 +106,8 @@ Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, e as correç�
 ```
 npm install
 npm run test:e2e
+# contra o site publicado:
+BASE_URL=https://celsoalmeidalf.github.io/identidade-systekna npm run test:e2e
 ```
 
 
