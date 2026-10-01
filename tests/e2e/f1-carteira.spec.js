@@ -48,6 +48,7 @@ async function emitirNoGrupo(page, tok, grupo) {
   await page.selectOption('#iType', 'MembroDoGrupo');
   await page.selectOption('#iGrp', { label: grupo });
   await page.click('#iGo');
+  await expect(page.locator('#iOut')).toBeVisible();
   await expect(page.locator('#iOk')).toContainText('Credencial emitida');
   return page.inputValue('#iJwt');
 }

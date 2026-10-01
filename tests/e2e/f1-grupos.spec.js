@@ -39,6 +39,8 @@ async function emitirNoGrupo(tok, grupo) {
   await conferirPedido(tok);
   await emissor.selectOption('#iGrp', { label: grupo });
   await emissor.click('#iGo');
+  // O resultado anterior fica no elemento escondido: espera o novo aparecer antes de ler.
+  await expect(emissor.locator('#iOut')).toBeVisible();
   await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
   return emissor.inputValue('#iJwt');
 }

@@ -58,11 +58,16 @@ Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo ind
 
 | Etapa | Quem gera | `typ` | Conteúdo principal | Validade |
 |---|---|---|---|---|
-| Pedido | Carteira | `pedido+jwt` | DID do titular, nome, tipo desejado, nonce | 7 dias, uso único |
+| Pedido | Carteira | `pedido+jwt` | DID do titular, nome, tipo desejado, chave X25519 (`x`), grupo (na renovação), nonce | 7 dias, uso único |
 | Credencial | Emissor | `vc+jwt` | `sub` = DID do titular, afirmações, `issuer.name`, `credentialStatus` | 30 dias a 5 anos, ou sem validade |
 | Desafio | Emissor | `desafio+jwt` | nonce, finalidade, tipo exigido | 10 minutos, uso único |
 | Apresentação | Carteira | `vp+jwt` | `aud` = DID do emissor, nonce do desafio, credencial embutida | 5 minutos |
 | Certificado de documento | Emissor | `vc+jwt` (DocumentRegistrationCredential) | SHA-256, nome, tamanho, requerente, nº do registro | Sem validade |
+| Credencial de grupo | Emissor | `vc+jwt` (MembroDoGrupo) | grupo, nome, apelido, `chaveCifragem` do titular | Obrigatória, a do grupo (30 dias a 1 ano) |
+| Convite | Emissor | `emissor+jwt` | DID e nome do emissor | 30 dias para importar |
+| Cartão de contato | Carteira | `contato+jwt` | DID, apelido, chave X25519, credenciais de grupo escolhidas | 30 dias para importar |
+| Conferência | Carteira | `conferencia+jwt` | `aud` = DID do contato, nonce | 10 minutos |
+| Resposta | Carteira | `resposta+jwt` | `aud` = quem pediu, a conferência embutida | 5 minutos, uso único na sessão |
 
 ### Fluxo de emissão
 ```
@@ -95,6 +100,13 @@ A apresentação é aprovada quando nenhuma checagem falha.
 
 - **Credenciais**: crachás por tipo, com detalhe, JWT bruto, Apresentar e Remover. Ao receber, recusa token sem `typ = vc+jwt`, emitido para outro DID, já expirado ou que ainda não entrou em vigor.
 - **Cofre**: senhas (com gerador), notas e documentos. Cada item é cifrado com AES-GCM e o `id` do item como AAD.
+- **Credenciais por emissor**: agrupadas por emissor, os confiáveis primeiro; as de emissor sem convite aceito ficam marcadas como "Emissor desconhecido". Estados: no prazo, "Vence em N dias" (20% da validade, entre 7 e 30 dias) e "Vencida". A credencial de grupo perto de vencer oferece "Pedir renovação", com nome, tipo e grupo já preenchidos.
+- **Contatos**:
+  - **Emissores confiáveis**: importa o convite `emissor+jwt` (assinatura e prazo conferidos). A confiança não é transitiva: só vale a lista da própria carteira.
+  - **Meu cartão**: `contato+jwt` assinado, com os grupos que a pessoa escolher mostrar.
+  - **Agenda**: importa cartões e mostra os selos de grupo. Um selo só aparece se a credencial anexada tiver assinatura válida, for do tipo de grupo, tiver sido emitida para o dono do cartão (`sub` = `iss` do cartão), vier de emissor confiável e estiver no prazo. Os selos são recalculados a cada vez. Filtro por grupo, renomear, remover e escrever mensagem cifrada já com a chave do contato.
+  - **Conferir pessoa**: a carteira assina um desafio para o DID do contato; a resposta só é aprovada se vier assinada por esse DID, para esta carteira, carregando o desafio ainda no prazo, e uma única vez.
+  - Emissores e contatos ficam no cofre cifrado, como os outros itens.
 - **Identidade**: DID, chave X25519, documento DID e mensagens cifradas (X25519 efêmero + HKDF + AES-GCM, formato `smsg1`).
 - **Ajustes**: ver palavras (pede PIN), trocar PIN, bloqueio automático, backup, restauração e apagar tudo.
 
@@ -110,6 +122,8 @@ A apresentação é aprovada quando nenhuma checagem falha.
   - confere um arquivo contra o certificado.
 - **Governança**:
   - nome público do emissor;
+  - convite `emissor+jwt` para as carteiras confiarem neste emissor;
+  - grupos (criar, renomear, mudar a validade, arquivar e ver os membros) e emissão da credencial `MembroDoGrupo`, uma por grupo, com a validade do grupo;
   - lista de emissores confiáveis (adicionar e remover);
   - política para status não verificável (recusar ou aceitar), registrada no livro;
   - credenciais emitidas, com revogação por motivo;
@@ -127,11 +141,13 @@ A apresentação é aprovada quando nenhuma checagem falha.
 - RN07: Mudanças de confiança, de nome e de política também são atos do livro.
 - RN08: O PIN tem 6 dígitos e rejeita repetições e sequências. O 10º erro consecutivo apaga os dados locais.
 - RN09: Por padrão, o emissor recusa credencial de outro emissor cuja revogação não pode conferir.
-- RN10: O cofre não guarda cartões. Itens desse tipo são apagados ao abrir a carteira e ignorados ao restaurar backup.
+- RN10: O cofre não guarda cartões de pagamento. Itens desse tipo são apagados ao abrir a carteira e ignorados ao restaurar backup.
+- RN11: Credencial de grupo sempre tem validade. Sem lista de status publicada, a revogação só é vista pelo próprio emissor, e a validade limita esse tempo.
+- RN12: A carteira só dá selo a credenciais de emissores cujo convite foi aceito nela.
 
 ## 7. Critérios de aceite (automatizados, Chrome 154)
 
-O núcleo criptográfico é conferido contra vetores oficiais (BIP39/Trezor, RFC 5869, RFC 8032, RFC 7748, base58, did:key) em `tests/e2e/vetores-oficiais.spec.js`, com as fontes em `tests/fixtures/`. Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js`, o PWA em `tests/e2e/pwa.spec.js` e a biometria em `tests/e2e/biometria.spec.js` (sensor simulado pelo autenticador virtual do Chrome) (Playwright, Chrome do sistema):
+O núcleo criptográfico é conferido contra vetores oficiais (BIP39/Trezor, RFC 5869, RFC 8032, RFC 7748, base58, did:key) em `tests/e2e/vetores-oficiais.spec.js`, com as fontes em `tests/fixtures/`. Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js`, o PWA em `tests/e2e/pwa.spec.js`, a biometria em `tests/e2e/biometria.spec.js` e a F1 do `plan.md` em `tests/e2e/f1-grupos.spec.js`, `f1-carteira.spec.js` e `f1-agenda.spec.js` (sensor simulado pelo autenticador virtual do Chrome) (Playwright, Chrome do sistema):
 
 ```
 npm install
