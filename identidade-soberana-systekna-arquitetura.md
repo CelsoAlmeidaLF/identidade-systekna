@@ -49,6 +49,7 @@ Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo ind
   - chave do aparelho não exportável (IndexedDB).
 - **Tentativas**: espera crescente a partir do 5º erro; o 10º erro apaga os dados locais. A tentativa é gravada antes de o PIN ser conferido, e o mesmo contador vale para desbloquear, ver as 12 palavras e trocar o PIN.
 - **Biometria (opcional)**: passkey do aparelho com a extensão **PRF**. O autenticador só entrega o segredo PRF depois da digital ou do rosto, e esse segredo (via HKDF) abre uma segunda cópia da entropia, também presa à chave do aparelho. Ativar pede o PIN. Sem PRF, a opção não é ativada, porque uma biometria conferida só em JavaScript poderia ser burlada. Biometria recusada não gasta tentativa de PIN: o limite fica no hardware.
+- **Só biometria (opcional)**: com a biometria ativada, a pessoa pode apagar o PIN do aparelho. Antes de apagar, a identidade é aberta de verdade pela biometria, para não deixar ninguém sem entrada. Sem PIN, a tela de bloqueio mostra só a biometria, "Ver as 12 palavras" pede a biometria e a biometria não pode ser desativada. Voltar a ter PIN pede a biometria. Se a biometria do aparelho mudar, a entrada é pelas 12 palavras, que criam um PIN novo.
 - **Bloqueio automático** configurável. Recarregar a página sempre bloqueia.
 - **Backup** `scb1.<iv>.<ct>` cifrado com a chave derivada das 12 palavras.
 - Todos os tokens são **JWT EdDSA** com `kid = did#chave`. A verificação lê a chave pública direto do DID, sem consultar servidor, e exige o `typ` esperado em cada etapa.
@@ -176,7 +177,7 @@ O PIN **não** protege contra quem consegue rodar código no navegador da pessoa
 
 Por isso a segurança real da identidade são as **12 palavras**, e o PIN é uma trava de conveniência.
 
-A **biometria** não tem essa fraqueza: o segredo que abre a identidade sai do chip de segurança do aparelho só depois da digital ou do rosto, e nenhum código na página consegue pedir esse segredo sem a pessoa. Mas, enquanto o PIN continuar ativo como alternativa, a cópia protegida pelo PIN continua sujeita ao ataque acima. Próximo passo possível: opção "usar só biometria", que apaga a cópia do PIN (a recuperação passa a ser só pelas 12 palavras).
+A **biometria** não tem essa fraqueza: o segredo que abre a identidade sai do chip de segurança do aparelho só depois da digital ou do rosto, e nenhum código na página consegue pedir esse segredo sem a pessoa. Mas, enquanto o PIN continuar ativo como alternativa, a cópia protegida pelo PIN continua sujeita ao ataque acima. A opção **"Usar só biometria"** apaga essa cópia: sem ela, não há o que testar por força bruta, e a recuperação passa a ser só pelas 12 palavras.
 
 ## 9. Próximos passos sugeridos
 
@@ -185,3 +186,4 @@ A **biometria** não tem essa fraqueza: o segredo que abre a identidade sai do c
 3. Divulgação seletiva (provar maioridade sem mostrar a data de nascimento).
 4. `did:web` para o cartório e registro público de emissores.
 5. Hospedagem dos dois serviços no GitHub Pages ou no SHTTPS, em origens separadas.
+6. **Login em sites com a carteira** ("Entrar com carteira Systekna"): o site gera um desafio (nonce, `aud` = domínio do site, prazo), a carteira mostra o domínio real de quem pede, a pessoa confirma com PIN ou biometria e a carteira devolve um `vp+jwt`. O servidor do site confere assinatura, nonce de uso único, `aud` e prazo, e abre a sessão com o DID como usuário. Começar pelo popup com `postMessage` (mesmo navegador), com um site de exemplo e um verificador em Node que reaproveita `src/shared/nucleo.js`, mais testes E2E (login aprovado, nonce repetido, `aud` errado, desafio vencido). Depois: redirecionamento OpenID4VP/SIOPv2 e a Digital Credentials API.

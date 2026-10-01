@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lEeLR/+ZAuE+shqMUt2t5lzA4Otb4CIXWXgnfhIx9jQ='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-OWP7pO5NZs2YYYL3JGXjtrD2MTwUeSpdZtgnZz1q6gs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -162,6 +162,7 @@ textarea.mono,.mono{font-family:var(--mono);font-size:12.5px;word-break:break-al
 .k.fn svg.i{width:26px;height:26px;color:var(--soft)}
 .k.fn:empty{visibility:hidden}
 .pad.busy .keys{opacity:.45;pointer-events:none}
+.pad.nopin .dots,.pad.nopin .keys{display:none}
 .pad.busy .dots i.on{animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.45}}
 
@@ -635,11 +636,13 @@ async function deviceKey(create){
   if(!dk&&create){dk=await S.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);await DB.set('deviceKey',dk)}
   return dk;
 }
+// Se há PIN neste aparelho ("usar só biometria" o apaga). Toda sessão começa por showLock ou writeLock, que o acertam.
+let pinOn=true;
 async function writeLock(ent,pin){
   const dk=await deviceKey(true);
   const inner=await seal(dk,ent,'device');
   const salt=rnd(16),outer=await seal(await pinKey(pin,salt,PIN_ITER),te.encode(JSON.stringify(inner)),'pin');
-  await DB.set('lock',{v:1,salt:b64u.enc(salt),iter:PIN_ITER,...outer});
+  await DB.set('lock',{v:1,salt:b64u.enc(salt),iter:PIN_ITER,...outer});pinOn=true;
 }
 class PinError extends Error{}
 async function readLock(pin){
@@ -719,10 +722,11 @@ async function unlockWithBio(){
   await DB.set('guard',{fails:0,until:0});
   return ent;
 }
-const bioErrMsg=e=>e&&e.name==='NotAllowedError'?'Biometria cancelada ou não reconhecida. Tente de novo ou use o PIN.'
+// pin: se o PIN ainda existe como alternativa. Com "usar só biometria", a saída é a recuperação pelas 12 palavras.
+const bioErrMsg=(e,pin=true)=>e&&e.name==='NotAllowedError'?`Biometria cancelada ou não reconhecida. Tente de novo${pin?' ou use o PIN':''}.`
   :e&&e.code==='missing'?'A chave deste aparelho sumiu. Recupere com as 12 palavras.'
-  :e&&(e.code==='key'||e.code==='prf')?'A biometria deste aparelho mudou. Entre com o PIN e ative de novo nos Ajustes.'
-  :'Não foi possível usar a biometria. Use o PIN.';
+  :e&&(e.code==='key'||e.code==='prf')?(pin?'A biometria deste aparelho mudou. Entre com o PIN e ative de novo nos Ajustes.':'A biometria deste aparelho mudou. Recupere com as 12 palavras.')
+  :pin?'Não foi possível usar a biometria. Use o PIN.':'Não foi possível usar a biometria. Tente de novo ou recupere com as 12 palavras.';
 const pinFailMsg=f=>{const left=MAX_FAILS-f;return f>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(f-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.'};
 const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p)||/^(\d\d)\1\1$/.test(p)||/^(\d{3})\1$/.test(p);
 const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
@@ -945,6 +949,7 @@ $('#recGo').onclick=async()=>{
 /* ================= PIN ================= */
 function pinSetup(ent,lang,from){
   show('sPin');$('#pinOrb').classList.remove('opening');
+  $('#pinPad').classList.remove('nopin');$('#bioBtn').hidden=true;
   const T=$('#pinTitle');
   T.textContent='Crie um PIN de 6 dígitos';
   $('#pinSub').textContent='Ele só abre neste aparelho. A chave mestra continua sendo as 12 palavras.';
@@ -962,11 +967,11 @@ function pinSetup(ent,lang,from){
   }});
 }
 async function showLock(msg){
-  const meta=await DB.get('meta');
+  const meta=await DB.get('meta'),hasPin=pinOn=!!await DB.get('lock');
   show('sPin');$('#pinOrb').classList.remove('opening');
-  $('#pinTitle').textContent='Digite seu PIN';
+  $('#pinTitle').textContent=hasPin?'Digite seu PIN':'Use a biometria';
   $('#pinSub').textContent=meta?shortDid(meta.did):'';
-  $('#pinLink').textContent='Esqueci meu PIN';$('#pinLink').onclick=()=>goRecover('lock');
+  $('#pinLink').textContent=hasPin?'Esqueci meu PIN':'Recuperar com as 12 palavras';$('#pinLink').onclick=()=>goRecover('lock');
   const pad=makePad($('#pinPad'),{onPin:async(pin,a)=>{
     a.say('Abrindo…');
     let r;
@@ -978,13 +983,17 @@ async function showLock(msg){
     await startSession(r.ent,meta.lang);
     await openAnim();enterApp();
   }});
+  // Só biometria: o teclado some e não recebe dígitos, mas a área de mensagens continua.
+  $('#pinPad').classList.toggle('nopin',!hasPin);
+  if(!hasPin)activePad=null;
   if(msg)pad.say(msg);
   const bio=$('#bioBtn');
   bio.hidden=!await DB.get('bioLock');
+  bio.classList.toggle('ghost',hasPin);
   bio.onclick=async()=>{
     bio.disabled=true;pad.say('Confirme com a biometria…');
     let ent;
-    try{ent=await unlockWithBio()}catch(e){bio.disabled=false;return pad.reset(bioErrMsg(e),true)}
+    try{ent=await unlockWithBio()}catch(e){bio.disabled=false;return pad.reset(bioErrMsg(e,hasPin),true)}
     bio.disabled=false;pad.say('Abrindo…');
     await startSession(ent,meta.lang);
     await openAnim();enterApp();
@@ -1018,9 +1027,10 @@ document.querySelectorAll('.dock [data-v]').forEach(b=>b.onclick=()=>setView(b.d
 function mountCommonSettings(el){
   el.innerHTML=`<div class="sec-h">Segurança</div>
   <div class="list glass flat">
-    <button class="tx" data-cs="words"><span class="dot" data-ic="note"></span><span class="t"><b>Ver as 12 palavras</b><small>Pede o PIN</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="words"><span class="dot" data-ic="note"></span><span class="t"><b>Ver as 12 palavras</b><small id="csWordsHow">Pede o PIN</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="pin"><span class="dot" data-ic="key"></span><span class="t"><b>Trocar PIN</b><small>Pede o PIN atual</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="bio" hidden><span class="dot" data-ic="shield"></span><span class="t"><b>Desbloqueio por biometria</b><small>Digital ou rosto, pelo chip de segurança do aparelho</small></span><span class="rv" id="csBio"></span></button>
+    <button class="tx" data-cs="bioOnly" hidden><span class="dot" data-ic="lock"></span><span class="t"><b>Usar só biometria</b><small>Apaga o PIN deste aparelho</small></span><span class="rv" id="csBioOnly"></span></button>
     <button class="tx" data-cs="auto"><span class="dot" data-ic="clock"></span><span class="t"><b>Bloqueio automático</b><small>Sem uso por este tempo, tudo fecha</small></span><span class="rv" id="csAuto"></span></button>
     <button class="tx" data-cs="lock"><span class="dot" data-ic="lock"></span><span class="t"><b>Bloquear agora</b></span></button>
   </div>
@@ -1055,7 +1065,12 @@ async function sessionPin(pin,a){
   if(!r.ent){a.reset(pinFailMsg(r.fails),true);return false}
   r.ent.fill(0);return true;
 }
-function reauth(title){
+/* Confirma quem está usando: pelo PIN ou, sem PIN, pela biometria. A folha do PIN abre já no clique. */
+async function reauth(title){
+  if(!pinOn){
+    try{(await unlockWithBio()).fill(0);return true}
+    catch(e){toast(e&&e.name==='NotAllowedError'?'Biometria cancelada':bioErrMsg(e,false),true);return false}
+  }
   return new Promise(res=>{
     openSheet(`<div style="text-align:center"><h3>${title}</h3><p class="sub">Confirme com seu PIN.</p><div id="raPad"></div></div>`,()=>res(false));
     makePad($('#raPad'),{onPin:async(pin,a)=>{if(await sessionPin(pin,a))res(true)}});
@@ -1063,9 +1078,22 @@ function reauth(title){
 }
 async function refreshBio(){
   const row=document.querySelector('[data-cs="bio"]');if(!row)return;
-  const on=!!await DB.get('bioLock');
+  const on=!!await DB.get('bioLock'),pin=pinOn;
   row.hidden=!on&&!await bioAvailable();
   $('#csBio').textContent=on?'Ativado':'Desativado';
+  document.querySelector('[data-cs="bioOnly"]').hidden=!on;
+  $('#csBioOnly').textContent=pin?'Desativado':'Ativado';
+  document.querySelector('[data-cs="pin"]').hidden=!pin;
+  $('#csWordsHow').textContent=pin?'Pede o PIN':'Pede a biometria';
+}
+/* Novo PIN digitado duas vezes no teclado da folha; T é o título que acompanha os passos. */
+function newPinSteps(T,onDone){
+  let first=null;
+  return async(pin,a)=>{
+    if(!first){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;T.textContent='Repita o novo PIN';return a.reset()}
+    if(pin!==first){first=null;T.textContent='Novo PIN';return a.reset('Os PINs não conferem. Digite o novo PIN de novo.',true)}
+    a.say('Salvando…');await writeLock(ses.ent,pin);await DB.set('guard',{fails:0,until:0});onDone();
+  };
 }
 const CS={
   async words(){
@@ -1076,14 +1104,13 @@ const CS={
     $('#swClose').onclick=closeSheet;
   },
   pin(){
-    let step=0,first=null;
+    let next=null;
     openSheet(`<div style="text-align:center"><h3 id="cpT">Digite o PIN atual</h3><p class="sub" id="cpS">Para trocar, confirme quem você é.</p><div id="cpPad"></div></div>`);
     makePad($('#cpPad'),{onPin:async(pin,a)=>{
-      const T=$('#cpT');
-      if(step===0){if(!await sessionPin(pin,a))return;step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
-      if(step===1){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;step=2;T.textContent='Repita o novo PIN';return a.reset()}
-      if(pin!==first){step=1;first=null;T.textContent='Novo PIN';return a.reset('Os PINs não conferem. Digite o novo PIN de novo.',true)}
-      a.say('Salvando…');await writeLock(ses.ent,pin);closeSheet();toast('PIN alterado');
+      if(next)return next(pin,a);
+      if(!await sessionPin(pin,a))return;
+      $('#cpT').textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';
+      next=newPinSteps($('#cpT'),()=>{closeSheet();toast('PIN alterado')});a.reset();
     }});
   },
   auto(){const opts=[1,3,5,10,30],n=opts[(opts.indexOf(autoMin())+1)%opts.length];store.set('auto',n);$('#csAuto').textContent=n+' min';toast(`Bloqueia após ${n} min sem uso`)},
@@ -1091,6 +1118,7 @@ const CS={
   async bio(){
     const L=await DB.get('bioLock');
     if(L){
+      if(!pinOn)return toast('Sem PIN, a biometria é a única entrada. Desligue antes "Usar só biometria".',true);
       if(!await confirmSheet('Desativar biometria','O desbloqueio volta a ser só pelo PIN. A passkey pode ser removida no gerenciador de senhas do aparelho.','Desativar'))return;
       forgetPasskey(b64u.dec(L.cred));await DB.del('bioLock');refreshBio();toast('Biometria desativada');return;
     }
@@ -1102,6 +1130,19 @@ const CS={
         :e&&e.name==='NotAllowedError'?'Biometria cancelada':'Não foi possível ativar a biometria',true);
     }
     refreshBio();toast('Biometria ativada');
+  },
+  /* Apagar o PIN tira do aparelho a cópia que um código no navegador poderia testar por força bruta. */
+  async bioOnly(){
+    if(pinOn){
+      if(!await confirmSheet('Usar só biometria','O PIN deste aparelho é apagado e só a digital ou o rosto abrem os dados. Se a biometria do aparelho mudar ou falhar, a entrada passa a ser só pelas 12 palavras. Confira que elas estão anotadas.','Apagar o PIN',true))return;
+      // Abre de verdade pela biometria antes de apagar o PIN: um registro que não abre deixaria a pessoa sem entrada.
+      try{(await unlockWithBio()).fill(0)}
+      catch(e){return toast(e&&e.name==='NotAllowedError'?'Biometria cancelada. O PIN continua ativo.':bioErrMsg(e,true),true)}
+      await DB.del('lock');await DB.del('guard');pinOn=false;refreshBio();toast('PIN apagado. Só a biometria abre os dados');return;
+    }
+    if(!await reauth('Criar PIN'))return;
+    openSheet(`<div style="text-align:center"><h3 id="cpT">Novo PIN</h3><p class="sub">O PIN volta a abrir os dados, junto com a biometria.</p><div id="cpPad"></div></div>`);
+    makePad($('#cpPad'),{onPin:newPinSteps($('#cpT'),()=>{closeSheet();refreshBio();toast('PIN criado')})});
   },
   async export(){
     const b=await seal(ses.vaultKey,{v:1,app:APP.db,did:ses.did,at:Date.now(),data:await APP.exportData()},'backup');
@@ -1160,7 +1201,7 @@ async function boot(){
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(()=>{});
   if(!await supports()){$('#unsupported').hidden=false;$('#goCreate').disabled=true;$('#goRecover').disabled=true;return show('sWelcome')}
   try{await DB.db()}catch{DB._mem=new Map();toast('Armazenamento indisponível: os dados vão durar só esta sessão',true)}
-  const meta=await DB.get('meta'),lock=await DB.get('lock');
+  const meta=await DB.get('meta'),lock=await DB.get('lock')||await DB.get('bioLock');
   if(meta&&lock)showLock();else show('sWelcome');
 }
 

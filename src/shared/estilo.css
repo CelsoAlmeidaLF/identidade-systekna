@@ -143,6 +143,7 @@ textarea.mono,.mono{font-family:var(--mono);font-size:12.5px;word-break:break-al
 .k.fn svg.i{width:26px;height:26px;color:var(--soft)}
 .k.fn:empty{visibility:hidden}
 .pad.busy .keys{opacity:.45;pointer-events:none}
+.pad.nopin .dots,.pad.nopin .keys{display:none}
 .pad.busy .dots i.on{animation:pulse 1s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.45}}
 
