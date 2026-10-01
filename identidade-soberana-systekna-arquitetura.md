@@ -96,7 +96,15 @@ A apresentação é aprovada quando nenhuma checagem falha.
 - RN07: Mudanças de confiança e de nome também são atos do livro.
 - RN08: O PIN tem 6 dígitos e rejeita repetições e sequências. O 10º erro consecutivo apaga os dados locais.
 
-## 7. Critérios de aceite (validados em Chromium 141)
+## 7. Critérios de aceite (automatizados, Chrome 154)
+
+Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js` (Playwright, Chrome do sistema):
+
+```
+npm install
+npm run test:e2e
+```
+
 
 - [x] Cartório instituído com o livro aberto e íntegro.
 - [x] Pedido válido é conferido. O mesmo pedido reenviado é recusado.
