@@ -588,7 +588,7 @@ async function wordsToSeed(words){
 const PK8={ed:hexB('302e020100300506032b657004220420'),x:hexB('302e020100300506032b656e04220420')};
 async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
   const k=await S.importKey('raw',ikm,'HKDF',false,['deriveBits']);
-  return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:te.encode(info)},k,len));
+  return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:typeof info==='string'?te.encode(info):info},k,len));
 }
 const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
 async function deriveIdentity(seed){
