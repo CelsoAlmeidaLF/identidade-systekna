@@ -13,6 +13,7 @@ const APP={
   howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
   <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O emissor confere essa assinatura e só então sabe que quem pede controla o DID.</p>
   <p><b>Credencial.</b> É uma afirmação sobre você assinada pela chave do emissor. Ela fica cifrada aqui e não serve sozinha como prova.</p>
+  <p><b>Emissores confiáveis.</b> A carteira só dá selo às credenciais dos emissores cujo convite você importou. As outras ficam marcadas como de emissor desconhecido. A confiança não passa adiante: confiar num emissor não faz confiar nos emissores em que ele confia.</p>
   <p><b>Apresentação.</b> Quem verifica gera um desafio novo. A carteira embrulha a credencial e assina junto com esse desafio. Assim o verificador confere que a credencial é verdadeira e que foi o dono quem apresentou, agora. Uma cópia antiga não passa.</p>
   <p><b>PIN.</b> Ele só destrava as chaves neste aparelho, em duas camadas: PBKDF2-SHA256 com 600 mil iterações e uma chave do aparelho que o navegador não deixa exportar. Seis dígitos são 1 milhão de combinações, então em produção o PIN deve ser conferido por hardware seguro.</p>`,
   async load(){
@@ -24,9 +25,9 @@ const APP={
     if(ses.purged)await persistItems();
   },
   enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão removido':'cartões removidos'} do cofre`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
-  onView(v){if(v==='vCreds')renderCreds();if(v==='vVault')renderVault()},
+  onView(v){if(v==='vCreds')renderCreds();if(v==='vVault')renderVault();if(v==='vContacts')renderContacts()},
   onLock(){
-    ['#cList','#vList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
+    ['#cList','#vList','#mOpenOut','#ctIss'].forEach(s=>$(s).innerHTML='');
     ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
     $('#mSealOut').hidden=true;
   },
@@ -51,9 +52,21 @@ $('#dockAdd').onclick=()=>actionMenu();
 /* ================= credenciais ================= */
 const creds=()=>ses.items.filter(i=>i.data.type==='cred').sort((a,b)=>b.data.created-a.data.created);
 const CLOCK_SKEW=60;
-const credState=d=>d.exp&&d.exp<now()?['no','Expirada']:['ok',d.exp?'Até '+fmtDate(d.exp*1000):'Sem validade'];
+// Perto do vencimento: 20% da validade, entre 7 e 30 dias. A credencial ainda vale, mas a carteira avisa.
+const soonWindow=d=>Math.min(30*86400,Math.max(7*86400,.2*(d.exp-(d.iat||d.exp))));
+function credState(d){
+  if(!d.exp)return['ok','Sem validade'];
+  const left=d.exp-now();
+  if(left<=0)return['no','Vencida'];
+  if(left<=soonWindow(d)){const n=Math.ceil(left/86400);return['warn',n===1?'Vence amanhã':`Vence em ${n} dias`]}
+  return['ok','Até '+fmtDate(d.exp*1000)];
+}
+const usable=d=>credState(d)[0]!=='no';
+const GROUP_TYPE='MembroDoGrupo';
+const credClaim=(d,k)=>(vcClaims(decodeJWT(d.jwt).payload).find(c=>c[0]===k)||[])[1];
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
+  if(d.vtype===GROUP_TYPE)return credClaim(d,'grupo')||'Grupo';
   if(d.vtype==='AgeOver18Credential')return 'Maior de 18 anos';
   if(d.vtype==='DocumentRegistrationCredential')return (cl.find(c=>c[0]==='documento')||[,'Documento'])[1];
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
@@ -62,11 +75,22 @@ function credCard(it,asDiv){
   const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
   return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
+/* ================= emissores confiáveis ================= */
+const issuers=()=>ses.items.filter(i=>i.data.type==='issuer').sort((a,b)=>a.data.name.localeCompare(b.data.name));
+const trustedIssuer=did=>issuers().find(i=>i.data.did===did);
+// Nome do emissor: o que veio no convite aceito; sem convite, o que a credencial declara.
+const issuerLabel=(did,fallback)=>{const t=trustedIssuer(did);return t?t.data.name:fallback};
+
 function renderCreds(){
   if(!ses)return;
   const list=creds();
+  // Seções por emissor: os confiáveis primeiro, depois os desconhecidos.
+  const by=new Map();
+  for(const i of list){const k=i.data.issuerDid;if(!by.has(k))by.set(k,[]);by.get(k).push(i)}
+  const secs=[...by.entries()].map(([did,its])=>({did,its,trusted:!!trustedIssuer(did),name:issuerLabel(did,its[0].data.issuerName)}))
+    .sort((a,b)=>(b.trusted-a.trusted)||a.name.localeCompare(b.name));
   $('#cNote').hidden=!list.length;
-  $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
+  $('#cList').innerHTML=list.length?secs.map(x=>`<section class="csec" data-issuer="${esc(x.did)}"><div class="sec-h">${esc(x.name)}${x.trusted?'':' <span class="pill warn">Emissor desconhecido</span>'}</div><div class="creds">${x.its.map(i=>credCard(i)).join('')}</div></section>`).join('')
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Pedir credencial</b>. O pedido é assinado e prova que você controla este DID.</span></li>
       <li><span>Leve o pedido ao <b>Emissor de Credenciais</b>, que confere a assinatura e emite a credencial.</span></li>
@@ -80,22 +104,25 @@ function actionMenu(){
     ${row('ask','send','Pedir credencial','Gera um pedido assinado para o emissor')}
     ${row('get','inbox','Receber credencial','Cola a credencial que o emissor emitiu')}
     ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}
+    ${row('trust','shield','Confiar em um emissor','Cola o convite de um emissor')}
     ${row('item','vault','Guardar no cofre','Senha, nota ou documento')}</div>`);
-  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present(),item:()=>editItem()})[b.dataset.act]()};
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:()=>askCred(),get:receiveCred,show:()=>present(),trust:trustIssuer,item:()=>editItem()})[b.dataset.act]()};
 }
 
-function askCred(){
+// pre: renovação de credencial de grupo (tipo, nome e grupo já preenchidos).
+function askCred(pre){
   openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
     <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([k])=>k!=='DocumentRegistrationCredential').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
+  if(pre){$('#aqN').value=pre.name||'';$('#aqT').value=GROUP_TYPE;$('#aqO').value=`Renovação: ${pre.grupo}`}
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
-    const iat=now();
+    const iat=now(),renew=pre&&$('#aqT').value===GROUP_TYPE?{grupo:pre.grupo}:{};
     // x: a chave de cifragem vai junto para entrar na credencial de grupo.
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),x:ses.xMb,nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),x:ses.xMb,...renew,nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
@@ -113,7 +140,7 @@ function receiveCred(){
     if(!r.ok)return fail('A assinatura não confere: a credencial foi alterada ou não foi emitida por quem diz.');
     if(p.sub!==ses.did)return fail('Esta credencial foi emitida para outro DID.');
     const t0=now();
-    if(p.exp&&p.exp<=t0)return fail(`Esta credencial expirou em ${fmtDate(p.exp*1000)}. Peça uma nova ao emissor.`);
+    if(p.exp&&p.exp<=t0)return fail(`Esta credencial venceu em ${fmtDate(p.exp*1000)}. Peça uma nova ao emissor.`);
     if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Esta credencial só vale a partir de ${fmtDate(p.nbf*1000)}.`);
     if(creds().some(c=>c.data.jti===p.jti))return fail('Esta credencial já está na carteira.');
     const t=vcType(p),ts=Date.now();
@@ -129,12 +156,14 @@ function showCred(id){
   openSheet(`${credCard(it,true)}
     <div class="sec-h">Afirmações</div><div class="list glass flat">${rows||'<div class="empty">Sem afirmações.</div>'}</div>
     <div class="sec-h">Origem</div><div class="list glass flat">
-      <div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
+      <div class="kr"><div class="h"><small>Emissor</small>${trustedIssuer(d.issuerDid)?'<span class="pill ok">Confiável</span>':'<span class="pill warn">Emissor desconhecido</span>'}</div><div class="v">${esc(issuerLabel(d.issuerDid,d.issuerName))}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
       <div class="kr"><div class="h"><small>Emitida em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
     <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o emissor assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
-    <button class="btn" id="scP">Apresentar</button>
+    ${d.vtype===GROUP_TYPE&&st!=='ok'?'<button class="btn" id="scR">Pedir renovação</button>':''}
+    <button class="btn${d.vtype===GROUP_TYPE&&st!=='ok'?' ghost':''}" id="scP">Apresentar</button>
     <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
   $('#scP').onclick=()=>present(id);
+  $('#scR')&&($('#scR').onclick=()=>askCred({name:credClaim(d,'nome'),grupo:credClaim(d,'grupo')}));
   $('#scD').onclick=async()=>{
     if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no emissor continua igual, e você pode pedir outra.','Remover',true))return;
     ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCreds();toast('Credencial removida');
@@ -153,7 +182,7 @@ function present(preId){
     if(r.header.typ!=='desafio+jwt')return fail('Isto não é um desafio. Peça a quem verifica para gerar um.');
     if(!r.ok)return fail('A assinatura do desafio não confere. Não responda.');
     if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
-    const all=creds().filter(c=>credState(c.data)[0]==='ok');
+    const all=creds().filter(c=>usable(c.data));
     const fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
     let pick=(fit.find(c=>c.rec.id===preId)||fit[0]||{}).rec;pick=pick&&pick.id;
     $('#apStep').innerHTML=`<div class="list glass flat mt">
@@ -171,6 +200,42 @@ function present(preId){
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });
+  };
+}
+
+/* ================= contatos: emissores confiáveis ================= */
+function renderContacts(){
+  if(!ses)return;
+  const iss=issuers();
+  $('#ctIss').innerHTML=iss.length?iss.map(i=>`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(i.data.name)}</b><small class="mono">${esc(shortDid(i.data.did))}</small></span><button class="mini sm" data-untrust="${i.rec.id}" aria-label="Deixar de confiar em ${esc(i.data.name)}">${ic('trash')}</button></div>`).join('')
+    :'<div class="empty">Nenhum emissor ainda. Peça o convite a quem emite as credenciais do seu grupo.</div>';
+}
+$('#ctIssAdd').onclick=()=>trustIssuer();
+$('#ctIss').onclick=async e=>{
+  const b=e.target.closest('[data-untrust]');if(!b)return;
+  const it=ses.items.find(i=>i.rec.id===b.dataset.untrust);if(!it)return;
+  if(!await confirmSheet('Deixar de confiar',`As credenciais de ${esc(it.data.name)} perdem o selo nesta carteira e na agenda. Elas continuam guardadas.`,'Deixar de confiar',true))return;
+  ses.items=ses.items.filter(i=>i!==it);await persistItems();renderContacts();renderCreds();toast('Emissor removido');
+};
+function trustIssuer(){
+  openSheet(`<h3>Confiar em um emissor</h3><p class="sub">Cole o convite que o emissor mandou. A carteira confere a assinatura e mostra quem é antes de você aceitar.</p>
+    <label class="f" id="tiF"><span>Convite</span><textarea class="mono" id="tiT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="tiH"></p>
+    <button class="btn" id="tiGo">Conferir convite</button><div id="tiStep"></div>`);
+  $('#tiGo').onclick=async()=>{
+    const H=$('#tiH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#tiF'));$('#tiStep').innerHTML=''};
+    H.textContent='';H.classList.remove('bad');
+    let r;try{r=await verifyJWT($('#tiT').value)}catch(e){return fail(e.message)}
+    if(r.header.typ!=='emissor+jwt')return fail('Isto não é um convite de emissor. No emissor, ele fica em Governança.');
+    if(!r.ok)return fail('A assinatura do convite não confere: ele foi alterado ou não é deste emissor.');
+    if(!r.payload.exp||r.payload.exp<now())return fail('Este convite venceu. Peça um novo ao emissor.');
+    const name=String(r.payload.name||'').trim()||shortDid(r.did),had=trustedIssuer(r.did);
+    $('#tiStep').innerHTML=`<div class="list glass flat mt"><div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(name)}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div></div>
+      <p class="hint">Confira com quem mandou que o nome e o começo do DID são estes.</p><button class="btn" id="tiOk">${had?'Atualizar nome':'Confiar neste emissor'}</button>`;
+    $('#tiOk').onclick=async()=>{
+      const ts=Date.now();
+      await saveItem({type:'issuer',did:r.did,name,created:had?had.data.created:ts,updated:ts},had&&had.rec.id);
+      closeSheet();renderContacts();renderCreds();toast(had?'Nome do emissor atualizado':'Emissor confiável adicionado');
+    };
   };
 }
 

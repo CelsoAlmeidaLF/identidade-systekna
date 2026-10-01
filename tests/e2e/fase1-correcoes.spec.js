@@ -161,7 +161,7 @@ test.describe('1.4 · carteira recusa credencial fora da validade', () => {
   test('credencial já expirada', async () => {
     const ontem = Math.floor(Date.now() / 1000) - 86_400;
     await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { iat: ontem - 60, nbf: ontem - 60, exp: ontem })));
-    await expect(carteira.locator('#rcH')).toContainText('Esta credencial expirou em');
+    await expect(carteira.locator('#rcH')).toContainText('Esta credencial venceu em');
     await fecharSheet(carteira);
   });
 
