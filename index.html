@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Identidade Soberana Systekna</title>
+<meta name="description" content="Ambiente de teste: carteira de identidade e cartório digital com credenciais verificáveis.">
+<style>
+:root{--bg:#eef4fb;--card:#ffffffcc;--ink:#10243a;--soft:#4a5d72;--accent:#1a7ad4;--line:#d5e2f0;--warn-bg:#fff6e0;--warn-ink:#6b4a00}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0b1522;--card:#13202fcc;--ink:#e6eef7;--soft:#9fb1c4;--accent:#5aa9ff;--line:#22344a;--warn-bg:#2a2210;--warn-ink:#f1d48a}}
+:root[data-theme="dark"]{--bg:#0b1522;--card:#13202fcc;--ink:#e6eef7;--soft:#9fb1c4;--accent:#5aa9ff;--line:#22344a;--warn-bg:#2a2210;--warn-ink:#f1d48a}
+*{box-sizing:border-box}
+body{margin:0;min-height:100vh;background:var(--bg);color:var(--ink);font:16px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;display:grid;place-items:center;padding:32px 16px}
+main{width:100%;max-width:640px}
+h1{font-size:28px;line-height:1.2;margin:0 0 8px}
+p.sub{color:var(--soft);margin:0 0 24px}
+.grid{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+a.card{display:block;padding:20px;border-radius:16px;background:var(--card);border:1px solid var(--line);color:inherit;text-decoration:none;transition:border-color .2s,transform .2s}
+a.card:hover,a.card:focus-visible{border-color:var(--accent);transform:translateY(-2px)}
+a.card b{display:block;font-size:18px;margin-bottom:4px;color:var(--accent)}
+a.card small{color:var(--soft)}
+.note{margin-top:24px;padding:14px 16px;border-radius:12px;background:var(--warn-bg);color:var(--warn-ink);font-size:14px}
+footer{margin-top:20px;font-size:13px;color:var(--soft)}
+footer a{color:var(--accent)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Identidade Soberana Systekna</h1>
+  <p class="sub">Ambiente de teste com dois serviços independentes. Tudo roda no seu navegador, sem servidor.</p>
+  <div class="grid">
+    <a class="card" href="carteira-systekna.html"><b>Carteira de Identidade</b><small>Para o titular: guarda a identidade, as credenciais e o cofre cifrado.</small></a>
+    <a class="card" href="cartorio-systekna.html"><b>Cartório Digital</b><small>Para a governança: emite, verifica, registra documentos e revoga.</small></a>
+  </div>
+  <p class="note"><b>Somente para teste.</b> Os dados ficam no navegador de quem usa e não são enviados a nenhum servidor. Não use para identidades reais: nesta hospedagem, os dois serviços dividem o armazenamento do navegador com outros sites do mesmo domínio.</p>
+  <footer>Como funciona: <a href="https://github.com/CelsoAlmeidaLF/identidade-systekna/blob/main/identidade-soberana-systekna-arquitetura.md">arquitetura e regras de negócio</a>.</footer>
+</main>
+</body>
+</html>

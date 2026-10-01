@@ -130,6 +130,7 @@ npm run test:e2e
 - Sem divulgação seletiva: a apresentação revela todas as afirmações da credencial. Evolução: SD-JWT ou BBS+.
 - PIN de 6 dígitos sem hardware seguro. Chave do cartório fora de HSM.
 - Derivação HKDF própria, sem compatibilidade com outras carteiras SSI.
+- Publicado em `celsoalmeidalf.github.io/identidade-systekna/`: a origem é a mesma de todos os sites Pages da conta, então o armazenamento do navegador é compartilhado com eles. Serve para demonstração, não para identidades reais. Em produção: um subdomínio próprio para cada serviço.
 
 ## 9. Próximos passos sugeridos
 
