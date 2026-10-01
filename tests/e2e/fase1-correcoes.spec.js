@@ -3,15 +3,15 @@
 // Tokens com conteúdo fora do comum (nbf no futuro, exp no passado, typ errado) são assinados
 // direto na página com signJWT, a mesma função que os serviços usam.
 const { test, expect } = require('@playwright/test');
-const { vigiarCsp, WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe } = require('./helpers');
+const { vigiarCsp, WORDS, telaDoPin, digitarPin, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
 /** @type {import('@playwright/test').Page} */ let carteira;
-/** @type {import('@playwright/test').Page} */ let cartorio;
-/** @type {import('@playwright/test').Page} */ let outroCartorio;
+/** @type {import('@playwright/test').Page} */ let emissor;
+/** @type {import('@playwright/test').Page} */ let outroEmissor;
 let didCarteira = '';
-let didCartorio = '';
+let didEmissor = '';
 let didOutro = '';
 /** @type {string[]} */ const violacoesCsp = [];
 
@@ -20,7 +20,7 @@ const guard = page => page.evaluate(async () => (await DB.get('guard')) || { fai
 /** Assina um JWT com a chave do serviço aberto na página. */
 const assinar = (page, typ, payload) => page.evaluate(([t, p]) => signJWT(t, p), [typ, payload]);
 
-/** Credencial no formato do cartório, com campos que o teste pode sobrescrever. */
+/** Credencial no formato do emissor, com campos que o teste pode sobrescrever. */
 function vcPayload(issuer, sub, extra = {}) {
   const iat = Math.floor(Date.now() / 1000);
   return {
@@ -36,11 +36,11 @@ function vcPayload(issuer, sub, extra = {}) {
 }
 
 async function gerarDesafio() {
-  await aba(cartorio, 'vVerify');
-  await cartorio.selectOption('#vType', 'any');
-  await cartorio.click('#vGen');
-  await expect(cartorio.locator('#vChal')).toBeVisible();
-  return payloadDe(await cartorio.inputValue('#vChalT')).nonce;
+  await aba(emissor, 'vVerify');
+  await emissor.selectOption('#vType', 'any');
+  await emissor.click('#vGen');
+  await expect(emissor.locator('#vChal')).toBeVisible();
+  return payloadDe(await emissor.inputValue('#vChalT')).nonce;
 }
 
 /** A carteira assina uma apresentação que embute exatamente o token dado. */
@@ -48,16 +48,16 @@ async function apresentacaoCom(tokenEmbutido) {
   const nonce = await gerarDesafio();
   const iat = Math.floor(Date.now() / 1000);
   return assinar(carteira, 'vp+jwt', {
-    iss: didCarteira, sub: didCarteira, aud: didCartorio, nonce, iat, exp: iat + 300,
+    iss: didCarteira, sub: didCarteira, aud: didEmissor, nonce, iat, exp: iat + 300,
     vp: { '@context': ['https://www.w3.org/2018/credentials/v1'], type: ['VerifiablePresentation'], holder: didCarteira, verifiableCredential: [tokenEmbutido] },
   });
 }
 
 async function conferirApresentacao(token) {
-  await aba(cartorio, 'vVerify');
-  await cartorio.fill('#vpT', token);
-  await cartorio.click('#vpGo');
-  return cartorio.locator('#vpOut');
+  await aba(emissor, 'vVerify');
+  await emissor.fill('#vpT', token);
+  await emissor.click('#vpGo');
+  return emissor.locator('#vpOut');
 }
 
 async function receberNaCarteira(token) {
@@ -73,18 +73,18 @@ async function ajusteCarteira(chave) {
 }
 
 test.beforeAll(async ({ browser }) => {
-  [carteira, cartorio, outroCartorio] = await Promise.all([1, 2, 3].map(async () => (await browser.newContext()).newPage()));
-  for (const p of [carteira, cartorio, outroCartorio]) vigiarCsp(p, violacoesCsp);
-  await instituir(cartorio, 'cartorio-systekna.html', WORDS.cartorio);
-  await instituir(outroCartorio, 'cartorio-systekna.html', WORDS.outroCartorio);
-  await instituir(carteira, 'carteira-systekna.html', WORDS.carteira);
+  [carteira, emissor, outroEmissor] = await Promise.all([1, 2, 3].map(async () => (await browser.newContext()).newPage()));
+  for (const p of [carteira, emissor, outroEmissor]) vigiarCsp(p, violacoesCsp);
+  await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
+  await preparar(outroEmissor, 'emissor-systekna.html', WORDS.outroEmissor);
+  await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
   didCarteira = await carteira.evaluate(() => ses.did);
-  didCartorio = await cartorio.evaluate(() => ses.did);
-  didOutro = await outroCartorio.evaluate(() => ses.did);
+  didEmissor = await emissor.evaluate(() => ses.did);
+  didOutro = await outroEmissor.evaluate(() => ses.did);
 });
 
 test.afterAll(async () => {
-  for (const p of [carteira, cartorio, outroCartorio]) await p?.context().close();
+  for (const p of [carteira, emissor, outroEmissor]) await p?.context().close();
 });
 
 test.describe('1.1 · contador de tentativas do PIN', () => {
@@ -134,24 +134,24 @@ test.describe('1.1 · contador de tentativas do PIN', () => {
   });
 });
 
-test('1.2 · cartório recusa credencial cujo nbf ainda não chegou', async () => {
+test('1.2 · emissor recusa credencial cujo nbf ainda não chegou', async () => {
   const amanha = Math.floor(Date.now() / 1000) + 86_400;
-  const vc = await assinar(cartorio, 'vc+jwt', vcPayload(didCartorio, didCarteira, { nbf: amanha }));
+  const vc = await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { nbf: amanha }));
   const out = await conferirApresentacao(await apresentacaoCom(vc));
   await expect(out).toContainText('Apresentação recusada');
   await expect(out.locator('.chk.no').filter({ hasText: 'Só vale a partir de' })).toHaveCount(1);
 });
 
 test.describe('1.3 · tipo do token (typ) é exigido', () => {
-  test('cartório recusa apresentação que embute um token que não é vc+jwt', async () => {
-    const falso = await assinar(cartorio, 'pedido+jwt', vcPayload(didCartorio, didCarteira));
+  test('emissor recusa apresentação que embute um token que não é vc+jwt', async () => {
+    const falso = await assinar(emissor, 'pedido+jwt', vcPayload(didEmissor, didCarteira));
     const out = await conferirApresentacao(await apresentacaoCom(falso));
     await expect(out).toContainText('Apresentação recusada');
     await expect(out.locator('.chk.no').filter({ hasText: 'aqui se espera vc+jwt' })).toHaveCount(1);
   });
 
   test('carteira recusa token com conteúdo de credencial mas typ diferente de vc+jwt', async () => {
-    await receberNaCarteira(await assinar(cartorio, 'pedido+jwt', vcPayload(didCartorio, didCarteira)));
+    await receberNaCarteira(await assinar(emissor, 'pedido+jwt', vcPayload(didEmissor, didCarteira)));
     await expect(carteira.locator('#rcH')).toHaveText('Isto não é uma credencial verificável.');
     await fecharSheet(carteira);
   });
@@ -160,43 +160,43 @@ test.describe('1.3 · tipo do token (typ) é exigido', () => {
 test.describe('1.4 · carteira recusa credencial fora da validade', () => {
   test('credencial já expirada', async () => {
     const ontem = Math.floor(Date.now() / 1000) - 86_400;
-    await receberNaCarteira(await assinar(cartorio, 'vc+jwt', vcPayload(didCartorio, didCarteira, { iat: ontem - 60, nbf: ontem - 60, exp: ontem })));
+    await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { iat: ontem - 60, nbf: ontem - 60, exp: ontem })));
     await expect(carteira.locator('#rcH')).toContainText('Esta credencial expirou em');
     await fecharSheet(carteira);
   });
 
   test('credencial que ainda não entrou em vigor', async () => {
     const amanha = Math.floor(Date.now() / 1000) + 86_400;
-    await receberNaCarteira(await assinar(cartorio, 'vc+jwt', vcPayload(didCartorio, didCarteira, { nbf: amanha })));
+    await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { nbf: amanha })));
     await expect(carteira.locator('#rcH')).toContainText('Esta credencial só vale a partir de');
     await fecharSheet(carteira);
   });
 });
 
 test('1.5 · status não verificável é recusado por padrão e aceito só com política explícita', async () => {
-  const vc = await assinar(outroCartorio, 'vc+jwt', vcPayload(didOutro, didCarteira));
+  const vc = await assinar(outroEmissor, 'vc+jwt', vcPayload(didOutro, didCarteira));
   await receberNaCarteira(vc);
   await expect(toast(carteira)).toHaveText('Credencial guardada');
 
-  // O outro cartório entra na lista de confiança.
-  await aba(cartorio, 'vGov');
-  await expect(cartorio.locator('#gPolV')).toHaveText('Recusar');
-  await cartorio.click('#gTrustAdd');
-  await cartorio.fill('#tn', 'Cartório de teste');
-  await cartorio.fill('#td', didOutro);
-  await cartorio.click('#tGo');
-  await expect(toast(cartorio)).toHaveText('Emissor adicionado');
+  // O outro emissor entra na lista de confiança.
+  await aba(emissor, 'vGov');
+  await expect(emissor.locator('#gPolV')).toHaveText('Recusar');
+  await emissor.click('#gTrustAdd');
+  await emissor.fill('#tn', 'Emissor de teste');
+  await emissor.fill('#td', didOutro);
+  await emissor.click('#tGo');
+  await expect(toast(emissor)).toHaveText('Emissor adicionado');
 
   let out = await conferirApresentacao(await apresentacaoCom(vc));
   await expect(out).toContainText('Apresentação recusada');
   await expect(out.locator('.chk.no').filter({ hasText: 'o status não pode ser conferido aqui' })).toHaveCount(1);
 
-  await aba(cartorio, 'vGov');
-  await cartorio.click('#gPol');
-  await cartorio.click('#cfOk');
-  await expect(toast(cartorio)).toHaveText('Política alterada');
-  await expect(cartorio.locator('#gPolV')).toHaveText('Aceitar');
-  expect(await cartorio.evaluate(() => st.book.at(-1).text)).toContain('Política: aceitar');
+  await aba(emissor, 'vGov');
+  await emissor.click('#gPol');
+  await emissor.click('#cfOk');
+  await expect(toast(emissor)).toHaveText('Política alterada');
+  await expect(emissor.locator('#gPolV')).toHaveText('Aceitar');
+  expect(await emissor.evaluate(() => st.book.at(-1).text)).toContain('Política: aceitar');
 
   out = await conferirApresentacao(await apresentacaoCom(vc));
   await expect(out).toContainText('Apresentação aprovada');

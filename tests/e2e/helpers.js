@@ -1,13 +1,13 @@
 // @ts-check
-// Passos comuns dos testes E2E da carteira e do cartório.
+// Passos comuns dos testes E2E da carteira e do emissor.
 const { expect } = require('@playwright/test');
 
 const PIN = '135790';
 // Frases BIP39 de teste com checksum válido: as identidades ficam iguais a cada execução.
 const WORDS = {
   carteira: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
-  cartorio: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong',
-  outroCartorio: 'legal winner thank year wave sausage worth useful legal winner thank yellow',
+  emissor: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong',
+  outroEmissor: 'legal winner thank year wave sausage worth useful legal winner thank yellow',
 };
 
 /**
@@ -25,7 +25,7 @@ async function digitarPin(page, pin = PIN) {
 }
 
 /** Entra pelo caminho "Recuperar com 12 palavras" e cria o PIN. */
-async function instituir(page, arquivo, palavras) {
+async function preparar(page, arquivo, palavras) {
   await page.goto(arquivo);
   await page.click('#goRecover');
   await page.fill('#recWords', palavras);
@@ -66,4 +66,4 @@ function vigiarCsp(page, violacoes = []) {
 /** Lê o payload de um JWT sem conferir a assinatura. */
 const payloadDe = tok => JSON.parse(Buffer.from(tok.split('.')[1], 'base64url').toString('utf8'));
 
-module.exports = { PIN, WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe, vigiarCsp };
+module.exports = { PIN, WORDS, telaDoPin, digitarPin, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe, vigiarCsp };

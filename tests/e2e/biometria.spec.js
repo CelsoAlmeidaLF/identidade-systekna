@@ -2,7 +2,7 @@
 // Desbloqueio por biometria (passkey com PRF). O sensor do aparelho é simulado pelo autenticador
 // virtual do Chrome (CDP), que reconhece ou recusa a "digital" conforme o teste pede.
 const { test, expect } = require('@playwright/test');
-const { WORDS, instituir, telaDoPin, digitarPin, aba, toast, vigiarCsp } = require('./helpers');
+const { WORDS, preparar, telaDoPin, digitarPin, aba, toast, vigiarCsp } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -48,7 +48,7 @@ test.describe('carteira', () => {
     page = await (await browser.newContext()).newPage();
     vigiarCsp(page, violacoes);
     dedo = await sensor(page);
-    await instituir(page, 'carteira-systekna.html', WORDS.carteira);
+    await preparar(page, 'carteira-systekna.html', WORDS.carteira);
   });
   test.afterAll(async () => { await page?.context().close(); });
 
@@ -111,7 +111,7 @@ test.describe('carteira', () => {
     await ativarBio(page);
     await bloquear(page);
     await page.click('#pinLink');
-    await page.fill('#recWords', WORDS.outroCartorio);
+    await page.fill('#recWords', WORDS.outroEmissor);
     await page.click('#recGo');
     await page.click('#cfOk');
     await telaDoPin(page, 'Crie um PIN de 6 dígitos');
@@ -128,7 +128,7 @@ test('biometria não reconhecida mantém bloqueado e não gasta tentativa de PIN
   // chamada WebAuthn pura, sem código da página). Num aparelho real a pessoa tenta de novo.
   const page = await (await browser.newContext()).newPage();
   const dedo = await sensor(page);
-  await instituir(page, 'carteira-systekna.html', WORDS.carteira);
+  await preparar(page, 'carteira-systekna.html', WORDS.carteira);
   await ativarBio(page);
   await bloquear(page);
   await dedo.reconhece(false);
@@ -144,7 +144,7 @@ test('biometria não reconhecida mantém bloqueado e não gasta tentativa de PIN
 test('aparelho sem PRF: não ativa e explica por quê', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   await sensor(page, { prf: false });
-  await instituir(page, 'carteira-systekna.html', WORDS.carteira);
+  await preparar(page, 'carteira-systekna.html', WORDS.carteira);
   await abrirAjusteBio(page);
   await expect(page.locator('#sheetBody h3')).toHaveText('Ativar biometria');
   await digitarPin(page);
@@ -153,10 +153,10 @@ test('aparelho sem PRF: não ativa e explica por quê', async ({ browser }) => {
   await page.context().close();
 });
 
-test('cartório também desbloqueia com biometria', async ({ browser }) => {
+test('emissor também desbloqueia com biometria', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   await sensor(page);
-  await instituir(page, 'cartorio-systekna.html', WORDS.cartorio);
+  await preparar(page, 'emissor-systekna.html', WORDS.emissor);
   await ativarBio(page);
   await bloquear(page);
   await page.click('#bioBtn');
@@ -182,7 +182,7 @@ test.describe('só biometria', () => {
     page = await (await browser.newContext()).newPage();
     vigiarCsp(page, violacoes);
     await sensor(page);
-    await instituir(page, 'carteira-systekna.html', WORDS.carteira);
+    await preparar(page, 'carteira-systekna.html', WORDS.carteira);
   });
   test.afterAll(async () => { await page?.context().close(); });
 
@@ -278,7 +278,7 @@ test.describe('só biometria', () => {
 test('só biometria: biometria recusada ao ativar mantém o PIN', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   const dedo = await sensor(page);
-  await instituir(page, 'carteira-systekna.html', WORDS.carteira);
+  await preparar(page, 'carteira-systekna.html', WORDS.carteira);
   await ativarBio(page);
   await dedo.reconhece(false);
   await page.click('#commonSet [data-cs="bioOnly"]');
@@ -291,7 +291,7 @@ test('só biometria: biometria recusada ao ativar mantém o PIN', async ({ brows
 test('só biometria: recusa na tela de bloqueio não oferece o PIN', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   const dedo = await sensor(page);
-  await instituir(page, 'cartorio-systekna.html', WORDS.cartorio);
+  await preparar(page, 'emissor-systekna.html', WORDS.emissor);
   await ativarBio(page);
   await ativarSoBio(page);
   await page.click('#lockBtn');

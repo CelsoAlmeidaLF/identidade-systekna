@@ -1,19 +1,19 @@
 /* ================= serviço ================= */
 let st=null;
 const APP={
-  db:'systekna-cartorio',label:'Cartório',dataKeys:['state'],createdMsg:'Cartório instituído',autoDefault:10,
-  importHint:'Substitui o livro e os registros deste cartório',
-  howHtml:`<p><b>Papel.</b> O cartório é emissor e verificador. Ele tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
-  <p><b>Emissão.</b> Só emite para quem prova controlar um DID: o titular envia um pedido assinado pela carteira. A credencial leva o DID do titular, o nome do cartório e um número de status.</p>
-  <p><b>Verificação.</b> O desafio é um número aleatório válido por 10 minutos e aceito uma única vez. Na apresentação, o cartório confere a assinatura do titular, o desafio, a assinatura do emissor, se a credencial é do titular, se o emissor é confiável, a revogação e a validade.</p>
-  <p><b>Revogação.</b> Fica no registro deste cartório e vale para tudo o que ele verifica. Em produção, a lista de status é publicada para que qualquer verificador consulte.</p>
-  <p><b>Livro.</b> Cada ato guarda o hash SHA-256 do ato anterior e é assinado pelo cartório. Alterar ou apagar um ato quebra a corrente, e a conferência de integridade mostra onde.</p>
+  db:'systekna-cartorio',label:'Emissor',dataKeys:['state'],createdMsg:'Emissor criado',autoDefault:10,
+  importHint:'Substitui o livro e os registros deste emissor',
+  howHtml:`<p><b>Papel.</b> O emissor também verifica credenciais. Ele tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
+  <p><b>Emissão.</b> Só emite para quem prova controlar um DID: o titular envia um pedido assinado pela carteira. A credencial leva o DID do titular, o nome do emissor e um número de status.</p>
+  <p><b>Verificação.</b> O desafio é um número aleatório válido por 10 minutos e aceito uma única vez. Na apresentação, o emissor confere a assinatura do titular, o desafio, a assinatura de quem emitiu a credencial, se ela é do titular, se quem a emitiu é confiável, a revogação e a validade.</p>
+  <p><b>Revogação.</b> Fica no registro deste emissor e vale para tudo o que ele verifica. Em produção, a lista de status é publicada para que qualquer verificador consulte.</p>
+  <p><b>Livro.</b> Cada ato guarda o hash SHA-256 do ato anterior e é assinado pelo emissor. Alterar ou apagar um ato quebra a corrente, e a conferência de integridade mostra onde.</p>
   <p><b>Documentos.</b> O registro guarda só o SHA-256 do arquivo. O certificado é uma credencial assinada, que o requerente pode guardar na carteira.</p>
-  <p><b>Limite.</b> Os dados ficam cifrados neste aparelho. Num cartório real, o livro e a lista de status ficariam replicados em servidores, e a chave do cartório num módulo de hardware (HSM).</p>`,
+  <p><b>Limite.</b> Os dados ficam cifrados neste aparelho. Num emissor real, o livro e a lista de status ficariam replicados em servidores, e a chave do emissor num módulo de hardware (HSM).</p>`,
   async load(){
     const r=await DB.get('state');
     st=r?await unseal(ses.vaultKey,r,'state'):null;
-    if(!st){st={name:'Cartório Digital Systekna',issued:[],trust:[],book:[],challenges:[],docs:[],seq:0,verifs:0};await ato('abertura','Livro aberto e cartório instituído',ses.did);await save()}
+    if(!st){st={name:'Emissor de Credenciais Systekna',issued:[],trust:[],book:[],challenges:[],docs:[],seq:0,verifs:0};await ato('abertura','Livro aberto e emissor criado',ses.did);await save()}
   },
   enter(){$('#whoLabel').textContent=st.name;fillTypeSelects();mountCommonSettings($('#commonSet'));setView('vPanel')},
   onView(v){if(v==='vPanel')renderPanel();if(v==='vGov')renderGov()},
@@ -22,13 +22,13 @@ const APP={
     ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#dInfo','#cInfo','#cOut','#gTrust','#gIssued','#iOk','#dOk'].forEach(s=>$(s).innerHTML='');
     ['#iqT','#iJwt','#vChalT','#vpT','#dJwt','#cT','#dName','#dDid'].forEach(s=>$(s).value='');
     ['#iForm','#iOut','#vChal','#dOut'].forEach(s=>$(s).hidden=true);
-    $('#whoLabel').textContent='Cartório Digital';
+    $('#whoLabel').textContent='Emissor de Credenciais';
   },
   exportData:async()=>st,
   async importData(d){
     if(!d||!d.book)return 'Backup sem livro de registros';
     st=d;await save();$('#whoLabel').textContent=st.name;renderPanel();
-    return `Cartório restaurado com ${st.book.length} atos`;
+    return `Emissor restaurado com ${st.book.length} atos`;
   }
 };
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
@@ -57,7 +57,7 @@ const trustedName=did=>did===ses.did?st.name:(st.trust.find(t=>t.did===did)||{})
 const CLOCK_SKEW=60;
 // Credencial de outro emissor: a revogação não pode ser conferida aqui. A política decide (padrão: recusar).
 const unverifiableStatus=()=>st.acceptUnverifiable?null:false;
-const unverifiableMsg='Emitida por outro cartório: o status não pode ser conferido aqui.';
+const unverifiableMsg='Emitida por outro emissor: o status não pode ser conferido aqui.';
 
 /* ================= painel ================= */
 async function renderPanel(){
@@ -68,12 +68,12 @@ async function renderPanel(){
   $('#sD').textContent=st.docs.length;$('#sV').textContent=st.verifs;
   $('#pAtos').innerHTML=st.book.slice(-6).reverse().map(e=>atoRow(e)).join('');
   const c=await checkBook();
-  $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo cartório.`)
+  $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo emissor.`)
     :verdictHtml(false,'Livro adulterado',`A corrente se rompe no ato nº ${c.at}. Restaure um backup.`);
   $('#pBook').firstElementChild.style.marginTop='0';
 }
 $('#pAll').onclick=()=>{
-  openSheet(`<h3>Livro de registros</h3><p class="sub">Cada ato carrega o hash do anterior e a assinatura do cartório.</p><button class="btn" id="bkChk" style="margin-top:0">Conferir integridade</button><div id="bkRes"></div><div class="list glass flat mt">${st.book.slice().reverse().map(e=>atoRow(e,true)).join('')}</div>`);
+  openSheet(`<h3>Livro de registros</h3><p class="sub">Cada ato carrega o hash do anterior e a assinatura do emissor.</p><button class="btn" id="bkChk" style="margin-top:0">Conferir integridade</button><div id="bkRes"></div><div class="list glass flat mt">${st.book.slice().reverse().map(e=>atoRow(e,true)).join('')}</div>`);
   $('#bkChk').onclick=async()=>{const c=await checkBook();$('#bkRes').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`Os ${c.n} atos conferem do primeiro ao último.`):verdictHtml(false,'Livro adulterado',`A corrente se rompe no ato nº ${c.at}.`)};
 };
 
@@ -148,7 +148,7 @@ async function checkVP(tok){
   add(vp.ok,'Assinatura do titular',vp.ok?`Assinada pela chave de ${esc(shortDid(vp.did))}.`:'A apresentação foi alterada ou não foi assinada por este titular.');
   const ch=st.challenges.find(c=>c.nonce===p.nonce);
   const chOk=!!ch&&p.aud===ses.did&&!ch.used;
-  add(chOk,'Desafio deste cartório',!ch?'O desafio não foi gerado aqui.':p.aud!==ses.did?'A apresentação foi feita para outro verificador.':ch.used?'Este desafio já foi usado. Pode ser uma cópia sendo reaproveitada.':`Responde ao desafio “${esc(ch.purpose)}”.`);
+  add(chOk,'Desafio deste emissor',!ch?'O desafio não foi gerado aqui.':p.aud!==ses.did?'A apresentação foi feita para outro verificador.':ch.used?'Este desafio já foi usado. Pode ser uma cópia sendo reaproveitada.':`Responde ao desafio “${esc(ch.purpose)}”.`);
   add(!!ch&&ch.exp>now()&&p.exp>now(),'Dentro do prazo',p.exp<=now()?'A apresentação expirou. Gere um novo desafio.':ch&&ch.exp<=now()?'O desafio expirou.':'Apresentada dentro dos prazos.');
   const vcTok=p.vp&&p.vp.verifiableCredential&&p.vp.verifiableCredential[0];
   if(!vcTok){add(false,'Credencial','A apresentação não contém credencial.');return{checks,ch}}
@@ -158,7 +158,7 @@ async function checkVP(tok){
   add(vc.ok,'Assinatura do emissor',vc.ok?`Assinada por ${esc(vcIssuerName(q))}.`:'A credencial foi alterada depois de emitida.');
   add(q.sub===vp.did,'Credencial pertence ao titular',q.sub===vp.did?'O DID da credencial é o mesmo de quem apresentou.':'A credencial é de outra pessoa.');
   const tn=trustedName(vc.did);
-  add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na lista de confiança deste cartório.');
+  add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na sua lista de confiança.');
   if(vc.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Não revogada',!rec?'Não consta no registro de emissões.':rec.revoked?`Revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativa no registro de emissões.')}
   else add(unverifiableStatus(),'Não revogada',unverifiableMsg);
   // 1.2: além do exp, confere o nbf (com folga de relógio entre aparelhos).
@@ -200,7 +200,7 @@ $('#dGo').onclick=async()=>{
     {act:'registro',text:`Documento “${dInfo.name}” registrado para ${name}`});
   st.docs.push({n,...dInfo,req:name,did:did||null,at:Date.now()});await save();
   $('#dJwt').value=jwt;
-  $('#dOk').innerHTML=verdictHtml(true,`Registro nº ${n}`,prev?`Este mesmo arquivo já tinha o registro nº ${prev.n}. Um novo foi lavrado.`:did?'O requerente pode guardar o certificado na carteira.':'Sem DID, o certificado serve para conferência, mas não entra numa carteira.');
+  $('#dOk').innerHTML=verdictHtml(true,`Registro nº ${n}`,prev?`Este mesmo arquivo já tinha o registro nº ${prev.n}. Um novo foi feito.`:did?'O requerente pode guardar o certificado na carteira.':'Sem DID, o certificado serve para conferência, mas não entra numa carteira.');
   $('#dOut').hidden=false;toast('Documento registrado');
 };
 $('#dCopy').onclick=()=>copy($('#dJwt').value,'Certificado copiado');
@@ -211,8 +211,8 @@ $('#cGo').onclick=async()=>{
   try{
     const r=await verifyJWT($('#cT').value,'vc+jwt'),q=r.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
     if(vcType(q)!=='DocumentRegistrationCredential')throw new Error('Este token não é um certificado de registro de documento.');
-    add(r.ok,'Assinatura do cartório',r.ok?`Assinado por ${esc(vcIssuerName(q))}.`:'O certificado foi alterado.');
-    const tn=trustedName(r.did);add(!!tn,'Cartório confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este cartório não está na lista de confiança.');
+    add(r.ok,'Assinatura do emissor',r.ok?`Assinado por ${esc(vcIssuerName(q))}.`:'O certificado foi alterado.');
+    const tn=trustedName(r.did);add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na lista de confiança.');
     if(r.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Registro ativo',!rec?'Não consta no registro.':rec.revoked?`Cancelado: ${esc(rec.reason)}.`:`Registro nº ${esc(cs.registro)} ativo.`)}
     else add(unverifiableStatus(),'Registro ativo',unverifiableMsg);
     add(cs.sha256===cInfo.sha256,'Arquivo idêntico',cs.sha256===cInfo.sha256?'A impressão digital confere byte a byte.':'O arquivo é diferente do registrado. Basta um byte para mudar a impressão.');
@@ -226,7 +226,7 @@ function renderGov(){
   if(!st)return;
   $('#gName').value=st.name;$('#gDid').textContent=ses.did;
   $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
-  $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este cartório</small></span><span class="pill ok">Você</span></div>`
+  $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este emissor</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
   const list=st.issued.slice().reverse();
   $('#gIssN').textContent=list.length?`${list.length} no total`:'';
@@ -240,14 +240,14 @@ $('#gNameS').onclick=async()=>{
 $('#gDidC').onclick=()=>copy(ses.did,'DID copiado');
 $('#gPol').onclick=async()=>{
   const accept=!st.acceptUnverifiable;
-  if(accept&&!await confirmSheet('Aceitar status não verificável','Credenciais de emissores confiáveis passam a ser aprovadas mesmo sem conferir se foram revogadas. Uma credencial revogada por outro cartório pode passar.','Aceitar',true))return;
+  if(accept&&!await confirmSheet('Aceitar status não verificável','Credenciais de emissores confiáveis passam a ser aprovadas mesmo sem conferir se foram revogadas. Uma credencial revogada por outro emissor pode passar.','Aceitar',true))return;
   st.acceptUnverifiable=accept;
   await ato('politica',accept?'Política: aceitar credenciais de outros emissores sem status verificável':'Política: recusar credenciais de outros emissores sem status verificável');
   await save();renderGov();toast('Política alterada');
 };
 $('#gTrustAdd').onclick=()=>{
-  openSheet(`<h3>Adicionar emissor confiável</h3><p class="sub">Credenciais assinadas por este DID passam a ser aceitas nas verificações deste cartório.</p>
-    <label class="f" id="tnF"><span>Nome</span><input id="tn" autocomplete="off" placeholder="Ex.: Cartório de Campinas"></label>
+  openSheet(`<h3>Adicionar emissor confiável</h3><p class="sub">Credenciais assinadas por este DID passam a ser aceitas nas verificações deste emissor.</p>
+    <label class="f" id="tnF"><span>Nome</span><input id="tn" autocomplete="off" placeholder="Ex.: Universidade de Campinas"></label>
     <label class="f" id="tdF"><span>DID do emissor</span><input id="td" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint" id="tH"></p>
     <button class="btn" id="tGo">Adicionar à lista</button>`);
   $('#tGo').onclick=async()=>{
@@ -279,7 +279,7 @@ function showIssued(n){
     ${i.revoked?'':`<label class="f mt"><span>Motivo da revogação</span><select id="rvR"><option>Pedido do titular</option><option>Dados incorretos</option><option>Fim do vínculo</option><option>Suspeita de fraude</option><option>Outro</option></select></label><button class="btn danger" id="rvGo">Revogar credencial</button>`}`);
   $('#rvGo')&&($('#rvGo').onclick=async()=>{
     const reason=$('#rvR').value;
-    if(!await confirmSheet('Revogar credencial','A partir de agora ela será recusada em todas as verificações deste cartório. Isso não pode ser desfeito.','Revogar',true))return;
+    if(!await confirmSheet('Revogar credencial','A partir de agora ela será recusada em todas as verificações deste emissor. Isso não pode ser desfeito.','Revogar',true))return;
     i.revoked=true;i.revokedAt=Date.now();i.reason=reason;
     await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${reason}`,i.jti);await save();renderGov();toast('Credencial revogada');
   });

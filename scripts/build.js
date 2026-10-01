@@ -1,5 +1,5 @@
 // Monta os HTML de arquivo único a partir de src/.
-//   node scripts/build.js          grava carteira-systekna.html e cartorio-systekna.html
+//   node scripts/build.js          grava carteira-systekna.html e emissor-systekna.html
 //   node scripts/build.js --check  só confere se os HTML publicados estão em dia com src/
 //
 // Em src/<app>/pagina.html, uma linha `<!-- @inclui caminho -->` é trocada pelo conteúdo do
@@ -9,7 +9,7 @@ const fs = require('fs');
 const path = require('path');
 
 const RAIZ = path.join(__dirname, '..');
-const APPS = ['carteira', 'cartorio'];
+const APPS = ['carteira', 'emissor'];
 const INCLUI = /^[ \t]*<!-- @inclui (\S+) -->\n/gm;
 
 function monta(arquivo, pilha = []) {

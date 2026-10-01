@@ -11,8 +11,8 @@ const APP={
   db:'systekna-carteira',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
   importHint:'Junta itens e credenciais ao que já está aqui',
   howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
-  <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O cartório confere essa assinatura e só então sabe que quem pede controla o DID.</p>
-  <p><b>Credencial.</b> É uma afirmação sobre você assinada pela chave do cartório. Ela fica cifrada aqui e não serve sozinha como prova.</p>
+  <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O emissor confere essa assinatura e só então sabe que quem pede controla o DID.</p>
+  <p><b>Credencial.</b> É uma afirmação sobre você assinada pela chave do emissor. Ela fica cifrada aqui e não serve sozinha como prova.</p>
   <p><b>Apresentação.</b> Quem verifica gera um desafio novo. A carteira embrulha a credencial e assina junto com esse desafio. Assim o verificador confere que a credencial é verdadeira e que foi o dono quem apresentou, agora. Uma cópia antiga não passa.</p>
   <p><b>PIN.</b> Ele só destrava as chaves neste aparelho, em duas camadas: PBKDF2-SHA256 com 600 mil iterações e uma chave do aparelho que o navegador não deixa exportar. Seis dígitos são 1 milhão de combinações, então em produção o PIN deve ser conferido por hardware seguro.</p>`,
   async load(){
@@ -69,39 +69,39 @@ function renderCreds(){
   $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Pedir credencial</b>. O pedido é assinado e prova que você controla este DID.</span></li>
-      <li><span>Leve o pedido ao <b>Cartório Digital</b>, que confere a assinatura e emite a credencial.</span></li>
-      <li><span>Cole o que o cartório devolver em <b>Receber credencial</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
+      <li><span>Leve o pedido ao <b>Emissor de Credenciais</b>, que confere a assinatura e emite a credencial.</span></li>
+      <li><span>Cole o que o emissor devolver em <b>Receber credencial</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
 $('#cList').onclick=e=>{const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 
 function actionMenu(){
   const row=(k,icn,t,s)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`;
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
-    ${row('ask','send','Pedir credencial','Gera um pedido assinado para o cartório')}
-    ${row('get','inbox','Receber credencial','Cola a credencial que o cartório emitiu')}
+    ${row('ask','send','Pedir credencial','Gera um pedido assinado para o emissor')}
+    ${row('get','inbox','Receber credencial','Cola a credencial que o emissor emitiu')}
     ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}
     ${row('item','vault','Guardar no cofre','Senha, nota ou documento')}</div>`);
   $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present(),item:()=>editItem()})[b.dataset.act]()};
 }
 
 function askCred(){
-  openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o cartório sabe que é você mesmo quem pede.</p>
+  openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
     <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([k])=>k!=='DocumentRegistrationCredential').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
-    <label class="f"><span>Observação para o cartório (opcional)</span><input id="aqO" autocomplete="off"></label>
+    <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'cartorio',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
 }
 
 function receiveCred(){
-  openSheet(`<h3>Receber credencial</h3><p class="sub">Cole a credencial que o cartório emitiu. A carteira confere a assinatura e se ela foi emitida para o seu DID.</p>
+  openSheet(`<h3>Receber credencial</h3><p class="sub">Cole a credencial que o emissor emitiu. A carteira confere a assinatura e se ela foi emitida para o seu DID.</p>
     <label class="f" id="rcF"><span>Credencial</span><textarea class="mono" id="rcT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="rcH"></p>
     <button class="btn" id="rcGo">Conferir e guardar</button>`);
   $('#rcGo').onclick=async()=>{
@@ -112,7 +112,7 @@ function receiveCred(){
     if(!r.ok)return fail('A assinatura não confere: a credencial foi alterada ou não foi emitida por quem diz.');
     if(p.sub!==ses.did)return fail('Esta credencial foi emitida para outro DID.');
     const t0=now();
-    if(p.exp&&p.exp<=t0)return fail(`Esta credencial expirou em ${fmtDate(p.exp*1000)}. Peça uma nova ao cartório.`);
+    if(p.exp&&p.exp<=t0)return fail(`Esta credencial expirou em ${fmtDate(p.exp*1000)}. Peça uma nova ao emissor.`);
     if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Esta credencial só vale a partir de ${fmtDate(p.nbf*1000)}.`);
     if(creds().some(c=>c.data.jti===p.jti))return fail('Esta credencial já está na carteira.');
     const t=vcType(p),ts=Date.now();
@@ -130,12 +130,12 @@ function showCred(id){
     <div class="sec-h">Origem</div><div class="list glass flat">
       <div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
       <div class="kr"><div class="h"><small>Emitida em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
-    <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o cartório assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
+    <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o emissor assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
     <button class="btn" id="scP">Apresentar</button>
     <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
   $('#scP').onclick=()=>present(id);
   $('#scD').onclick=async()=>{
-    if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no cartório continua igual, e você pode pedir outra.','Remover',true))return;
+    if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no emissor continua igual, e você pode pedir outra.','Remover',true))return;
     ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCreds();toast('Credencial removida');
   };
 }
@@ -161,7 +161,7 @@ function present(preId){
         <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve','Você não tem uma credencial válida do tipo exigido. Peça uma ao cartório.')}
+        :verdictHtml(false,'Nenhuma credencial serve','Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{

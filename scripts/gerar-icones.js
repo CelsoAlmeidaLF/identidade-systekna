@@ -7,12 +7,12 @@ const path = require('path');
 // Mesmos traços dos ícones das páginas (24×24, traço branco).
 const GLIFOS = {
   carteira: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
-  cartorio: '<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/>',
+  emissor: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="M9 12l2 2 4-4"/>',
 };
-// Gradiente "gloss" do design Aero; o cartório usa um tom mais escuro para diferenciar na tela inicial.
+// Gradiente "gloss" do design Aero; o emissor usa um tom mais escuro para diferenciar na tela inicial.
 const CORES = {
   carteira: ['#7CCBF8', '#3BA0EA', '#1A7AD4', '#2B8DE2'],
-  cartorio: ['#5E9FE0', '#1F6FC0', '#0E4F96', '#1A62AE'],
+  emissor: ['#5E9FE0', '#1F6FC0', '#0E4F96', '#1A62AE'],
 };
 
 function svg(app, { arredondado, escala }) {

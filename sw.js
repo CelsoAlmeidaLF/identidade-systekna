@@ -1,18 +1,19 @@
-// Service worker da Carteira e do Cartório: permite instalar e abrir os apps sem internet.
+// Service worker da Carteira e do Emissor: permite instalar e abrir os apps sem internet.
 // Páginas e arquivos do site: rede primeiro, para que cada publicação chegue logo; sem rede,
 // usa a última cópia guardada. Nada é buscado fora do site.
-const VERSAO = 'systekna-v2';
+const VERSAO = 'systekna-v3';
 const ESSENCIAIS = [
   './',
   'index.html',
   'carteira-systekna.html',
-  'cartorio-systekna.html',
+  'emissor-systekna.html',
+  'cartorio-systekna.html', // endereço antigo, redireciona para o emissor
   'carteira.webmanifest',
-  'cartorio.webmanifest',
+  'emissor.webmanifest',
   'icons/carteira-192.png',
   'icons/carteira-512.png',
-  'icons/cartorio-192.png',
-  'icons/cartorio-512.png',
+  'icons/emissor-192.png',
+  'icons/emissor-512.png',
   'fonts/open-sans-latin.woff2',
   'fonts/open-sans-latin-ext.woff2',
 ];
