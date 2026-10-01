@@ -1,0 +1,1271 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#DCEBFA" id="metaTheme">
+<title>Carteira de Identidade Systekna</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ===== Systekna Aero 2.0 · claro ===== */
+:root{
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  --font:"Open Sans","Segoe UI",system-ui,sans-serif;
+  --mono:ui-monospace,"SF Mono",Menlo,Consolas,"Liberation Mono",monospace;
+  --page:#EAF2FB;
+  --sky:radial-gradient(90% 55% at 15% -5%,rgba(110,190,245,.55),transparent 70%),radial-gradient(70% 45% at 100% 20%,rgba(60,150,230,.32),transparent 70%),radial-gradient(80% 50% at 30% 100%,rgba(120,200,240,.3),transparent 70%),linear-gradient(180deg,#D6E8F9 0%,#EAF2FB 45%,#F5F9FD 100%);
+  --beam:rgba(255,255,255,.45);
+  --ink:#0E2742;--soft:#5A6F88;--faint:#8EA0B5;--line:rgba(14,39,66,.08);
+  --glass-strong:rgba(255,255,255,.72);
+  --accent:#1A7AD4;--accent-2:#3BA0EA;--accent-soft:rgba(26,122,212,.1);
+  --gloss:linear-gradient(180deg,#7CCBF8 0%,#3BA0EA 48%,#1A7AD4 52%,#2B8DE2 100%);
+  --gloss-edge:inset 0 0 0 1px rgba(10,80,160,.55),inset 0 1px 0 rgba(255,255,255,.6);
+  --in:#23863A;--out:#C2412F;--warn:#C98512;
+  --field:rgba(255,255,255,.7);--track:rgba(14,39,66,.08);
+  --e1:0 1px 1px rgba(20,60,110,.05),0 3px 6px -2px rgba(20,60,110,.08),0 10px 22px -14px rgba(20,60,110,.35);
+  --e2:0 1px 2px rgba(20,60,110,.06),0 6px 12px -4px rgba(20,60,110,.1),0 22px 44px -20px rgba(20,60,110,.5);
+  --e3:0 2px 4px rgba(20,60,110,.06),0 12px 24px -8px rgba(20,60,110,.16),0 40px 70px -28px rgba(20,60,110,.6);
+  --thick:inset 0 1px 0 rgba(255,255,255,.95),inset 0 0 0 1px rgba(255,255,255,.6),inset 0 -1px 0 rgba(14,39,66,.07),inset 0 -14px 24px -18px rgba(14,39,66,.12);
+  --recess:inset 0 1px 2px rgba(14,39,66,.14),inset 0 0 0 1px rgba(14,39,66,.05);
+  --glass-top:rgba(255,255,255,.66);--glass-bot:rgba(255,255,255,.42);
+  --orb1:rgba(90,180,245,.5);--orb2:rgba(150,210,250,.55);--orb3:rgba(60,140,225,.35);
+  --sheet:rgba(244,249,254,.9);
+}
+/* ===== Systekna Aero 2.0 · escuro ===== */
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--page:#071120;--sky:radial-gradient(90% 55% at 15% -5%,rgba(40,110,200,.45),transparent 70%),radial-gradient(70% 45% at 100% 20%,rgba(30,90,170,.3),transparent 70%),radial-gradient(80% 50% at 30% 100%,rgba(20,80,140,.3),transparent 70%),linear-gradient(180deg,#0B1B33 0%,#08142A 50%,#060E1C 100%);--beam:rgba(140,200,255,.05);--ink:#E6EFFA;--soft:#9AAEC6;--faint:#6A7F99;--line:rgba(170,205,245,.1);--glass-strong:rgba(28,46,76,.68);--accent:#5DB4F5;--accent-2:#3BA0EA;--accent-soft:rgba(93,180,245,.12);--gloss:linear-gradient(180deg,#5CB8F2 0%,#2A86D8 48%,#1666BA 52%,#2479CC 100%);--gloss-edge:inset 0 0 0 1px rgba(120,190,255,.45),inset 0 1px 0 rgba(255,255,255,.35);--in:#5CCB76;--out:#F07A68;--warn:#F0B24A;--field:rgba(10,22,42,.55);--track:rgba(170,205,245,.1);--e1:0 1px 1px rgba(0,0,0,.25),0 4px 8px -2px rgba(0,0,0,.3),0 12px 24px -14px rgba(0,0,0,.7);--e2:0 1px 2px rgba(0,0,0,.3),0 8px 16px -4px rgba(0,0,0,.35),0 26px 50px -20px rgba(0,0,0,.85);--e3:0 2px 4px rgba(0,0,0,.3),0 14px 28px -8px rgba(0,0,0,.45),0 44px 80px -28px rgba(0,0,0,.95);--thick:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(160,200,255,.1),inset 0 -1px 0 rgba(0,0,0,.35),inset 0 -14px 24px -18px rgba(0,0,0,.45);--recess:inset 0 1px 3px rgba(0,0,0,.45),inset 0 0 0 1px rgba(160,200,255,.06);--glass-top:rgba(40,62,98,.5);--glass-bot:rgba(22,38,64,.38);--orb1:rgba(40,120,220,.4);--orb2:rgba(60,150,230,.25);--orb3:rgba(30,90,180,.35);--sheet:rgba(16,30,54,.9);}}
+:root[data-theme="dark"]{--page:#071120;--sky:radial-gradient(90% 55% at 15% -5%,rgba(40,110,200,.45),transparent 70%),radial-gradient(70% 45% at 100% 20%,rgba(30,90,170,.3),transparent 70%),radial-gradient(80% 50% at 30% 100%,rgba(20,80,140,.3),transparent 70%),linear-gradient(180deg,#0B1B33 0%,#08142A 50%,#060E1C 100%);--beam:rgba(140,200,255,.05);--ink:#E6EFFA;--soft:#9AAEC6;--faint:#6A7F99;--line:rgba(170,205,245,.1);--glass-strong:rgba(28,46,76,.68);--accent:#5DB4F5;--accent-2:#3BA0EA;--accent-soft:rgba(93,180,245,.12);--gloss:linear-gradient(180deg,#5CB8F2 0%,#2A86D8 48%,#1666BA 52%,#2479CC 100%);--gloss-edge:inset 0 0 0 1px rgba(120,190,255,.45),inset 0 1px 0 rgba(255,255,255,.35);--in:#5CCB76;--out:#F07A68;--warn:#F0B24A;--field:rgba(10,22,42,.55);--track:rgba(170,205,245,.1);--e1:0 1px 1px rgba(0,0,0,.25),0 4px 8px -2px rgba(0,0,0,.3),0 12px 24px -14px rgba(0,0,0,.7);--e2:0 1px 2px rgba(0,0,0,.3),0 8px 16px -4px rgba(0,0,0,.35),0 26px 50px -20px rgba(0,0,0,.85);--e3:0 2px 4px rgba(0,0,0,.3),0 14px 28px -8px rgba(0,0,0,.45),0 44px 80px -28px rgba(0,0,0,.95);--thick:inset 0 1px 0 rgba(255,255,255,.14),inset 0 0 0 1px rgba(160,200,255,.1),inset 0 -1px 0 rgba(0,0,0,.35),inset 0 -14px 24px -18px rgba(0,0,0,.45);--recess:inset 0 1px 3px rgba(0,0,0,.45),inset 0 0 0 1px rgba(160,200,255,.06);--glass-top:rgba(40,62,98,.5);--glass-bot:rgba(22,38,64,.38);--orb1:rgba(40,120,220,.4);--orb2:rgba(60,150,230,.25);--orb3:rgba(30,90,180,.35);--sheet:rgba(16,30,54,.9);}
+
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+html,body{margin:0}
+body{min-height:100vh;font:15px/1.5 var(--font);color:var(--ink);background:var(--page);-webkit-tap-highlight-color:transparent;transition:background .5s,color .4s}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px;border-radius:10px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition-duration:.01ms!important}}
+button{font-family:inherit;color:inherit}
+[hidden]{display:none!important}
+
+/* céu Aero */
+.sky{position:fixed;inset:0;z-index:-2;background:var(--sky)}
+.sky::after{content:"";position:absolute;inset:-30%;background:repeating-linear-gradient(118deg,transparent 0 110px,var(--beam) 110px 114px,transparent 114px 260px)}
+.orbs{position:fixed;inset:0;z-index:-1;pointer-events:none;overflow:hidden}
+.orbs i{position:absolute;border-radius:50%;filter:blur(50px)}
+.orbs .o1{width:70vw;height:70vw;max-width:520px;max-height:520px;left:-20vw;top:-10vh;background:var(--orb1)}
+.orbs .o2{width:55vw;height:55vw;max-width:420px;max-height:420px;right:-18vw;top:38vh;background:var(--orb2)}
+.orbs .o3{width:60vw;height:60vw;max-width:460px;max-height:460px;left:10vw;top:85vh;background:var(--orb3)}
+
+/* vidro com espessura */
+.glass{position:relative;border-radius:20px;background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:var(--thick),var(--e2);
+  -webkit-backdrop-filter:blur(24px) saturate(1.7);backdrop-filter:blur(24px) saturate(1.7)}
+.glass::before{content:"";position:absolute;left:16px;right:16px;top:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,.9),transparent);pointer-events:none}
+:root[data-theme="dark"] .glass::before{opacity:.25}
+.flat{box-shadow:var(--thick),var(--e1)}
+svg.i{width:20px;height:20px;stroke:currentColor;fill:none;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* telas */
+.screen{display:none}
+.screen.on{display:block;animation:viewIn .45s cubic-bezier(.2,.8,.2,1)}
+@keyframes viewIn{from{opacity:0;transform:translateY(8px)}}
+.wrap{max-width:440px;margin:0 auto;padding:28px 22px 48px}
+.center{text-align:center;padding-top:9vh}
+h1{font:300 34px/1.1 var(--font);letter-spacing:-.02em;margin:0 0 12px}
+h2{font:300 28px/1.15 var(--font);letter-spacing:-.02em;margin:0 0 10px}
+h3{font:300 22px/1.2 var(--font);margin:0 0 6px}
+.lead{color:var(--soft);max-width:34ch;margin:0 auto 30px}
+.sub{color:var(--soft);font-size:14px;margin:0 0 18px}
+.fine{font-size:12px;color:var(--faint);margin:18px 0 0}
+.warn-t{color:var(--out);font-weight:500}
+.back{display:inline-flex;align-items:center;gap:4px;border:0;background:none;color:var(--accent);font:600 14px var(--font);cursor:pointer;padding:6px 0;margin:0 0 16px}
+
+/* orbe do cofre */
+.orb{position:relative;width:104px;height:104px;margin:0 auto 24px;border-radius:50%;display:grid;place-items:center;
+  background:radial-gradient(62% 40% at 50% 16%,rgba(255,255,255,.88),rgba(255,255,255,0) 72%),radial-gradient(circle at 50% 118%,rgba(140,220,255,.9) 0,transparent 55%),linear-gradient(180deg,#5CB8F2,#1A7AD4 55%,#0D4F96);
+  box-shadow:inset 0 0 0 1px rgba(10,80,160,.5),inset 0 -12px 22px -6px rgba(0,30,80,.55),0 20px 44px -14px rgba(26,122,212,.9),0 0 0 10px var(--accent-soft),0 0 0 22px rgba(26,122,212,.04)}
+.orb svg{width:44px;height:44px;stroke:#fff;fill:none;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;filter:drop-shadow(0 1px 1px rgba(0,40,90,.45))}
+.orb.sm{width:72px;height:72px;margin-bottom:18px}.orb.sm svg{width:30px;height:30px}
+.orb::before{content:"";position:absolute;inset:0;border-radius:50%;border:2px solid var(--accent-2);opacity:0}
+.orb.opening{animation:orbOpen .75s cubic-bezier(.2,.8,.2,1) forwards}
+.orb.opening::before{animation:ring .75s ease-out forwards}
+@keyframes orbOpen{35%{transform:scale(1.08)}100%{transform:scale(.7);opacity:0}}
+@keyframes ring{0%{opacity:.9}100%{transform:scale(2.8);opacity:0}}
+
+/* botões */
+.btn{display:block;width:100%;height:52px;margin-top:14px;border:0;border-radius:14px;cursor:pointer;font:600 15px var(--font);color:#fff;background:var(--gloss);
+  box-shadow:var(--gloss-edge),inset 0 -8px 14px -8px rgba(0,40,100,.45),0 2px 3px rgba(10,60,130,.2),0 16px 28px -12px rgba(26,122,212,.85);
+  text-shadow:0 1px 1px rgba(0,40,90,.35);transition:transform .3s cubic-bezier(.34,1.56,.64,1),filter .2s}
+.btn:active{transform:scale(.98);box-shadow:inset 0 2px 8px rgba(0,30,80,.5),0 4px 10px -6px rgba(26,122,212,.8)}
+.btn:disabled{filter:grayscale(.6);opacity:.6;cursor:not-allowed}
+.btn.ghost{color:var(--accent);text-shadow:none;background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:var(--thick),var(--e1)}
+.btn.danger{background:linear-gradient(180deg,#F59A8B 0%,#E0604D 48%,#C2412F 52%,#D4503D 100%);box-shadow:inset 0 0 0 1px rgba(140,30,20,.5),inset 0 1px 0 rgba(255,255,255,.5),0 14px 26px -12px rgba(194,65,47,.8)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.link{border:0;background:none;color:var(--accent);font:600 14px var(--font);cursor:pointer;padding:10px;margin-top:18px}
+.mini{height:48px;min-width:48px;padding:0 12px;border:0;border-radius:12px;cursor:pointer;color:var(--accent);font:600 13px var(--font);display:grid;place-items:center;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:var(--thick),var(--e1);transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.mini:active{transform:scale(.92);box-shadow:var(--recess)}
+.mini.sm{height:34px;min-width:34px;padding:0 8px;border-radius:10px}
+.mini.sm svg.i{width:17px;height:17px}
+
+/* segmentado */
+.seg{position:relative;display:grid;grid-template-columns:repeat(var(--n,2),1fr);padding:3px;border-radius:12px;background:var(--track);box-shadow:var(--recess);margin-bottom:16px}
+.seg .ind{position:absolute;top:3px;bottom:3px;left:3px;width:calc((100% - 6px)/var(--n,2));border-radius:9px;background:var(--glass-strong);box-shadow:var(--thick),0 2px 8px -4px rgba(14,39,66,.35);transform:translateX(calc(100% * var(--i,0)));transition:transform .4s cubic-bezier(.34,1.56,.64,1)}
+:root[data-theme="dark"] .seg .ind{background:rgba(60,90,140,.55)}
+.seg button{position:relative;height:36px;border:0;background:none;font:500 13px var(--font);color:var(--soft);cursor:pointer}
+.seg button[aria-pressed=true]{color:var(--ink);font-weight:600}
+
+/* campos */
+.f{display:grid;gap:6px;font-size:12px;font-weight:500;color:var(--soft);margin-top:12px;text-align:left}
+.f input,.f select,.f textarea{width:100%;min-width:0;border:0;border-radius:12px;background:var(--field);color:var(--ink);font:15px var(--font);outline:none;box-shadow:var(--recess);transition:box-shadow .25s}
+.f input,.f select{height:48px;padding:0 14px}
+.f textarea{padding:12px 14px;resize:vertical;min-height:110px;line-height:1.5}
+.f input:focus,.f select:focus,.f textarea:focus{box-shadow:inset 0 0 0 1px var(--accent),0 0 0 4px var(--accent-soft)}
+.f select option{color:#0E2742}
+.f.bad input,.f.bad textarea{box-shadow:inset 0 0 0 1px var(--out),0 0 0 4px rgba(194,65,47,.12);animation:shake .35s}
+.inrow{display:flex;gap:8px}.inrow input{flex:1}
+textarea.mono,.mono{font-family:var(--mono);font-size:12.5px;word-break:break-all}
+.hint{font-size:13px;color:var(--soft);margin:8px 2px 0;min-height:20px;text-align:left}
+.hint.bad{color:var(--out)}
+@keyframes shake{25%{transform:translateX(-6px)}75%{transform:translateX(5px)}}
+
+/* 12 palavras */
+.words{list-style:none;counter-reset:w;display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:0;padding:10px}
+.words li{counter-increment:w;display:flex;gap:10px;align-items:baseline;padding:11px 14px;border-radius:12px;background:var(--field);box-shadow:var(--recess);font-weight:500;transition:filter .3s}
+.words li::before{content:counter(w);font-size:12px;color:var(--faint);min-width:16px;font-variant-numeric:tabular-nums}
+.words.veil li{filter:blur(7px);user-select:none}
+.reveal{display:flex;justify-content:center;margin-top:12px}
+
+/* PIN */
+.pad{text-align:center}
+.dots{display:flex;gap:16px;justify-content:center;margin:6px 0 10px}
+.dots i{width:14px;height:14px;border-radius:50%;background:var(--track);box-shadow:var(--recess);transition:transform .25s cubic-bezier(.34,1.56,.64,1),background .2s}
+.dots i.on{background:var(--gloss);box-shadow:var(--gloss-edge),0 3px 8px -3px rgba(26,122,212,.9);transform:scale(1.15)}
+.dots.shake{animation:shake .4s}
+.pmsg{min-height:22px;font-size:13px;color:var(--soft);margin:0 auto 16px;max-width:32ch}
+.pmsg.bad{color:var(--out);font-weight:500}
+.keys{display:grid;grid-template-columns:repeat(3,72px);gap:16px 26px;justify-content:center}
+.k{width:72px;height:72px;border-radius:50%;border:0;cursor:pointer;font:300 28px var(--font);color:var(--ink);background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));
+  box-shadow:var(--thick),var(--e2);-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);transition:transform .25s cubic-bezier(.34,1.56,.64,1),box-shadow .2s;display:grid;place-items:center}
+.k:active{transform:scale(.9);box-shadow:var(--recess),var(--e1)}
+.k.fn{background:none;box-shadow:none;-webkit-backdrop-filter:none;backdrop-filter:none;font:500 13px var(--font);color:var(--accent)}
+.k.fn svg.i{width:26px;height:26px;color:var(--soft)}
+.k.fn:empty{visibility:hidden}
+.pad.busy .keys{opacity:.45;pointer-events:none}
+.pad.busy .dots i.on{animation:pulse 1s ease-in-out infinite}
+@keyframes pulse{50%{opacity:.45}}
+
+/* app */
+.app{max-width:480px;margin:0 auto;padding:14px 18px 120px}
+.top{display:flex;align-items:center;gap:10px;margin-bottom:22px}
+.top .who{flex:1;min-width:0}
+.top small{display:block;color:var(--soft);font-size:13px}
+.top b{display:block;font-weight:600;font-size:15px;font-family:var(--mono);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.avatar{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--gloss);box-shadow:var(--gloss-edge),0 6px 14px -6px rgba(26,122,212,.8);flex:none}
+.ib{width:42px;height:42px;border-radius:50%;border:0;cursor:pointer;display:grid;place-items:center;color:var(--ink);flex:none;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:var(--thick),var(--e1);-webkit-backdrop-filter:blur(20px);backdrop-filter:blur(20px);transition:transform .3s cubic-bezier(.34,1.56,.64,1)}
+.ib:active{transform:scale(.9);box-shadow:var(--recess)}
+.ib .sun{display:none}:root[data-theme="dark"] .ib .sun{display:block}:root[data-theme="dark"] .ib .moon{display:none}
+.view{display:none}.view.on{display:block;animation:viewIn .4s cubic-bezier(.2,.8,.2,1)}
+.sec-h{display:flex;justify-content:space-between;align-items:baseline;margin:26px 4px 10px;font-weight:600;font-size:15px}
+.sec-h small{font-weight:500;color:var(--soft);font-size:12px}
+
+.status{display:flex;align-items:center;gap:12px;padding:14px 16px;margin-bottom:16px}
+.status .dot{background:rgba(35,134,58,.12);color:var(--in)}
+.status b{display:block;font-weight:600;font-size:14px}
+.status small{color:var(--soft);font-size:12px}
+
+.search{display:flex;align-items:center;gap:10px;height:46px;padding:0 16px;border-radius:14px;margin-bottom:12px;color:var(--faint)}
+.search input{flex:1;border:0;background:none;outline:none;font:15px var(--font);color:var(--ink);min-width:0}
+.search input::placeholder{color:var(--faint)}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:2px 2px 8px;margin:0 -2px 6px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;height:34px;padding:0 14px;border:0;border-radius:17px;font:500 13px var(--font);color:var(--soft);cursor:pointer;
+  background:linear-gradient(180deg,var(--glass-top),var(--glass-bot));box-shadow:var(--thick),var(--e1)}
+.chip[aria-pressed=true]{color:#fff;background:var(--gloss);box-shadow:var(--gloss-edge),0 6px 14px -8px rgba(26,122,212,.9)}
+
+.list{overflow:hidden}
+.tx{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.tx+.tx{border-top:1px solid var(--line)}
+.tx .t{flex:1;min-width:0}
+.tx b{display:block;font-weight:500;font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tx small{color:var(--faint);font-size:12px}
+.tx>svg.i{color:var(--faint);width:18px;height:18px}
+.tx.danger{color:var(--out)}
+.tx .rv{color:var(--soft);font-size:13px}
+.dot{width:36px;height:36px;border-radius:11px;display:grid;place-items:center;background:var(--accent-soft);color:var(--accent);flex:none}
+.empty{padding:30px 20px;text-align:center;color:var(--soft);font-size:14px}
+
+/* cartão de identidade */
+.idcard{position:relative;border-radius:22px;padding:20px;color:#fff;overflow:hidden;display:grid;gap:22px;
+  background:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%);box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 24px 44px -20px rgba(13,63,120,.85)}
+.idcard::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.07) 48%,rgba(255,255,255,0) 50%)}
+.idcard::after{content:"";position:absolute;inset:-40%;background:repeating-linear-gradient(118deg,transparent 0 70px,rgba(255,255,255,.06) 70px 74px,transparent 74px 150px)}
+.idcard>*{position:relative;z-index:1}
+.idcard .r1{display:flex;justify-content:space-between;align-items:center;font-weight:600;font-size:14px}
+.idcard .did{font-family:var(--mono);font-size:13px;line-height:1.55;word-break:break-all;text-shadow:0 1px 1px rgba(0,30,70,.35)}
+.idcard .r3{display:flex;justify-content:space-between;font-size:12px;opacity:.9}
+.kr{padding:14px 16px}
+.kr+.kr{border-top:1px solid var(--line)}
+.kr .h{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:6px}
+.kr .h small{color:var(--soft);font-size:12px;font-weight:500}
+.kr .h span{display:flex;gap:6px}
+.kr .v{font-size:14px;word-break:break-word;white-space:pre-wrap}
+.kr .v.mono{font-size:12.5px;color:var(--ink)}
+.note{font-size:13px;color:var(--soft);margin:12px 4px 0}
+details.raw{margin-top:14px;border-radius:14px;padding:12px 14px;background:var(--field);box-shadow:var(--recess)}
+details.raw summary{cursor:pointer;font-weight:600;font-size:13px;color:var(--accent)}
+details.raw p{font-size:13px;color:var(--soft);margin:10px 0 8px}
+details.raw pre{margin:0;white-space:pre-wrap;max-height:220px;overflow:auto}
+
+.verdict{display:flex;gap:12px;align-items:center;padding:16px;margin-top:16px}
+.verdict .badge{width:44px;height:44px;border-radius:50%;display:grid;place-items:center;color:#fff;flex:none}
+.verdict.ok .badge{background:linear-gradient(180deg,#7EDC95,#23863A);box-shadow:inset 0 0 0 1px rgba(10,90,30,.45),0 8px 18px -8px rgba(35,134,58,.8)}
+.verdict.no .badge{background:linear-gradient(180deg,#F59A8B,#C2412F);box-shadow:inset 0 0 0 1px rgba(140,30,20,.5),0 8px 18px -8px rgba(194,65,47,.8)}
+.verdict b{display:block;font-weight:600}
+.verdict small{color:var(--soft);font-size:13px}
+
+/* dock */
+.dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;width:min(444px,calc(100vw - 24px));height:66px;
+  display:none;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px;border-radius:22px}
+body[data-screen="sApp"] .dock{display:grid}
+.dock button{height:52px;border:0;background:none;cursor:pointer;display:grid;place-items:center;align-content:center;gap:2px;font:500 10px var(--font);color:var(--faint)}
+.dock button svg.i{width:22px;height:22px}
+.dock button[aria-current=true]{color:var(--accent)}
+.dock button[aria-current=true]::after{content:"";width:4px;height:4px;border-radius:50%;background:var(--accent);margin-top:2px}
+.dock .add{width:52px;height:52px;justify-self:center;border-radius:17px;color:#fff;background:var(--gloss);box-shadow:var(--gloss-edge),0 10px 20px -10px rgba(26,122,212,.9);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.dock .add:active{transform:scale(.9)}
+.dock .add svg.i{width:24px;height:24px;stroke-width:2.2}
+
+/* folha */
+.scrim{position:fixed;inset:0;z-index:40;background:rgba(5,15,30,.38);opacity:0;visibility:hidden;transition:.3s}
+.scrim.open{opacity:1;visibility:visible}
+.sheet{position:fixed;left:50%;bottom:0;z-index:41;width:min(480px,100vw);max-height:90vh;overflow-y:auto;overscroll-behavior:contain;transform:translate(-50%,105%);transition:transform .45s cubic-bezier(.2,.9,.25,1.05);
+  border-radius:24px 24px 0 0;padding:10px 20px calc(24px + env(safe-area-inset-bottom,0px));background:var(--sheet);box-shadow:var(--thick),var(--e3);-webkit-backdrop-filter:blur(28px) saturate(1.6);backdrop-filter:blur(28px) saturate(1.6)}
+.sheet.open{transform:translate(-50%,0)}
+.grab{width:36px;height:4px;border-radius:2px;background:var(--faint);opacity:.5;margin:0 auto 16px}
+.dhead{display:flex;gap:12px;align-items:center;margin-bottom:14px}
+.dhead h3{margin:0}
+.dhead small{color:var(--soft);font-size:12px}
+.sheet .list{margin-top:4px}
+.prose p{font-size:14px;color:var(--soft);margin:0 0 12px}
+.prose b{color:var(--ink);font-weight:600}
+
+/* aviso */
+.toast{position:fixed;left:50%;top:calc(14px + env(safe-area-inset-top,0px));z-index:60;transform:translate(-50%,-20px);opacity:0;visibility:hidden;display:flex;align-items:center;gap:10px;
+  padding:12px 18px;border-radius:16px;font-size:14px;font-weight:500;background:var(--sheet);box-shadow:var(--thick),var(--e2);transition:transform .4s cubic-bezier(.34,1.56,.64,1),opacity .25s,visibility .25s;max-width:calc(100vw - 32px)}
+.toast.show{transform:translate(-50%,0);opacity:1;visibility:visible}
+.toast i{width:8px;height:8px;border-radius:50%;background:var(--in);flex:none}
+.toast.bad i{background:var(--out)}
+
+@media (max-width:360px){.keys{grid-template-columns:repeat(3,64px);gap:14px 22px}.k{width:64px;height:64px}}
+
+/* ===== adições do kit Identidade + Cartório ===== */
+.app{max-width:520px}
+.pill{display:inline-flex;align-items:center;gap:5px;height:22px;padding:0 9px;border-radius:11px;font-size:11px;font-weight:600;white-space:nowrap}
+.pill.ok{background:rgba(35,134,58,.12);color:var(--in)}
+.pill.no{background:rgba(194,65,47,.12);color:var(--out)}
+.pill.warn{background:rgba(201,133,18,.14);color:var(--warn)}
+.pill.on-card{background:rgba(255,255,255,.22);color:#fff;box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
+
+/* crachás */
+.creds{display:grid;gap:14px}
+.cred{position:relative;width:100%;border:0;cursor:pointer;text-align:left;font:inherit;border-radius:20px;padding:18px;color:#fff;overflow:hidden;display:grid;gap:16px;
+  background:var(--cg,linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%));box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 20px 40px -20px rgba(13,63,120,.85);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
+.cred:active{transform:scale(.98)}
+.cred::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.07) 48%,rgba(255,255,255,0) 50%);pointer-events:none}
+.cred::after{content:"";position:absolute;inset:-40%;background:repeating-linear-gradient(118deg,transparent 0 70px,rgba(255,255,255,.06) 70px 74px,transparent 74px 150px);pointer-events:none}
+.cred>*{position:relative;z-index:1}
+.cred .r1{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cred .r1 b{font-weight:600;font-size:15px}
+.cred .main{font:300 24px/1.15 var(--font);letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,30,70,.35);word-break:break-word}
+.cred .r3{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font-size:12px;opacity:.92}
+.cred .r3 span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cred.dim{filter:saturate(.35) brightness(.9)}
+.g-IdentityCredential{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
+.g-AgeOver18Credential{--cg:linear-gradient(150deg,#62D2E6 0%,#1595B8 45%,#0A4F6E 100%)}
+.g-EmploymentCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
+.g-ResidenceCredential{--cg:linear-gradient(150deg,#7FC9F0 0%,#2C7FBF 45%,#173E66 100%)}
+.g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
+.g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
+
+/* passos (sequência real) */
+.steps{list-style:none;counter-reset:s;margin:0;padding:6px 0}
+.steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:12px 16px;font-size:14px;color:var(--soft)}
+.steps li+li{border-top:1px solid var(--line)}
+.steps li::before{content:counter(s);flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600;color:#fff;background:var(--gloss);box-shadow:var(--gloss-edge)}
+.steps b{color:var(--ink);font-weight:600}
+
+/* checklist */
+.chk{display:flex;gap:12px;align-items:flex-start;padding:12px 16px}
+.chk+.chk{border-top:1px solid var(--line)}
+.chk .ci{flex:none;width:24px;height:24px;border-radius:50%;display:grid;place-items:center;color:#fff;margin-top:1px}
+.chk .ci svg.i{width:14px;height:14px;stroke-width:2.4}
+.chk.ok .ci{background:linear-gradient(180deg,#7EDC95,#23863A)}
+.chk.no .ci{background:linear-gradient(180deg,#F59A8B,#C2412F)}
+.chk.na .ci{background:linear-gradient(180deg,#F5CB6E,#C98512)}
+.chk b{display:block;font-weight:600;font-size:14px}
+.chk small{color:var(--soft);font-size:13px}
+
+/* indicadores */
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.stat{padding:14px 16px}
+.stat small{display:block;color:var(--soft);font-size:12px}
+.stat b{font:300 30px/1.1 var(--font);letter-spacing:-.02em}
+
+/* livro */
+.ato{display:flex;gap:12px;align-items:flex-start;padding:12px 16px}
+.ato+.ato{border-top:1px solid var(--line)}
+.ato .n{flex:none;min-width:30px;font-size:12px;font-weight:600;color:var(--faint);font-variant-numeric:tabular-nums;padding-top:2px}
+.ato .t{flex:1;min-width:0}
+.ato b{display:block;font-weight:500;font-size:14px}
+.ato small{color:var(--faint);font-size:12px}
+.ato code{font-family:var(--mono);font-size:11px;color:var(--faint);word-break:break-all}
+
+/* arquivo */
+.file{display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer}
+.file input{position:absolute;width:1px;height:1px;opacity:0}
+.fileinfo{margin-top:10px}
+
+/* linhas de afirmações */
+.claim{display:grid;grid-template-columns:1fr 1.3fr auto;gap:8px;align-items:end}
+.claim .f{margin-top:10px}
+.claim .mini{height:48px}
+.choice{display:flex;align-items:center;gap:12px;width:100%;padding:13px 16px;border:0;background:none;text-align:left;cursor:pointer;font:inherit;color:inherit}
+.choice+.choice{border-top:1px solid var(--line)}
+.choice .rd{flex:none;width:20px;height:20px;border-radius:50%;box-shadow:var(--recess);background:var(--track)}
+.choice[aria-pressed=true] .rd{background:var(--gloss);box-shadow:var(--gloss-edge),inset 0 0 0 5px rgba(255,255,255,.85)}
+.choice .t{flex:1;min-width:0}
+.choice b{display:block;font-weight:500;font-size:14px}
+.choice small{color:var(--soft);font-size:12px}
+.rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.card{padding:16px}
+.card+.card{margin-top:12px}
+.mt{margin-top:14px}
+</style>
+</head>
+<body data-screen="">
+<div class="sky"></div>
+<div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
+
+<section class="screen" id="sWelcome">
+  <div class="wrap center">
+    <div class="orb" data-ic="wallet"></div>
+    <h1>Carteira de Identidade</h1>
+    <p class="lead">Sua identidade soberana. As chaves nascem de 12 palavras, as credenciais ficam cifradas no aparelho e um PIN de 6 dígitos abre a carteira.</p>
+    <button class="btn" id="goCreate">Criar minha carteira</button>
+    <button class="btn ghost" id="goRecover">Recuperar com 12 palavras</button>
+    <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
+    <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
+  </div>
+</section>
+
+<section class="screen" id="sWords">
+  <div class="wrap">
+    <button class="back" data-go="sWelcome"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
+    <h2>Suas 12 palavras</h2>
+    <p class="sub">Anote em papel, nesta ordem. Quem tiver estas palavras tem a sua identidade, e sem elas não existe recuperação.</p>
+    <div class="seg" id="langSeg" style="--n:2"><span class="ind"></span><button aria-pressed="true" data-l="pt">Português</button><button aria-pressed="false" data-l="en">English</button></div>
+    <ol class="words glass veil" id="wordGrid"></ol>
+    <div class="reveal"><button class="link" id="toggleVeil" style="margin:0">Mostrar palavras</button></div>
+    <button class="btn" id="wordsDone">Já anotei</button>
+    <button class="btn ghost" id="wordsNew">Gerar outras palavras</button>
+  </div>
+</section>
+
+<section class="screen" id="sConfirm">
+  <div class="wrap">
+    <button class="back" data-go="sWords"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Ver palavras</button>
+    <h2>Confirme 3 palavras</h2>
+    <p class="sub">Assim garantimos que a anotação está certa antes de continuar.</p>
+    <div id="confirmFields"></div>
+    <p class="hint" id="confirmHint"></p>
+    <button class="btn" id="confirmGo">Confirmar palavras</button>
+  </div>
+</section>
+
+<section class="screen" id="sRecover">
+  <div class="wrap">
+    <button class="back" id="recBack"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
+    <h2>Recuperar identidade</h2>
+    <p class="sub">Digite as 12 palavras na ordem, separadas por espaço. Em português ou inglês.</p>
+    <label class="f" id="recField"><span>Palavras de recuperação</span>
+      <textarea id="recWords" rows="4" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="palavra1 palavra2 palavra3 …"></textarea></label>
+    <p class="hint" id="recHint">0 de 12 palavras</p>
+    <button class="btn" id="recGo">Validar palavras</button>
+  </div>
+</section>
+
+<section class="screen" id="sPin">
+  <div class="wrap center" style="padding-top:6vh">
+    <div class="orb sm" id="pinOrb" data-ic="lock"></div>
+    <h2 id="pinTitle">Digite seu PIN</h2>
+    <p class="sub" id="pinSub"></p>
+    <div class="pad" id="pinPad"></div>
+    <button class="link" id="pinLink">Esqueci meu PIN</button>
+  </div>
+</section>
+
+<section class="screen" id="sApp">
+  <div class="app">
+    <header class="top">
+      <span class="avatar" data-ic="wallet"></span>
+      <div class="who"><small id="whoLabel">Identidade soberana</small><b id="didShort">did:key:…</b></div>
+      <button class="ib" id="themeBtn" aria-label="Alternar tema claro ou escuro"><svg class="i moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><svg class="i sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="ib" id="lockBtn" aria-label="Bloquear" data-ic="lock"></button>
+    </header>
+
+    <section class="view on" id="vCreds">
+      <h2>Credenciais</h2>
+      <div id="cList"></div>
+      <p class="note" id="cNote" hidden>Para usar uma credencial, toque nela e escolha Apresentar. Você assina um desafio novo a cada uso, então ninguém consegue reaproveitar uma cópia.</p>
+    </section>
+
+    <section class="view" id="vVault">
+      <h2>Cofre</h2>
+      <div class="status glass flat"><span class="dot" data-ic="lock" style="background:rgba(35,134,58,.12);color:var(--in)"></span><div><b id="vCount">Cofre aberto</b><small>Cifrado neste aparelho com AES-256-GCM</small></div></div>
+      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" placeholder="Buscar no cofre" aria-label="Buscar no cofre"></label>
+      <div class="chips" id="vChips"></div>
+      <div class="list glass flat" id="vList"></div>
+    </section>
+
+    <section class="view" id="vId">
+      <h2>Identidade</h2>
+      <div class="idcard">
+        <div class="r1"><span>Identidade soberana</span><span data-ic="shield"></span></div>
+        <div class="did" id="idDid"></div>
+        <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
+      </div>
+      <div class="sec-h">Chaves públicas <small>pode compartilhar</small></div>
+      <div class="list glass flat">
+        <div class="kr"><div class="h"><small>DID, para pedir credenciais</small><span><button class="mini sm" data-copyid="did" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="idDid2"></div></div>
+        <div class="kr"><div class="h"><small>Cifragem (X25519), para receber mensagens</small><span><button class="mini sm" data-copyid="xPub" aria-label="Copiar chave de cifragem" data-ic="copy"></button></span></div><div class="v mono" id="idX"></div></div>
+      </div>
+      <details class="raw"><summary>Documento DID</summary><p>Descreve publicamente quais chaves falam por esta identidade.</p><pre class="mono" id="idDoc"></pre></details>
+
+      <div class="sec-h">Mensagens cifradas</div>
+      <div class="seg" id="mSeg" style="--n:2"><span class="ind"></span><button aria-pressed="true">Cifrar</button><button aria-pressed="false">Abrir</button></div>
+      <div id="mA">
+        <label class="f" style="margin-top:0"><span>Chave de cifragem do destinatário</span><div class="inrow"><input id="mTo" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="z6LS…"><button class="mini" id="mMe" type="button">A minha</button></div></label>
+        <label class="f"><span>Mensagem</span><textarea id="mText" rows="3"></textarea></label>
+        <button class="btn" id="mSeal">Cifrar mensagem</button>
+        <div id="mSealOut" hidden><label class="f"><span>Mensagem cifrada</span><textarea class="mono" id="mSealed" rows="4" readonly></textarea></label><button class="btn ghost" id="mCopy">Copiar mensagem cifrada</button></div>
+      </div>
+      <div id="mB" hidden>
+        <label class="f" style="margin-top:0"><span>Mensagem cifrada recebida</span><textarea class="mono" id="mIn" rows="4" spellcheck="false" placeholder="smsg1.…"></textarea></label>
+        <button class="btn" id="mOpen">Decifrar com minha chave</button>
+        <div id="mOpenOut"></div>
+      </div>
+    </section>
+
+    <section class="view" id="vSet">
+      <h2>Ajustes</h2>
+      <div id="commonSet"></div>
+    </section>
+
+  </div>
+</section>
+
+<nav class="dock glass" aria-label="Navegação"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button data-v="vVault" aria-current="false"><span data-ic="vault"></span>Cofre</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidade</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
+
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
+<div class="toast" id="toast" role="status"><i></i><span></span></div>
+
+<script>
+'use strict';
+/* ================= ícones ================= */
+const P={
+ shield:'<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+ lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ key:'<circle cx="8" cy="15" r="4"/><path d="M11 12l9-9M17 6l3 3M15 8l2 2"/>',
+ note:'<path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5M9 13h7M9 17h5"/>',
+ id:'<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="12" r="2.5"/><path d="M14 10h4M14 14h4"/>',
+ vault:'<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="12" cy="12" r="3.5"/><path d="M12 8.5V7M12 17v-1.5M15.5 12H17M7 12h1.5"/>',
+ user:'<circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/>',
+ badge:'<path d="M12 3l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.8 1 2.8-2.4 1.8-.9 2.9-3-.2L12 21l-2.4-1.8-3 .2-.9-2.9-2.4-1.8 1-2.8-1-2.8 2.4-1.8.9-2.9 3 .2z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
+ sliders:'<path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ copy:'<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+ eye:'<path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ bksp:'<path d="M21 5H9l-6 7 6 7h12z"/><path d="M12 9l6 6M18 9l-6 6"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ restore:'<path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/>',
+ trash:'<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+ check:'<path d="M5 12l5 5 9-10"/>',
+ x:'<path d="M6 6l12 12M18 6L6 18"/>',
+ chev:'<path d="M9 5l7 7-7 7"/>',
+ minus:'<path d="M5 12h14"/>',
+ stamp:'<path d="M9 3h6v4l-1 3h4a2 2 0 0 1 2 2v3H4v-3a2 2 0 0 1 2-2h4L9 7z"/><path d="M4 19h16"/>',
+ book:'<path d="M5 4h11a3 3 0 0 1 3 3v13H8a3 3 0 0 1-3-3z"/><path d="M5 17a3 3 0 0 1 3-3h11"/>',
+ file:'<path d="M6 3h8l5 5v13H6z"/><path d="M14 3v5h5"/>',
+ inbox:'<path d="M3 13h5l1 3h6l1-3h5"/><path d="M5 5h14l2 8v6H3v-6z"/>',
+ send:'<path d="M21 3L3 10l7 3 3 7z"/><path d="M10 13L21 3"/>',
+ scan:'<path d="M4 8V5a1 1 0 0 1 1-1h3M16 4h3a1 1 0 0 1 1 1v3M20 16v3a1 1 0 0 1-1 1h-3M8 20H5a1 1 0 0 1-1-1v-3"/><path d="M8 12h8"/>',
+ home:'<path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/>',
+ wallet:'<rect x="3" y="6" width="18" height="14" rx="2"/><path d="M3 10h18M16 15h2"/><path d="M6 6l9-3 1 3"/>',
+ gov:'<path d="M3 10l9-6 9 6"/><path d="M5 10v8M9.5 10v8M14.5 10v8M19 10v8M3 21h18"/>',
+ mail:'<rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/>',
+ alert:'<path d="M12 3l9 16H3z"/><path d="M12 10v4M12 17v.5"/>'
+};
+const ic=n=>`<svg class="i" viewBox="0 0 24 24" aria-hidden="true">${P[n]||''}</svg>`;
+const paintIcons=(root=document)=>root.querySelectorAll('[data-ic]').forEach(e=>e.innerHTML=ic(e.dataset.ic));
+paintIcons();
+
+/* ================= utilidades ================= */
+const $=s=>document.querySelector(s);
+const S=crypto.subtle, te=new TextEncoder(), td=new TextDecoder();
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const rnd=n=>crypto.getRandomValues(new Uint8Array(n));
+const cat=(...a)=>{const o=new Uint8Array(a.reduce((x,y)=>x+y.length,0));let p=0;for(const x of a){o.set(x,p);p+=x.length}return o};
+const hexB=h=>new Uint8Array(h.match(/../g).map(x=>parseInt(x,16)));
+const hex=b=>[...new Uint8Array(b)].map(x=>x.toString(16).padStart(2,'0')).join('');
+const now=()=>Math.floor(Date.now()/1000);
+const b64u={
+  enc(b){b=new Uint8Array(b);let s='';for(let i=0;i<b.length;i+=0x8000)s+=String.fromCharCode.apply(null,b.subarray(i,i+0x8000));return btoa(s).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')},
+  dec(s){s=String(s).replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';const bin=atob(s),u=new Uint8Array(bin.length);for(let i=0;i<bin.length;i++)u[i]=bin.charCodeAt(i);return u}
+};
+const B58='123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+function b58enc(bytes){let z=0;while(z<bytes.length&&bytes[z]===0)z++;let n=0n;for(const b of bytes)n=n*256n+BigInt(b);let s='';while(n>0n){s=B58[Number(n%58n)]+s;n/=58n}return '1'.repeat(z)+s}
+function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)throw new Error('Caractere inválido em base58.');n=n*58n+BigInt(i)}const out=[];while(n>0n){out.unshift(Number(n%256n));n/=256n}let z=0;while(str[z]==='1')z++;return new Uint8Array([...new Array(z).fill(0),...out])}
+const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
+const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
+const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
+const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
+const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+
+/* ================= armazenamento (IndexedDB) ================= */
+const DB={
+  _db:null,_mem:null,
+  async db(){if(this._db)return this._db;this._db=await new Promise((res,rej)=>{const r=indexedDB.open(APP.db,1);r.onupgradeneeded=()=>r.result.createObjectStore('kv');r.onsuccess=()=>res(r.result);r.onerror=()=>rej(r.error)});return this._db},
+  async tx(mode,fn){const d=await this.db();return new Promise((res,rej)=>{const t=d.transaction('kv',mode);const r=fn(t.objectStore('kv'));t.oncomplete=()=>res(r&&r.result);t.onerror=()=>rej(t.error)})},
+  get(k){return this._mem?this._mem.get(k):this.tx('readonly',s=>s.get(k))},
+  set(k,v){if(this._mem){this._mem.set(k,v);return}return this.tx('readwrite',s=>s.put(v,k))},
+  del(k){if(this._mem){this._mem.delete(k);return}return this.tx('readwrite',s=>s.delete(k))},
+  clear(){if(this._mem){this._mem.clear();return}return this.tx('readwrite',s=>s.clear())}
+};
+
+/* ================= BIP39 ================= */
+const WORDS={pt:'abacate abaixo abalar abater abduzir abelha aberto abismo abotoar abranger abreviar abrigar abrupto absinto absoluto absurdo abutre acabado acalmar acampar acanhar acaso aceitar acelerar acenar acervo acessar acetona achatar acidez acima acionado acirrar aclamar aclive acolhida acomodar acoplar acordar acumular acusador adaptar adega adentro adepto adequar aderente adesivo adeus adiante aditivo adjetivo adjunto admirar adorar adquirir adubo adverso advogado aeronave afastar aferir afetivo afinador afivelar aflito afluente afrontar agachar agarrar agasalho agenciar agilizar agiota agitado agora agradar agreste agrupar aguardar agulha ajoelhar ajudar ajustar alameda alarme alastrar alavanca albergue albino alcatra aldeia alecrim alegria alertar alface alfinete algum alheio aliar alicate alienar alinhar aliviar almofada alocar alpiste alterar altitude alucinar alugar aluno alusivo alvo amaciar amador amarelo amassar ambas ambiente ameixa amenizar amido amistoso amizade amolador amontoar amoroso amostra amparar ampliar ampola anagrama analisar anarquia anatomia andaime anel anexo angular animar anjo anomalia anotado ansioso anterior anuidade anunciar anzol apagador apalpar apanhado apego apelido apertada apesar apetite apito aplauso aplicada apoio apontar aposta aprendiz aprovar aquecer arame aranha arara arcada ardente areia arejar arenito aresta argiloso argola arma arquivo arraial arrebate arriscar arroba arrumar arsenal arterial artigo arvoredo asfaltar asilado aspirar assador assinar assoalho assunto astral atacado atadura atalho atarefar atear atender aterro ateu atingir atirador ativo atoleiro atracar atrevido atriz atual atum auditor aumentar aura aurora autismo autoria autuar avaliar avante avaria avental avesso aviador avisar avulso axila azarar azedo azeite azulejo babar babosa bacalhau bacharel bacia bagagem baiano bailar baioneta bairro baixista bajular baleia baliza balsa banal bandeira banho banir banquete barato barbado baronesa barraca barulho baseado bastante batata batedor batida batom batucar baunilha beber beijo beirada beisebol beldade beleza belga beliscar bendito bengala benzer berimbau berlinda berro besouro bexiga bezerro bico bicudo bienal bifocal bifurcar bigorna bilhete bimestre bimotor biologia biombo biosfera bipolar birrento biscoito bisneto bispo bissexto bitola bizarro blindado bloco bloquear boato bobagem bocado bocejo bochecha boicotar bolada boletim bolha bolo bombeiro bonde boneco bonita borbulha borda boreal borracha bovino boxeador branco brasa braveza breu briga brilho brincar broa brochura bronzear broto bruxo bucha budismo bufar bule buraco busca busto buzina cabana cabelo cabide cabo cabrito cacau cacetada cachorro cacique cadastro cadeado cafezal caiaque caipira caixote cajado caju calafrio calcular caldeira calibrar calmante calota camada cambista camisa camomila campanha camuflar canavial cancelar caneta canguru canhoto canivete canoa cansado cantar canudo capacho capela capinar capotar capricho captador capuz caracol carbono cardeal careca carimbar carneiro carpete carreira cartaz carvalho casaco casca casebre castelo casulo catarata cativar caule causador cautelar cavalo caverna cebola cedilha cegonha celebrar celular cenoura censo centeio cercar cerrado certeiro cerveja cetim cevada chacota chaleira chamado chapada charme chatice chave chefe chegada cheiro cheque chicote chifre chinelo chocalho chover chumbo chutar chuva cicatriz ciclone cidade cidreira ciente cigana cimento cinto cinza ciranda circuito cirurgia citar clareza clero clicar clone clube coado coagir cobaia cobertor cobrar cocada coelho coentro coeso cogumelo coibir coifa coiote colar coleira colher colidir colmeia colono coluna comando combinar comentar comitiva comover complexo comum concha condor conectar confuso congelar conhecer conjugar consumir contrato convite cooperar copeiro copiador copo coquetel coragem cordial corneta coronha corporal correio cortejo coruja corvo cosseno costela cotonete couro couve covil cozinha cratera cravo creche credor creme crer crespo criada criminal crioulo crise criticar crosta crua cruzeiro cubano cueca cuidado cujo culatra culminar culpar cultura cumprir cunhado cupido curativo curral cursar curto cuspir custear cutelo damasco datar debater debitar deboche debulhar decalque decimal declive decote decretar dedal dedicado deduzir defesa defumar degelo degrau degustar deitado deixar delator delegado delinear delonga demanda demitir demolido dentista depenado depilar depois depressa depurar deriva derramar desafio desbotar descanso desenho desfiado desgaste desigual deslize desmamar desova despesa destaque desviar detalhar detentor detonar detrito deusa dever devido devotado dezena diagrama dialeto didata difuso digitar dilatado diluente diminuir dinastia dinheiro diocese direto discreta disfarce disparo disquete dissipar distante ditador diurno diverso divisor divulgar dizer dobrador dolorido domador dominado donativo donzela dormente dorsal dosagem dourado doutor drenagem drible drogaria duelar duende dueto duplo duquesa durante duvidoso eclodir ecoar ecologia edificar edital educado efeito efetivar ejetar elaborar eleger eleitor elenco elevador eliminar elogiar embargo embolado embrulho embutido emenda emergir emissor empatia empenho empinado empolgar emprego empurrar emulador encaixe encenado enchente encontro endeusar endossar enfaixar enfeite enfim engajado engenho englobar engomado engraxar enguia enjoar enlatar enquanto enraizar enrolado enrugar ensaio enseada ensino ensopado entanto enteado entidade entortar entrada entulho envergar enviado envolver enxame enxerto enxofre enxuto epiderme equipar ereto erguido errata erva ervilha esbanjar esbelto escama escola escrita escuta esfinge esfolar esfregar esfumado esgrima esmalte espanto espelho espiga esponja espreita espumar esquerda estaca esteira esticar estofado estrela estudo esvaziar etanol etiqueta euforia europeu evacuar evaporar evasivo eventual evidente evoluir exagero exalar examinar exato exausto excesso excitar exclamar executar exemplo exibir exigente exonerar expandir expelir expirar explanar exposto expresso expulsar externo extinto extrato fabricar fabuloso faceta facial fada fadiga faixa falar falta familiar fandango fanfarra fantoche fardado farelo farinha farofa farpa fartura fatia fator favorita faxina fazenda fechado feijoada feirante felino feminino fenda feno fera feriado ferrugem ferver festejar fetal feudal fiapo fibrose ficar ficheiro figurado fileira filho filme filtrar firmeza fisgada fissura fita fivela fixador fixo flacidez flamingo flanela flechada flora flutuar fluxo focal focinho fofocar fogo foguete foice folgado folheto forjar formiga forno forte fosco fossa fragata fralda frango frasco fraterno freira frente fretar frieza friso fritura fronha frustrar fruteira fugir fulano fuligem fundar fungo funil furador furioso futebol gabarito gabinete gado gaiato gaiola gaivota galega galho galinha galocha ganhar garagem garfo gargalo garimpo garoupa garrafa gasoduto gasto gata gatilho gaveta gazela gelado geleia gelo gemada gemer gemido generoso gengiva genial genoma genro geologia gerador germinar gesso gestor ginasta gincana gingado girafa girino glacial glicose global glorioso goela goiaba golfe golpear gordura gorjeta gorro gostoso goteira governar gracejo gradual grafite gralha grampo granada gratuito graveto graxa grego grelhar greve grilo grisalho gritaria grosso grotesco grudado grunhido gruta guache guarani guaxinim guerrear guiar guincho guisado gula guloso guru habitar harmonia haste haver hectare herdar heresia hesitar hiato hibernar hidratar hiena hino hipismo hipnose hipoteca hoje holofote homem honesto honrado hormonal hospedar humorado iate ideia idoso ignorado igreja iguana ileso ilha iludido iluminar ilustrar imagem imediato imenso imersivo iminente imitador imortal impacto impedir implante impor imprensa impune imunizar inalador inapto inativo incenso inchar incidir incluir incolor indeciso indireto indutor ineficaz inerente infantil infestar infinito inflamar informal infrator ingerir inibido inicial inimigo injetar inocente inodoro inovador inox inquieto inscrito inseto insistir inspetor instalar insulto intacto integral intimar intocado intriga invasor inverno invicto invocar iogurte iraniano ironizar irreal irritado isca isento isolado isqueiro italiano janeiro jangada janta jararaca jardim jarro jasmim jato javali jazida jejum joaninha joelhada jogador joia jornal jorrar jovem juba judeu judoca juiz julgador julho jurado jurista juro justa labareda laboral lacre lactante ladrilho lagarta lagoa laje lamber lamentar laminar lampejo lanche lapidar lapso laranja lareira largura lasanha lastro lateral latido lavanda lavoura lavrador laxante lazer lealdade lebre legado legendar legista leigo leiloar leitura lembrete leme lenhador lentilha leoa lesma leste letivo letreiro levar leveza levitar liberal libido liderar ligar ligeiro limitar limoeiro limpador linda linear linhagem liquidez listagem lisura litoral livro lixa lixeira locador locutor lojista lombo lona longe lontra lorde lotado loteria loucura lousa louvar luar lucidez lucro luneta lustre lutador luva macaco macete machado macio madeira madrinha magnata magreza maior mais malandro malha malote maluco mamilo mamoeiro mamute manada mancha mandato manequim manhoso manivela manobrar mansa manter manusear mapeado maquinar marcador maresia marfim margem marinho marmita maroto marquise marreco martelo marujo mascote masmorra massagem mastigar matagal materno matinal matutar maxilar medalha medida medusa megafone meiga melancia melhor membro memorial menino menos mensagem mental merecer mergulho mesada mesclar mesmo mesquita mestre metade meteoro metragem mexer mexicano micro migalha migrar milagre milenar milhar mimado minerar minhoca ministro minoria miolo mirante mirtilo misturar mocidade moderno modular moeda moer moinho moita moldura moleza molho molinete molusco montanha moqueca morango morcego mordomo morena mosaico mosquete mostarda motel motim moto motriz muda muito mulata mulher multar mundial munido muralha murcho muscular museu musical nacional nadador naja namoro narina narrado nascer nativa natureza navalha navegar navio neblina nebuloso negativa negociar negrito nervoso neta neural nevasca nevoeiro ninar ninho nitidez nivelar nobreza noite noiva nomear nominal nordeste nortear notar noticiar noturno novelo novilho novo nublado nudez numeral nupcial nutrir nuvem obcecado obedecer objetivo obrigado obscuro obstetra obter obturar ocidente ocioso ocorrer oculista ocupado ofegante ofensiva oferenda oficina ofuscado ogiva olaria oleoso olhar oliveira ombro omelete omisso omitir ondulado oneroso ontem opcional operador oponente oportuno oposto orar orbitar ordem ordinal orfanato orgasmo orgulho oriental origem oriundo orla ortodoxo orvalho oscilar ossada osso ostentar otimismo ousadia outono outubro ouvido ovelha ovular oxidar oxigenar pacato paciente pacote pactuar padaria padrinho pagar pagode painel pairar paisagem palavra palestra palheta palito palmada palpitar pancada panela panfleto panqueca pantanal papagaio papelada papiro parafina parcial pardal parede partida pasmo passado pastel patamar patente patinar patrono paulada pausar peculiar pedalar pedestre pediatra pedra pegada peitoral peixe pele pelicano penca pendurar peneira penhasco pensador pente perceber perfeito pergunta perito permitir perna perplexo persiana pertence peruca pescado pesquisa pessoa petiscar piada picado piedade pigmento pilastra pilhado pilotar pimenta pincel pinguim pinha pinote pintar pioneiro pipoca piquete piranha pires pirueta piscar pistola pitanga pivete planta plaqueta platina plebeu plumagem pluvial pneu poda poeira poetisa polegada policiar poluente polvilho pomar pomba ponderar pontaria populoso porta possuir postal pote poupar pouso povoar praia prancha prato praxe prece predador prefeito premiar prensar preparar presilha pretexto prevenir prezar primata princesa prisma privado processo produto profeta proibido projeto prometer propagar prosa protetor provador publicar pudim pular pulmonar pulseira punhal punir pupilo pureza puxador quadra quantia quarto quase quebrar queda queijo quente querido quimono quina quiosque rabanada rabisco rachar racionar radial raiar rainha raio raiva rajada ralado ramal ranger ranhura rapadura rapel rapidez raposa raquete raridade rasante rascunho rasgar raspador rasteira rasurar ratazana ratoeira realeza reanimar reaver rebaixar rebelde rebolar recado recente recheio recibo recordar recrutar recuar rede redimir redonda reduzida reenvio refinar refletir refogar refresco refugiar regalia regime regra reinado reitor rejeitar relativo remador remendo remorso renovado reparo repelir repleto repolho represa repudiar requerer resenha resfriar resgatar residir resolver respeito ressaca restante resumir retalho reter retirar retomada retratar revelar revisor revolta riacho rica rigidez rigoroso rimar ringue risada risco risonho robalo rochedo rodada rodeio rodovia roedor roleta romano roncar rosado roseira rosto rota roteiro rotina rotular rouco roupa roxo rubro rugido rugoso ruivo rumo rupestre russo sabor saciar sacola sacudir sadio safira saga sagrada saibro salada saleiro salgado saliva salpicar salsicha saltar salvador sambar samurai sanar sanfona sangue sanidade sapato sarda sargento sarjeta saturar saudade saxofone sazonal secar secular seda sedento sediado sedoso sedutor segmento segredo segundo seiva seleto selvagem semanal semente senador senhor sensual sentado separado sereia seringa serra servo setembro setor sigilo silhueta silicone simetria simpatia simular sinal sincero singular sinopse sintonia sirene siri situado soberano sobra socorro sogro soja solda soletrar solteiro sombrio sonata sondar sonegar sonhador sono soprano soquete sorrir sorteio sossego sotaque soterrar sovado sozinho suavizar subida submerso subsolo subtrair sucata sucesso suco sudeste sufixo sugador sugerir sujeito sulfato sumir suor superior suplicar suposto suprimir surdina surfista surpresa surreal surtir suspiro sustento tabela tablete tabuada tacho tagarela talher talo talvez tamanho tamborim tampa tangente tanto tapar tapioca tardio tarefa tarja tarraxa tatuagem taurino taxativo taxista teatral tecer tecido teclado tedioso teia teimar telefone telhado tempero tenente tensor tentar termal terno terreno tese tesoura testado teto textura texugo tiara tigela tijolo timbrar timidez tingido tinteiro tiragem titular toalha tocha tolerar tolice tomada tomilho tonel tontura topete tora torcido torneio torque torrada torto tostar touca toupeira toxina trabalho tracejar tradutor trafegar trajeto trama trancar trapo traseiro tratador travar treino tremer trepidar trevo triagem tribo triciclo tridente trilogia trindade triplo triturar triunfal trocar trombeta trova trunfo truque tubular tucano tudo tulipa tupi turbo turma turquesa tutelar tutorial uivar umbigo unha unidade uniforme urologia urso urtiga urubu usado usina usufruir vacina vadiar vagaroso vaidoso vala valente validade valores vantagem vaqueiro varanda vareta varrer vascular vasilha vassoura vazar vazio veado vedar vegetar veicular veleiro velhice veludo vencedor vendaval venerar ventre verbal verdade vereador vergonha vermelho verniz versar vertente vespa vestido vetorial viaduto viagem viajar viatura vibrador videira vidraria viela viga vigente vigiar vigorar vilarejo vinco vinheta vinil violeta virada virtude visitar visto vitral viveiro vizinho voador voar vogal volante voleibol voltagem volumoso vontade vulto vuvuzela xadrez xarope xeque xeretar xerife xingar zangado zarpar zebu zelador zombar zoologia zumbido'.split(' '),en:'abandon ability able about above absent absorb abstract absurd abuse access accident account accuse achieve acid acoustic acquire across act action actor actress actual adapt add addict address adjust admit adult advance advice aerobic affair afford afraid again age agent agree ahead aim air airport aisle alarm album alcohol alert alien all alley allow almost alone alpha already also alter always amateur amazing among amount amused analyst anchor ancient anger angle angry animal ankle announce annual another answer antenna antique anxiety any apart apology appear apple approve april arch arctic area arena argue arm armed armor army around arrange arrest arrive arrow art artefact artist artwork ask aspect assault asset assist assume asthma athlete atom attack attend attitude attract auction audit august aunt author auto autumn average avocado avoid awake aware away awesome awful awkward axis baby bachelor bacon badge bag balance balcony ball bamboo banana banner bar barely bargain barrel base basic basket battle beach bean beauty because become beef before begin behave behind believe below belt bench benefit best betray better between beyond bicycle bid bike bind biology bird birth bitter black blade blame blanket blast bleak bless blind blood blossom blouse blue blur blush board boat body boil bomb bone bonus book boost border boring borrow boss bottom bounce box boy bracket brain brand brass brave bread breeze brick bridge brief bright bring brisk broccoli broken bronze broom brother brown brush bubble buddy budget buffalo build bulb bulk bullet bundle bunker burden burger burst bus business busy butter buyer buzz cabbage cabin cable cactus cage cake call calm camera camp can canal cancel candy cannon canoe canvas canyon capable capital captain car carbon card cargo carpet carry cart case cash casino castle casual cat catalog catch category cattle caught cause caution cave ceiling celery cement census century cereal certain chair chalk champion change chaos chapter charge chase chat cheap check cheese chef cherry chest chicken chief child chimney choice choose chronic chuckle chunk churn cigar cinnamon circle citizen city civil claim clap clarify claw clay clean clerk clever click client cliff climb clinic clip clock clog close cloth cloud clown club clump cluster clutch coach coast coconut code coffee coil coin collect color column combine come comfort comic common company concert conduct confirm congress connect consider control convince cook cool copper copy coral core corn correct cost cotton couch country couple course cousin cover coyote crack cradle craft cram crane crash crater crawl crazy cream credit creek crew cricket crime crisp critic crop cross crouch crowd crucial cruel cruise crumble crunch crush cry crystal cube culture cup cupboard curious current curtain curve cushion custom cute cycle dad damage damp dance danger daring dash daughter dawn day deal debate debris decade december decide decline decorate decrease deer defense define defy degree delay deliver demand demise denial dentist deny depart depend deposit depth deputy derive describe desert design desk despair destroy detail detect develop device devote diagram dial diamond diary dice diesel diet differ digital dignity dilemma dinner dinosaur direct dirt disagree discover disease dish dismiss disorder display distance divert divide divorce dizzy doctor document dog doll dolphin domain donate donkey donor door dose double dove draft dragon drama drastic draw dream dress drift drill drink drip drive drop drum dry duck dumb dune during dust dutch duty dwarf dynamic eager eagle early earn earth easily east easy echo ecology economy edge edit educate effort egg eight either elbow elder electric elegant element elephant elevator elite else embark embody embrace emerge emotion employ empower empty enable enact end endless endorse enemy energy enforce engage engine enhance enjoy enlist enough enrich enroll ensure enter entire entry envelope episode equal equip era erase erode erosion error erupt escape essay essence estate eternal ethics evidence evil evoke evolve exact example excess exchange excite exclude excuse execute exercise exhaust exhibit exile exist exit exotic expand expect expire explain expose express extend extra eye eyebrow fabric face faculty fade faint faith fall false fame family famous fan fancy fantasy farm fashion fat fatal father fatigue fault favorite feature february federal fee feed feel female fence festival fetch fever few fiber fiction field figure file film filter final find fine finger finish fire firm first fiscal fish fit fitness fix flag flame flash flat flavor flee flight flip float flock floor flower fluid flush fly foam focus fog foil fold follow food foot force forest forget fork fortune forum forward fossil foster found fox fragile frame frequent fresh friend fringe frog front frost frown frozen fruit fuel fun funny furnace fury future gadget gain galaxy gallery game gap garage garbage garden garlic garment gas gasp gate gather gauge gaze general genius genre gentle genuine gesture ghost giant gift giggle ginger giraffe girl give glad glance glare glass glide glimpse globe gloom glory glove glow glue goat goddess gold good goose gorilla gospel gossip govern gown grab grace grain grant grape grass gravity great green grid grief grit grocery group grow grunt guard guess guide guilt guitar gun gym habit hair half hammer hamster hand happy harbor hard harsh harvest hat have hawk hazard head health heart heavy hedgehog height hello helmet help hen hero hidden high hill hint hip hire history hobby hockey hold hole holiday hollow home honey hood hope horn horror horse hospital host hotel hour hover hub huge human humble humor hundred hungry hunt hurdle hurry hurt husband hybrid ice icon idea identify idle ignore ill illegal illness image imitate immense immune impact impose improve impulse inch include income increase index indicate indoor industry infant inflict inform inhale inherit initial inject injury inmate inner innocent input inquiry insane insect inside inspire install intact interest into invest invite involve iron island isolate issue item ivory jacket jaguar jar jazz jealous jeans jelly jewel job join joke journey joy judge juice jump jungle junior junk just kangaroo keen keep ketchup key kick kid kidney kind kingdom kiss kit kitchen kite kitten kiwi knee knife knock know lab label labor ladder lady lake lamp language laptop large later latin laugh laundry lava law lawn lawsuit layer lazy leader leaf learn leave lecture left leg legal legend leisure lemon lend length lens leopard lesson letter level liar liberty library license life lift light like limb limit link lion liquid list little live lizard load loan lobster local lock logic lonely long loop lottery loud lounge love loyal lucky luggage lumber lunar lunch luxury lyrics machine mad magic magnet maid mail main major make mammal man manage mandate mango mansion manual maple marble march margin marine market marriage mask mass master match material math matrix matter maximum maze meadow mean measure meat mechanic medal media melody melt member memory mention menu mercy merge merit merry mesh message metal method middle midnight milk million mimic mind minimum minor minute miracle mirror misery miss mistake mix mixed mixture mobile model modify mom moment monitor monkey monster month moon moral more morning mosquito mother motion motor mountain mouse move movie much muffin mule multiply muscle museum mushroom music must mutual myself mystery myth naive name napkin narrow nasty nation nature near neck need negative neglect neither nephew nerve nest net network neutral never news next nice night noble noise nominee noodle normal north nose notable note nothing notice novel now nuclear number nurse nut oak obey object oblige obscure observe obtain obvious occur ocean october odor off offer office often oil okay old olive olympic omit once one onion online only open opera opinion oppose option orange orbit orchard order ordinary organ orient original orphan ostrich other outdoor outer output outside oval oven over own owner oxygen oyster ozone pact paddle page pair palace palm panda panel panic panther paper parade parent park parrot party pass patch path patient patrol pattern pause pave payment peace peanut pear peasant pelican pen penalty pencil people pepper perfect permit person pet phone photo phrase physical piano picnic picture piece pig pigeon pill pilot pink pioneer pipe pistol pitch pizza place planet plastic plate play please pledge pluck plug plunge poem poet point polar pole police pond pony pool popular portion position possible post potato pottery poverty powder power practice praise predict prefer prepare present pretty prevent price pride primary print priority prison private prize problem process produce profit program project promote proof property prosper protect proud provide public pudding pull pulp pulse pumpkin punch pupil puppy purchase purity purpose purse push put puzzle pyramid quality quantum quarter question quick quit quiz quote rabbit raccoon race rack radar radio rail rain raise rally ramp ranch random range rapid rare rate rather raven raw razor ready real reason rebel rebuild recall receive recipe record recycle reduce reflect reform refuse region regret regular reject relax release relief rely remain remember remind remove render renew rent reopen repair repeat replace report require rescue resemble resist resource response result retire retreat return reunion reveal review reward rhythm rib ribbon rice rich ride ridge rifle right rigid ring riot ripple risk ritual rival river road roast robot robust rocket romance roof rookie room rose rotate rough round route royal rubber rude rug rule run runway rural sad saddle sadness safe sail salad salmon salon salt salute same sample sand satisfy satoshi sauce sausage save say scale scan scare scatter scene scheme school science scissors scorpion scout scrap screen script scrub sea search season seat second secret section security seed seek segment select sell seminar senior sense sentence series service session settle setup seven shadow shaft shallow share shed shell sheriff shield shift shine ship shiver shock shoe shoot shop short shoulder shove shrimp shrug shuffle shy sibling sick side siege sight sign silent silk silly silver similar simple since sing siren sister situate six size skate sketch ski skill skin skirt skull slab slam sleep slender slice slide slight slim slogan slot slow slush small smart smile smoke smooth snack snake snap sniff snow soap soccer social sock soda soft solar soldier solid solution solve someone song soon sorry sort soul sound soup source south space spare spatial spawn speak special speed spell spend sphere spice spider spike spin spirit split spoil sponsor spoon sport spot spray spread spring spy square squeeze squirrel stable stadium staff stage stairs stamp stand start state stay steak steel stem step stereo stick still sting stock stomach stone stool story stove strategy street strike strong struggle student stuff stumble style subject submit subway success such sudden suffer sugar suggest suit summer sun sunny sunset super supply supreme sure surface surge surprise surround survey suspect sustain swallow swamp swap swarm swear sweet swift swim swing switch sword symbol symptom syrup system table tackle tag tail talent talk tank tape target task taste tattoo taxi teach team tell ten tenant tennis tent term test text thank that theme then theory there they thing this thought three thrive throw thumb thunder ticket tide tiger tilt timber time tiny tip tired tissue title toast tobacco today toddler toe together toilet token tomato tomorrow tone tongue tonight tool tooth top topic topple torch tornado tortoise toss total tourist toward tower town toy track trade traffic tragic train transfer trap trash travel tray treat tree trend trial tribe trick trigger trim trip trophy trouble truck true truly trumpet trust truth try tube tuition tumble tuna tunnel turkey turn turtle twelve twenty twice twin twist two type typical ugly umbrella unable unaware uncle uncover under undo unfair unfold unhappy uniform unique unit universe unknown unlock until unusual unveil update upgrade uphold upon upper upset urban urge usage use used useful useless usual utility vacant vacuum vague valid valley valve van vanish vapor various vast vault vehicle velvet vendor venture venue verb verify version very vessel veteran viable vibrant vicious victory video view village vintage violin virtual virus visa visit visual vital vivid vocal voice void volcano volume vote voyage wage wagon wait walk wall walnut want warfare warm warrior wash wasp waste water wave way wealth weapon wear weasel weather web wedding weekend weird welcome west wet whale what wheat wheel when where whip whisper wide width wife wild will win window wine wing wink winner winter wire wisdom wise wish witness wolf woman wonder wood wool word work world worry worth wrap wreck wrestle wrist write wrong yard year yellow you young youth zebra zero zone zoo'.split(' ')};
+const IDX={pt:new Map(WORDS.pt.map((w,i)=>[w,i])),en:new Map(WORDS.en.map((w,i)=>[w,i]))};
+const sha256=async b=>new Uint8Array(await S.digest('SHA-256',b));
+async function entropyToWords(ent,lang){
+  const h=await sha256(ent);let bits='';
+  for(const b of ent)bits+=b.toString(2).padStart(8,'0');
+  bits+=h[0].toString(2).padStart(8,'0').slice(0,ent.length/4);
+  const out=[];for(let i=0;i<bits.length;i+=11)out.push(WORDS[lang][parseInt(bits.slice(i,i+11),2)]);
+  return out;
+}
+const normWords=t=>t.normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z\s]/g,' ').trim().split(/\s+/).filter(Boolean);
+async function wordsToEntropy(words){
+  if(words.length!==12)throw{code:'count'};
+  const langs=['pt','en'].filter(l=>words.every(w=>IDX[l].has(w)));
+  if(!langs.length){
+    const best=['pt','en'].sort((a,b)=>words.filter(w=>IDX[b].has(w)).length-words.filter(w=>IDX[a].has(w)).length)[0];
+    throw{code:'word',bad:words.map((w,i)=>IDX[best].has(w)?-1:i+1).filter(i=>i>0)};
+  }
+  for(const lang of langs){
+    let bits='';for(const w of words)bits+=IDX[lang].get(w).toString(2).padStart(11,'0');
+    const ent=new Uint8Array(16);for(let i=0;i<16;i++)ent[i]=parseInt(bits.slice(i*8,i*8+8),2);
+    const h=await sha256(ent);
+    if(h[0].toString(2).padStart(8,'0').slice(0,4)===bits.slice(128))return{ent,lang};
+  }
+  throw{code:'checksum'};
+}
+async function wordsToSeed(words){
+  const k=await S.importKey('raw',te.encode(words.join(' ').normalize('NFKD')),'PBKDF2',false,['deriveBits']);
+  return new Uint8Array(await S.deriveBits({name:'PBKDF2',hash:'SHA-512',salt:te.encode('mnemonic'),iterations:2048},k,512));
+}
+
+/* ================= derivação de chaves ================= */
+const PK8={ed:hexB('302e020100300506032b657004220420'),x:hexB('302e020100300506032b656e04220420')};
+async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
+  const k=await S.importKey('raw',ikm,'HKDF',false,['deriveBits']);
+  return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:te.encode(info)},k,len));
+}
+const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
+async function deriveIdentity(seed){
+  const edSeed=await hkdf(seed,'ssi/ed25519'),xSeed=await hkdf(seed,'ssi/x25519'),vBits=await hkdf(seed,'vault/aes-256-gcm');
+  const pubOf=async(der,alg,use)=>b64u.dec((await S.exportKey('jwk',await S.importKey('pkcs8',der,{name:alg},true,use))).x);
+  const edDer=cat(PK8.ed,edSeed),xDer=cat(PK8.x,xSeed);
+  const edPub=await pubOf(edDer,'Ed25519',['sign']),xPub=await pubOf(xDer,'X25519',['deriveBits']);
+  const id={
+    edPriv:await S.importKey('pkcs8',edDer,{name:'Ed25519'},false,['sign']),
+    xPriv:await S.importKey('pkcs8',xDer,{name:'X25519'},false,['deriveBits']),
+    vaultKey:await S.importKey('raw',vBits,{name:'AES-GCM'},false,['encrypt','decrypt']),
+    edPub,xPub,edMb:multibase([0xed,0x01],edPub),xMb:multibase([0xec,0x01],xPub)
+  };
+  id.did='did:key:'+id.edMb;
+  [edSeed,xSeed,vBits,edDer,xDer].forEach(b=>b.fill(0));
+  return id;
+}
+
+/* ================= AES-256-GCM ================= */
+async function seal(key,data,aad){
+  const iv=rnd(12),p={name:'AES-GCM',iv};if(aad)p.additionalData=te.encode(aad);
+  const pt=data instanceof Uint8Array?data:te.encode(JSON.stringify(data));
+  return{iv:b64u.enc(iv),ct:b64u.enc(await S.encrypt(p,key,pt))};
+}
+async function unseal(key,rec,aad,raw){
+  const p={name:'AES-GCM',iv:b64u.dec(rec.iv)};if(aad)p.additionalData=te.encode(aad);
+  const pt=new Uint8Array(await S.decrypt(p,key,b64u.dec(rec.ct)));
+  return raw?pt:JSON.parse(td.decode(pt));
+}
+
+/* ================= PIN + chave do aparelho ================= */
+const PIN_ITER=600000, MAX_FAILS=10, SOFT_FAILS=5;
+async function pinKey(pin,salt,iter){
+  const k=await S.importKey('raw',te.encode(pin),'PBKDF2',false,['deriveKey']);
+  return S.deriveKey({name:'PBKDF2',hash:'SHA-256',salt,iterations:iter},k,{name:'AES-GCM',length:256},false,['encrypt','decrypt']);
+}
+async function deviceKey(create){
+  let dk=await DB.get('deviceKey');
+  if(!dk&&create){dk=await S.generateKey({name:'AES-GCM',length:256},false,['encrypt','decrypt']);await DB.set('deviceKey',dk)}
+  return dk;
+}
+async function writeLock(ent,pin){
+  const dk=await deviceKey(true);
+  const inner=await seal(dk,ent,'device');
+  const salt=rnd(16),outer=await seal(await pinKey(pin,salt,PIN_ITER),te.encode(JSON.stringify(inner)),'pin');
+  await DB.set('lock',{v:1,salt:b64u.enc(salt),iter:PIN_ITER,...outer});
+}
+class PinError extends Error{}
+async function readLock(pin){
+  const L=await DB.get('lock'),dk=await deviceKey(false);
+  if(!L||!dk)throw new Error('missing');
+  let inner;
+  try{inner=JSON.parse(td.decode(await unseal(await pinKey(pin,b64u.dec(L.salt),L.iter),L,'pin',true)))}
+  catch{throw new PinError()}
+  return unseal(dk,inner,'device',true);
+}
+const getGuard=async()=>(await DB.get('guard'))||{fails:0,until:0};
+const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p)||/^(\d\d)\1\1$/.test(p)||/^(\d{3})\1$/.test(p);
+const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
+
+/* ================= credenciais: vocabulário comum ================= */
+const VC_TYPES={
+  IdentityCredential:{label:'Identidade',claims:[['nome',''],['documento','']]},
+  AgeOver18Credential:{label:'Maioridade',claims:[['maiorDeIdade','true']]},
+  EmploymentCredential:{label:'Vínculo profissional',claims:[['empresa',''],['cargo','']]},
+  ResidenceCredential:{label:'Residência',claims:[['cidade',''],['uf','']]},
+  DocumentRegistrationCredential:{label:'Registro de documento',claims:[]},
+  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
+};
+const vcLabel=t=>(VC_TYPES[t]||{}).label||t;
+const vcType=p=>((p.vc&&p.vc.type)||[]).find(t=>t!=='VerifiableCredential')||'CustomCredential';
+const vcClaims=p=>Object.entries((p.vc&&p.vc.credentialSubject)||{}).filter(([k])=>k!=='id');
+const vcIssuerName=p=>(p.vc&&p.vc.issuer&&p.vc.issuer.name)||shortDid(p.iss);
+const fmtVal=v=>v===true?'sim':v===false?'não':String(v);
+const VC_CONTEXT=['https://www.w3.org/2018/credentials/v1'];
+
+/* ================= JWT EdDSA ================= */
+async function signJWT(typ,payload){
+  const header={alg:'EdDSA',typ,kid:`${ses.did}#${ses.edMb}`};
+  const si=b64u.enc(te.encode(JSON.stringify(header)))+'.'+b64u.enc(te.encode(JSON.stringify(payload)));
+  return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(si)));
+}
+function decodeJWT(tok){
+  const p=String(tok).trim().split('.');
+  if(p.length!==3)throw new Error('Um token JWT tem três partes separadas por ponto.');
+  try{return{header:JSON.parse(td.decode(b64u.dec(p[0]))),payload:JSON.parse(td.decode(b64u.dec(p[1]))),parts:p}}
+  catch{throw new Error('O conteúdo colado não é um JWT legível.')}
+}
+function didToEdKey(did){
+  if(!/^did:key:z/.test(did))throw new Error('O assinante não usa did:key, então a chave não pode ser lida do próprio DID.');
+  const b=b58dec(did.slice(9));
+  if(b.length!==34||b[0]!==0xed||b[1]!==0x01)throw new Error('O did:key não é uma chave Ed25519.');
+  return S.importKey('raw',b.slice(2),{name:'Ed25519'},false,['verify']);
+}
+async function verifyJWT(tok){
+  const{header,payload,parts}=decodeJWT(tok);
+  if(header.alg!=='EdDSA')throw new Error(`Algoritmo ${header.alg} não suportado. Use EdDSA.`);
+  const did=String(header.kid||payload.iss||'').split('#')[0];
+  if(payload.iss&&payload.iss!==did)throw new Error('O emissor declarado não confere com a chave que assinou.');
+  const ok=await S.verify({name:'Ed25519'},await didToEdKey(did),b64u.dec(parts[2]),te.encode(parts[0]+'.'+parts[1]));
+  return{ok,header,payload,did,tok:String(tok).trim()};
+}
+
+/* ================= mensagens (X25519 + AES-256-GCM) ================= */
+function parseXKey(s){
+  s=s.trim();let raw;
+  if(s.startsWith('z')){const b=b58dec(s.slice(1));if(b.length!==34||b[0]!==0xec||b[1]!==0x01)throw new Error('Essa não é uma chave de cifragem X25519. Ela começa com z6LS.');raw=b.slice(2)}
+  else raw=b64u.dec(s);
+  if(raw.length!==32)throw new Error('A chave de cifragem tem tamanho inválido.');
+  return raw;
+}
+async function msgKey(shared,ephPub,toPub){return S.importKey('raw',await hkdf(shared,'msg/aes-256-gcm',cat(ephPub,toPub)),{name:'AES-GCM'},false,['encrypt','decrypt'])}
+async function sealFor(toMb,text){
+  const toPub=parseXKey(toMb);
+  const rp=await S.importKey('raw',toPub,{name:'X25519'},false,[]);
+  const eph=await S.generateKey({name:'X25519'},true,['deriveBits']);
+  const ephPub=new Uint8Array(await S.exportKey('raw',eph.publicKey));
+  const shared=new Uint8Array(await S.deriveBits({name:'X25519',public:rp},eph.privateKey,256));
+  const r=await seal(await msgKey(shared,ephPub,toPub),te.encode(text));shared.fill(0);
+  return['smsg1',b64u.enc(ephPub),r.iv,r.ct].join('.');
+}
+async function openMsg(pkg){
+  const p=pkg.trim().split('.');
+  if(p.length!==4||p[0]!=='smsg1')throw new Error('Isso não parece uma mensagem cifrada. Ela começa com smsg1.');
+  const ephPub=b64u.dec(p[1]);
+  const shared=new Uint8Array(await S.deriveBits({name:'X25519',public:await S.importKey('raw',ephPub,{name:'X25519'},false,[])},ses.xPriv,256));
+  try{return td.decode(await unseal(await msgKey(shared,ephPub,ses.xPub),{iv:p[2],ct:p[3]},null,true))}
+  catch{throw new Error('Esta mensagem não foi cifrada para a sua chave, ou foi alterada.')}
+  finally{shared.fill(0)}
+}
+
+/* ================= sessão ================= */
+let ses=null, draft=null, activePad=null;
+async function startSession(ent,lang){
+  const words=await entropyToWords(ent,lang),seed=await wordsToSeed(words);
+  const id=await deriveIdentity(seed);seed.fill(0);
+  ses={...id,ent:new Uint8Array(ent),lang};
+  const meta=await DB.get('meta');
+  await DB.set('meta',{did:ses.did,lang,created:meta&&meta.did===ses.did?meta.created:Date.now()});
+  await APP.load();
+  touch();
+}
+let lastAct=Date.now();
+const autoMin=()=>+(store.get('auto')||APP.autoDefault||3);
+const touch=()=>{lastAct=Date.now()};
+['pointerdown','keydown','scroll'].forEach(e=>addEventListener(e,touch,{passive:true}));
+setInterval(()=>{if(ses&&Date.now()-lastAct>autoMin()*60000)lockNow('Bloqueado por inatividade.')},5000);
+document.addEventListener('visibilitychange',()=>{if(!document.hidden&&ses&&Date.now()-lastAct>autoMin()*60000)lockNow('Bloqueado por inatividade.')});
+
+/* ================= UI base ================= */
+function show(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on',s.id===id));
+  document.body.dataset.screen=id;scrollTo(0,0);
+  if(id!=='sPin'&&!$('#sheet').classList.contains('open'))activePad=null;
+}
+let toastT;
+function toast(msg,bad){const t=$('#toast');t.querySelector('span').textContent=msg;t.classList.toggle('bad',!!bad);t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2800)}
+let sheetClose=null;
+function openSheet(html,onClose){
+  const b=$('#sheetBody');b.onclick=null;b.innerHTML=html;sheetClose=onClose||null;paintIcons(b);
+  $('#sheet').classList.add('open');$('#scrim').classList.add('open');$('#sheet').scrollTop=0;
+}
+function closeSheet(){
+  $('#sheet').classList.remove('open');$('#scrim').classList.remove('open');
+  const f=sheetClose;sheetClose=null;activePad=null;
+  setTimeout(()=>{if(!$('#sheet').classList.contains('open'))$('#sheetBody').innerHTML=''},450);
+  f&&f();
+}
+$('#scrim').onclick=closeSheet;
+function confirmSheet(title,text,ok,danger){
+  return new Promise(res=>{
+    openSheet(`<h3>${title}</h3><p class="sub">${text}</p><div class="pair"><button class="btn ghost" id="cfNo">Cancelar</button><button class="btn ${danger?'danger':''}" id="cfOk">${ok}</button></div>`,()=>res(false));
+    $('#cfNo').onclick=()=>closeSheet();
+    $('#cfOk').onclick=()=>{sheetClose=null;closeSheet();res(true)};
+  });
+}
+async function copy(text,label='Copiado'){
+  try{await navigator.clipboard.writeText(text);toast(label)}
+  catch{const t=document.createElement('textarea');t.value=text;t.style.cssText='position:fixed;opacity:0';document.body.appendChild(t);t.select();
+    let ok=false;try{ok=document.execCommand('copy')}catch{}t.remove();toast(ok?label:'Não foi possível copiar. Selecione o texto e copie manualmente.',!ok)}
+}
+function setSeg(seg,i){seg.style.setProperty('--i',i);seg.querySelectorAll('button').forEach((b,j)=>b.setAttribute('aria-pressed',j===i))}
+function wireSeg(seg,onPick){seg.onclick=e=>{const b=e.target.closest('button');if(!b)return;const i=[...seg.querySelectorAll('button')].indexOf(b);setSeg(seg,i);onPick(b,i)}}
+const verdictHtml=(ok,title,text)=>`<div class="verdict glass flat ${ok?'ok':'no'}"><span class="badge">${ic(ok?'check':'x')}</span><div><b>${title}</b><small>${text}</small></div></div>`;
+const shake=el=>{el.classList.remove('bad');void el.offsetWidth;el.classList.add('bad')};
+
+function applyTheme(t){
+  t=t||store.get('theme')||(matchMedia('(prefers-color-scheme: dark)').matches?'dark':'light');
+  document.documentElement.dataset.theme=t;$('#metaTheme').content=t==='dark'?'#0B1B33':'#DCEBFA';
+}
+$('#themeBtn').onclick=()=>{const t=document.documentElement.dataset.theme==='dark'?'light':'dark';store.set('theme',t);applyTheme(t)};
+
+/* ================= teclado de PIN ================= */
+function makePad(root,{onPin}){
+  root.classList.add('pad');
+  root.innerHTML=`<div class="dots">${'<i></i>'.repeat(6)}</div><p class="pmsg" role="status" aria-live="polite"></p><div class="keys">${[1,2,3,4,5,6,7,8,9].map(n=>`<button class="k" data-k="${n}">${n}</button>`).join('')}<button class="k fn" data-k="x"></button><button class="k" data-k="0">0</button><button class="k fn" data-k="del" aria-label="Apagar dígito">${ic('bksp')}</button></div>`;
+  let v='',busy=false;
+  const dotsEl=root.querySelector('.dots'),dots=[...dotsEl.children],msg=root.querySelector('.pmsg');
+  const draw=()=>dots.forEach((d,i)=>d.classList.toggle('on',i<v.length));
+  const api={
+    async key(k){
+      if(busy||k==='x')return;
+      if(k==='del'){v=v.slice(0,-1);draw();return}
+      if(v.length>=6)return;
+      v+=k;draw();
+      if(v.length===6){busy=true;root.classList.add('busy');const pin=v;await new Promise(r=>setTimeout(r,140));
+        try{await onPin(pin,api)}catch(e){console.error(e);api.reset('Algo falhou. Tente de novo.',true)}}
+    },
+    reset(m,bad){v='';draw();busy=false;root.classList.remove('busy');msg.textContent=m||'';msg.classList.toggle('bad',!!bad);
+      if(bad){dotsEl.classList.remove('shake');void dotsEl.offsetWidth;dotsEl.classList.add('shake')}},
+    say(m){msg.textContent=m;msg.classList.remove('bad')}
+  };
+  root.onclick=e=>{const b=e.target.closest('.k');if(b)api.key(b.dataset.k)};
+  activePad=api;return api;
+}
+addEventListener('keydown',e=>{
+  if(!activePad||e.target.matches('input,textarea,select'))return;
+  if(/^\d$/.test(e.key)){e.preventDefault();activePad.key(e.key)}
+  else if(e.key==='Backspace'){e.preventDefault();activePad.key('del')}
+});
+
+/* ================= criação ================= */
+document.querySelectorAll('[data-go]').forEach(b=>b.onclick=()=>show(b.dataset.go));
+$('#goCreate').onclick=async()=>{draft={ent:rnd(16),lang:'pt'};setSeg($('#langSeg'),0);await drawWords();show('sWords')};
+async function drawWords(){
+  draft.words=await entropyToWords(draft.ent,draft.lang);
+  $('#wordGrid').innerHTML=draft.words.map(w=>`<li>${w}</li>`).join('');
+  $('#wordGrid').classList.add('veil');$('#toggleVeil').textContent='Mostrar palavras';
+}
+$('#toggleVeil').onclick=()=>{const g=$('#wordGrid');g.classList.toggle('veil');$('#toggleVeil').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
+wireSeg($('#langSeg'),async b=>{draft.lang=b.dataset.l;await drawWords()});
+$('#wordsNew').onclick=async()=>{draft.ent=rnd(16);await drawWords();toast('Novas palavras geradas')};
+$('#wordsDone').onclick=()=>{
+  const pos=[];while(pos.length<3){const p=1+crypto.getRandomValues(new Uint32Array(1))[0]%12;if(!pos.includes(p))pos.push(p)}
+  draft.check=pos.sort((a,b)=>a-b);
+  $('#confirmFields').innerHTML=draft.check.map(p=>`<label class="f" data-p="${p}"><span>Palavra nº ${p}</span><input autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false"></label>`).join('');
+  $('#confirmHint').textContent='';show('sConfirm');$('#confirmFields input').focus();
+};
+$('#confirmGo').onclick=()=>{
+  let ok=true;
+  $('#confirmFields').querySelectorAll('.f').forEach(f=>{const good=normWords(f.querySelector('input').value)[0]===draft.words[f.dataset.p-1];f.classList.toggle('bad',!good);if(!good)ok=false});
+  if(!ok){$('#confirmHint').textContent='Alguma palavra não confere. Volte e confira a anotação.';$('#confirmHint').classList.add('bad');return}
+  pinSetup(draft.ent,draft.lang,'sConfirm');
+};
+
+/* ================= recuperação ================= */
+function goRecover(from){$('#recWords').value='';$('#recHint').textContent='0 de 12 palavras';$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad');$('#recBack').onclick=()=>from==='lock'?showLock():show('sWelcome');show('sRecover')}
+$('#goRecover').onclick=()=>goRecover('welcome');
+$('#recWords').oninput=()=>{const n=normWords($('#recWords').value).length;$('#recHint').textContent=`${n} de 12 palavras`;$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad')};
+$('#recGo').onclick=async()=>{
+  const words=normWords($('#recWords').value),hint=$('#recHint');
+  const fail=m=>{hint.textContent=m;hint.classList.add('bad');shake($('#recField'))};
+  let r;
+  try{r=await wordsToEntropy(words)}
+  catch(e){
+    if(e.code==='count')return fail(`São 12 palavras. Você digitou ${words.length}.`);
+    if(e.code==='word')return fail(`${e.bad.length>1?'As palavras':'A palavra'} nº ${e.bad.join(', ')} não ${e.bad.length>1?'estão':'está'} na lista oficial. Confira a grafia.`);
+    return fail('As palavras existem, mas a combinação não fecha. Confira a ordem.');
+  }
+  $('#recGo').disabled=true;
+  try{
+    const seed=await wordsToSeed(words),id=await deriveIdentity(seed);seed.fill(0);
+    const meta=await DB.get('meta');
+    if(meta&&meta.did!==id.did){
+      const go=await confirmSheet('Outra identidade','Estas palavras pertencem a uma identidade diferente da que está neste aparelho. Os dados atuais não abrem com elas e serão apagados.','Substituir',true);
+      if(!go)return;
+      for(const k of APP.dataKeys)await DB.del(k);
+      await DB.del('meta');
+    }
+    pinSetup(r.ent,r.lang,'sRecover');
+  }finally{$('#recGo').disabled=false}
+};
+
+/* ================= PIN ================= */
+function pinSetup(ent,lang,from){
+  show('sPin');$('#pinOrb').classList.remove('opening');
+  const T=$('#pinTitle');
+  T.textContent='Crie um PIN de 6 dígitos';
+  $('#pinSub').textContent='Ele só abre neste aparelho. A chave mestra continua sendo as 12 palavras.';
+  $('#pinLink').textContent='Cancelar';$('#pinLink').onclick=()=>show(from);
+  let first=null;
+  makePad($('#pinPad'),{onPin:async(pin,a)=>{
+    if(!first){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;T.textContent='Repita o PIN';return a.reset()}
+    if(pin!==first){first=null;T.textContent='Crie um PIN de 6 dígitos';return a.reset('Os PINs não conferem. Comece de novo.',true)}
+    a.say('Protegendo as chaves…');
+    await writeLock(ent,pin);await DB.set('guard',{fails:0,until:0});
+    await startSession(ent,lang);draft=null;
+    await openAnim();enterApp();toast(from==='sRecover'?'Identidade recuperada':APP.createdMsg);
+  }});
+}
+async function showLock(msg){
+  const meta=await DB.get('meta');
+  show('sPin');$('#pinOrb').classList.remove('opening');
+  $('#pinTitle').textContent='Digite seu PIN';
+  $('#pinSub').textContent=meta?shortDid(meta.did):'';
+  $('#pinLink').textContent='Esqueci meu PIN';$('#pinLink').onclick=()=>goRecover('lock');
+  const pad=makePad($('#pinPad'),{onPin:async(pin,a)=>{
+    const g=await getGuard();
+    if(Date.now()<g.until)return a.reset(`Aguarde ${Math.ceil((g.until-Date.now())/1000)} s para tentar de novo.`,true);
+    a.say('Abrindo…');
+    let ent;
+    try{ent=await readLock(pin)}
+    catch(e){
+      if(!(e instanceof PinError))return a.reset('A chave deste aparelho sumiu. Recupere com as 12 palavras.',true);
+      g.fails++;
+      if(g.fails>=MAX_FAILS){await DB.clear();toast('Dados apagados após 10 tentativas erradas',true);return show('sWelcome')}
+      if(g.fails>=SOFT_FAILS)g.until=Date.now()+30000*2**(g.fails-SOFT_FAILS);
+      await DB.set('guard',g);
+      const left=MAX_FAILS-g.fails;
+      return a.reset(g.fails>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(g.fails-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.',true);
+    }
+    await DB.set('guard',{fails:0,until:0});
+    await startSession(ent,meta.lang);
+    await openAnim();enterApp();
+  }});
+  if(msg)pad.say(msg);
+}
+function openAnim(){
+  return new Promise(r=>{
+    if(matchMedia('(prefers-reduced-motion: reduce)').matches)return r();
+    const o=$('#pinOrb');o.classList.remove('opening');void o.offsetWidth;o.classList.add('opening');setTimeout(r,650);
+  });
+}
+function lockNow(msg){
+  if(!ses)return;
+  if(ses.ent)ses.ent.fill(0);ses=null;
+  if($('#sheet').classList.contains('open')){sheetClose=null;closeSheet()}
+  APP.onLock();
+  showLock(msg);
+}
+$('#lockBtn').onclick=()=>lockNow();
+
+/* ================= navegação ================= */
+function enterApp(){show('sApp');$('#didShort').textContent=shortDid(ses.did);APP.enter()}
+function setView(v){
+  document.querySelectorAll('.view').forEach(x=>x.classList.toggle('on',x.id===v));
+  document.querySelectorAll('.dock [data-v]').forEach(b=>b.setAttribute('aria-current',b.dataset.v===v));
+  scrollTo(0,0);APP.onView&&APP.onView(v);
+}
+document.querySelectorAll('.dock [data-v]').forEach(b=>b.onclick=()=>setView(b.dataset.v));
+
+/* ================= ajustes comuns ================= */
+function mountCommonSettings(el){
+  el.innerHTML=`<div class="sec-h">Segurança</div>
+  <div class="list glass flat">
+    <button class="tx" data-cs="words"><span class="dot" data-ic="note"></span><span class="t"><b>Ver as 12 palavras</b><small>Pede o PIN</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="pin"><span class="dot" data-ic="key"></span><span class="t"><b>Trocar PIN</b><small>Pede o PIN atual</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="auto"><span class="dot" data-ic="clock"></span><span class="t"><b>Bloqueio automático</b><small>Sem uso por este tempo, tudo fecha</small></span><span class="rv" id="csAuto"></span></button>
+    <button class="tx" data-cs="lock"><span class="dot" data-ic="lock"></span><span class="t"><b>Bloquear agora</b></span></button>
+  </div>
+  <div class="sec-h">Backup</div>
+  <div class="list glass flat">
+    <button class="tx" data-cs="export"><span class="dot" data-ic="copy"></span><span class="t"><b>Copiar backup cifrado</b><small>Só abre com as 12 palavras</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="import"><span class="dot" data-ic="restore"></span><span class="t"><b>Restaurar backup</b><small>${APP.importHint}</small></span>${ic('chev')}</button>
+  </div>
+  <div class="sec-h">Sobre</div>
+  <div class="list glass flat">
+    <button class="tx" data-cs="how"><span class="dot" data-ic="shield"></span><span class="t"><b>Como funciona</b></span>${ic('chev')}</button>
+    <button class="tx danger" data-cs="wipe"><span class="dot" style="background:rgba(194,65,47,.1);color:var(--out)" data-ic="trash"></span><span class="t"><b>Apagar tudo deste aparelho</b><small>Recuperável só com as 12 palavras e um backup</small></span></button>
+  </div>`;
+  paintIcons(el);
+  $('#csAuto').textContent=autoMin()+' min';
+  el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};
+}
+function reauth(title){
+  return new Promise(res=>{
+    openSheet(`<div style="text-align:center"><h3>${title}</h3><p class="sub">Confirme com seu PIN.</p><div id="raPad"></div></div>`,()=>res(false));
+    makePad($('#raPad'),{onPin:async(pin,a)=>{a.say('Conferindo…');try{await readLock(pin);res(true)}catch{a.reset('PIN incorreto.',true)}}});
+  });
+}
+const CS={
+  async words(){
+    if(!await reauth('Ver as 12 palavras'))return;
+    const words=await entropyToWords(ses.ent,ses.lang);
+    openSheet(`<h3>As 12 palavras</h3><p class="sub">Confira que ninguém está olhando a tela.</p><ol class="words glass veil" id="swGrid">${words.map(w=>`<li>${w}</li>`).join('')}</ol><div class="reveal"><button class="link" id="swT" style="margin:0">Mostrar palavras</button></div><button class="btn ghost" id="swClose">Fechar</button>`);
+    $('#swT').onclick=()=>{const g=$('#swGrid');g.classList.toggle('veil');$('#swT').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
+    $('#swClose').onclick=closeSheet;
+  },
+  pin(){
+    let step=0,first=null;
+    openSheet(`<div style="text-align:center"><h3 id="cpT">Digite o PIN atual</h3><p class="sub" id="cpS">Para trocar, confirme quem você é.</p><div id="cpPad"></div></div>`);
+    makePad($('#cpPad'),{onPin:async(pin,a)=>{
+      const T=$('#cpT');
+      if(step===0){a.say('Conferindo…');try{await readLock(pin)}catch{return a.reset('PIN incorreto.',true)}step=1;T.textContent='Novo PIN';$('#cpS').textContent='Seis dígitos, sem sequências.';return a.reset()}
+      if(step===1){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;step=2;T.textContent='Repita o novo PIN';return a.reset()}
+      if(pin!==first){step=1;first=null;T.textContent='Novo PIN';return a.reset('Os PINs não conferem. Digite o novo PIN de novo.',true)}
+      a.say('Salvando…');await writeLock(ses.ent,pin);closeSheet();toast('PIN alterado');
+    }});
+  },
+  auto(){const opts=[1,3,5,10,30],n=opts[(opts.indexOf(autoMin())+1)%opts.length];store.set('auto',n);$('#csAuto').textContent=n+' min';toast(`Bloqueia após ${n} min sem uso`)},
+  lock(){lockNow()},
+  async export(){
+    const b=await seal(ses.vaultKey,{v:1,app:APP.db,did:ses.did,at:Date.now(),data:await APP.exportData()},'backup');
+    const txt=['scb1',b.iv,b.ct].join('.');
+    openSheet(`<h3>Backup cifrado</h3><p class="sub">Guarde este texto onde quiser, como e-mail ou nuvem. Ele só abre com as 12 palavras desta identidade.</p><label class="f"><span>Backup</span><textarea class="mono" rows="6" readonly id="bkT">${txt}</textarea></label><button class="btn" id="bkC">Copiar backup</button>`);
+    $('#bkC').onclick=()=>copy(txt,'Backup copiado');
+  },
+  import(){
+    openSheet(`<h3>Restaurar backup</h3><p class="sub">${APP.importHint}.</p><label class="f" id="riF"><span>Backup</span><textarea class="mono" rows="6" id="riT" spellcheck="false" placeholder="scb1.…"></textarea></label><p class="hint" id="riH"></p><button class="btn" id="riGo">Restaurar</button>`);
+    $('#riGo').onclick=async()=>{
+      const p=$('#riT').value.trim().split('.'),H=$('#riH');
+      const fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#riF'))};
+      if(p.length!==3||p[0]!=='scb1')return fail('Isso não parece um backup. Ele começa com scb1.');
+      let d;try{d=await unseal(ses.vaultKey,{iv:p[1],ct:p[2]},'backup')}catch{return fail('Este backup pertence a outra identidade ou foi alterado.')}
+      if(d.app&&d.app!==APP.db)return fail('Este backup é de outro serviço.');
+      const msg=await APP.importData(d.data);closeSheet();toast(msg);
+    };
+  },
+  how(){openSheet(`<h3>Como funciona</h3><div class="prose">${APP.howHtml}</div><button class="btn ghost" id="howClose">Entendi</button>`);$('#howClose').onclick=closeSheet},
+  async wipe(){
+    if(!await confirmSheet('Apagar tudo deste aparelho','A identidade, as chaves e todos os dados somem daqui. Para voltar, você precisará das 12 palavras e de um backup.','Apagar tudo',true))return;
+    if(ses&&ses.ent)ses.ent.fill(0);ses=null;APP.onLock();await DB.clear();show('sWelcome');toast('Tudo apagado');
+  }
+};
+
+/* ================= início ================= */
+async function supports(){
+  try{if(!window.isSecureContext||!S)return false;await S.generateKey({name:'Ed25519'},false,['sign','verify']);await S.generateKey({name:'X25519'},false,['deriveBits']);return true}catch{return false}
+}
+async function boot(){
+  applyTheme();
+  if(!await supports()){$('#unsupported').hidden=false;$('#goCreate').disabled=true;$('#goRecover').disabled=true;return show('sWelcome')}
+  try{await DB.db()}catch{DB._mem=new Map();toast('Armazenamento indisponível: os dados vão durar só esta sessão',true)}
+  const meta=await DB.get('meta'),lock=await DB.get('lock');
+  if(meta&&lock)showLock();else show('sWelcome');
+}
+
+/* ================= serviço ================= */
+const TYPES={
+  senha:{label:'Senha',plural:'Senhas',icon:'key',fields:[['user','Usuário ou e-mail'],['pass','Senha','secret'],['url','Site ou app']]},
+  nota:{label:'Nota',plural:'Notas',icon:'note',fields:[['text','Texto','area']]},
+  doc:{label:'Documento',plural:'Documentos',icon:'id',fields:[['num','Número','secret'],['issuer','Órgão emissor'],['exp','Validade']]}
+};
+
+const APP={
+  db:'systekna-carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
+  importHint:'Junta itens e credenciais ao que já está aqui',
+  howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
+  <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O cartório confere essa assinatura e só então sabe que quem pede controla o DID.</p>
+  <p><b>Credencial.</b> É uma afirmação sobre você assinada pela chave do cartório. Ela fica cifrada aqui e não serve sozinha como prova.</p>
+  <p><b>Apresentação.</b> Quem verifica gera um desafio novo. A carteira embrulha a credencial e assina junto com esse desafio. Assim o verificador confere que a credencial é verdadeira e que foi o dono quem apresentou, agora. Uma cópia antiga não passa.</p>
+  <p><b>PIN.</b> Ele só destrava as chaves neste aparelho, em duas camadas: PBKDF2-SHA256 com 600 mil iterações e uma chave do aparelho que o navegador não deixa exportar. Seis dígitos são 1 milhão de combinações, então em produção o PIN deve ser conferido por hardware seguro.</p>`,
+  async load(){
+    ses.items=[];
+    for(const r of (await DB.get('items'))||[]){try{ses.items.push({rec:r,data:await unseal(ses.vaultKey,r,r.id)})}catch{}}
+  },
+  enter(){renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  onView(v){if(v==='vCreds')renderCreds();if(v==='vVault')renderVault()},
+  onLock(){
+    ['#cList','#vList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
+    ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
+    $('#mSealOut').hidden=true;
+  },
+  exportData:async()=>(await DB.get('items'))||[],
+  async importData(recs){
+    let n=0;
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});n++}catch{}}
+    await persistItems();renderCreds();renderVault();
+    return `${n} ${n===1?'item restaurado':'itens restaurados'}`;
+  }
+};
+async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
+async function saveItem(data,id){
+  id=id||b64u.enc(rnd(9));
+  const rec={id,...await seal(ses.vaultKey,data,id)};
+  const i=ses.items.findIndex(x=>x.rec.id===id);
+  if(i>=0)ses.items[i]={rec,data};else ses.items.push({rec,data});
+  await persistItems();
+}
+$('#dockAdd').onclick=()=>actionMenu();
+
+/* ================= credenciais ================= */
+const creds=()=>ses.items.filter(i=>i.data.type==='cred').sort((a,b)=>b.data.created-a.data.created);
+const credState=d=>d.exp&&d.exp<now()?['no','Expirada']:['ok',d.exp?'Até '+fmtDate(d.exp*1000):'Sem validade'];
+function credMain(d){
+  const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
+  if(d.vtype==='AgeOver18Credential')return 'Maior de 18 anos';
+  if(d.vtype==='DocumentRegistrationCredential')return (cl.find(c=>c[0]==='documento')||[,'Documento'])[1];
+  return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
+}
+function credCard(it,asDiv){
+  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
+  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+}
+function renderCreds(){
+  if(!ses)return;
+  const list=creds();
+  $('#cNote').hidden=!list.length;
+  $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
+    :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
+      <li><span>Toque em <b>+</b> e escolha <b>Pedir credencial</b>. O pedido é assinado e prova que você controla este DID.</span></li>
+      <li><span>Leve o pedido ao <b>Cartório Digital</b>, que confere a assinatura e emite a credencial.</span></li>
+      <li><span>Cole o que o cartório devolver em <b>Receber credencial</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
+}
+$('#cList').onclick=e=>{const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
+
+function actionMenu(){
+  const row=(k,icn,t,s)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`;
+  openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
+    ${row('ask','send','Pedir credencial','Gera um pedido assinado para o cartório')}
+    ${row('get','inbox','Receber credencial','Cola a credencial que o cartório emitiu')}
+    ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}
+    ${row('item','vault','Guardar no cofre','Senha, nota ou documento')}</div>`);
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present(),item:()=>editItem()})[b.dataset.act]()};
+}
+
+function askCred(){
+  openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o cartório sabe que é você mesmo quem pede.</p>
+    <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
+    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([k])=>k!=='DocumentRegistrationCredential').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
+    <label class="f"><span>Observação para o cartório (opcional)</span><input id="aqO" autocomplete="off"></label>
+    <button class="btn" id="aqGo">Assinar pedido</button>
+    <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
+  $('#aqGo').onclick=async()=>{
+    const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
+    const iat=now();
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'cartorio',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqOut').hidden=false;toast('Pedido assinado');
+  };
+  $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
+}
+
+function receiveCred(){
+  openSheet(`<h3>Receber credencial</h3><p class="sub">Cole a credencial que o cartório emitiu. A carteira confere a assinatura e se ela foi emitida para o seu DID.</p>
+    <label class="f" id="rcF"><span>Credencial</span><textarea class="mono" id="rcT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="rcH"></p>
+    <button class="btn" id="rcGo">Conferir e guardar</button>`);
+  $('#rcGo').onclick=async()=>{
+    const H=$('#rcH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#rcF'))};
+    let r;try{r=await verifyJWT($('#rcT').value)}catch(e){return fail(e.message)}
+    const p=r.payload;
+    if(!p.vc)return fail(r.header.typ==='desafio+jwt'?'Isto é um desafio. Use Apresentar credencial.':'Isto não é uma credencial verificável.');
+    if(!r.ok)return fail('A assinatura não confere: a credencial foi alterada ou não foi emitida por quem diz.');
+    if(p.sub!==ses.did)return fail('Esta credencial foi emitida para outro DID.');
+    if(creds().some(c=>c.data.jti===p.jti))return fail('Esta credencial já está na carteira.');
+    const t=vcType(p),ts=Date.now();
+    await saveItem({type:'cred',title:vcLabel(t),vtype:t,jwt:r.tok,jti:p.jti,issuerName:vcIssuerName(p),issuerDid:r.did,iat:p.iat,exp:p.exp||0,created:ts,updated:ts});
+    closeSheet();setView('vCreds');toast('Credencial guardada');
+  };
+}
+
+function showCred(id){
+  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
+  const d=it.data,p=decodeJWT(d.jwt).payload,[st,stl]=credState(d);
+  const rows=vcClaims(p).map(([k,v])=>`<div class="kr"><div class="h"><small>${esc(k)}</small></div><div class="v">${esc(fmtVal(v))}</div></div>`).join('');
+  openSheet(`${credCard(it,true)}
+    <div class="sec-h">Afirmações</div><div class="list glass flat">${rows||'<div class="empty">Sem afirmações.</div>'}</div>
+    <div class="sec-h">Origem</div><div class="list glass flat">
+      <div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
+      <div class="kr"><div class="h"><small>Emitida em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
+    <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o cartório assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
+    <button class="btn" id="scP">Apresentar</button>
+    <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
+  $('#scP').onclick=()=>present(id);
+  $('#scD').onclick=async()=>{
+    if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no cartório continua igual, e você pode pedir outra.','Remover',true))return;
+    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCreds();toast('Credencial removida');
+  };
+}
+
+function present(preId){
+  openSheet(`<h3>Apresentar credencial</h3><p class="sub">Cole o desafio de quem vai verificar. Ele muda a cada vez, então uma apresentação copiada não serve de novo.</p>
+    <label class="f" id="apF"><span>Desafio</span><textarea class="mono" id="apT" rows="4" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="apH"></p>
+    <button class="btn" id="apGo">Ler desafio</button><div id="apStep"></div>`);
+  $('#apGo').onclick=async()=>{
+    const H=$('#apH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#apF'));$('#apStep').innerHTML=''};
+    H.textContent='';H.classList.remove('bad');
+    let r;try{r=await verifyJWT($('#apT').value)}catch(e){return fail(e.message)}
+    const q=r.payload;
+    if(r.header.typ!=='desafio+jwt')return fail('Isto não é um desafio. Peça a quem verifica para gerar um.');
+    if(!r.ok)return fail('A assinatura do desafio não confere. Não responda.');
+    if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
+    const all=creds().filter(c=>credState(c.data)[0]==='ok');
+    const fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
+    let pick=(fit.find(c=>c.rec.id===preId)||fit[0]||{}).rec;pick=pick&&pick.id;
+    $('#apStep').innerHTML=`<div class="list glass flat mt">
+        <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
+        <div class="kr"><div class="h"><small>Para quê</small></div><div class="v">${esc(q.purpose||'Não informado')}</div></div>
+        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
+      ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
+        <button class="btn" id="apSign">Assinar e apresentar</button>`
+        :verdictHtml(false,'Nenhuma credencial serve','Você não tem uma credencial válida do tipo exigido. Peça uma ao cartório.')}
+      <div id="apOut"></div>`;
+    $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
+    $('#apSign')&&($('#apSign').onclick=async()=>{
+      const c=ses.items.find(i=>i.rec.id===pick),iat=now();
+      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}});
+      $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
+      $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
+    });
+  };
+}
+
+/* ================= cofre de dados ================= */
+let vFilter='all';
+function renderVault(){
+  if(!ses)return;
+  const items=ses.items.filter(i=>TYPES[i.data.type]);
+  $('#vChips').innerHTML=[['all','Todos'],...Object.entries(TYPES).map(([k,t])=>[k,t.plural])].map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${vFilter===k}">${l}</button>`).join('');
+  const n=items.length;$('#vCount').textContent=`Cofre aberto, ${n} ${n===1?'item cifrado':'itens cifrados'}`;
+  const q=fold($('#vSearch').value);
+  const list=items.filter(i=>(vFilter==='all'||i.data.type===vFilter)&&(!q||fold(i.data.title+' '+(i.data.fields.user||'')+' '+(i.data.fields.url||'')+' '+(i.data.fields.issuer||'')).includes(q))).sort((a,b)=>b.data.updated-a.data.updated);
+  $('#vList').innerHTML=list.length?list.map(i=>{const T=TYPES[i.data.type];return `<button class="tx" data-id="${i.rec.id}"><span class="dot">${ic(T.icon)}</span><span class="t"><b>${esc(i.data.title)}</b><small>${T.label}, ${fmtDate(i.data.updated)}</small></span>${ic('chev')}</button>`}).join('')
+    :`<div class="empty">${n?'Nada encontrado com esse filtro.':'O cofre está vazio. Toque em + e escolha Guardar no cofre.'}</div>`;
+}
+$('#vSearch').oninput=renderVault;
+$('#vChips').onclick=e=>{const b=e.target.closest('.chip');if(b){vFilter=b.dataset.f;renderVault()}};
+$('#vList').onclick=e=>{const b=e.target.closest('[data-id]');if(b)showItem(b.dataset.id)};
+function genPass(n=20){const cs='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*?-_';let s='';while(s.length<n){const b=rnd(1)[0];if(b<cs.length*Math.floor(256/cs.length))s+=cs[b%cs.length]}return s}
+function editItem(id){
+  const it=id&&ses.items.find(i=>i.rec.id===id);
+  let type=it?it.data.type:'senha';
+  const fieldHtml=(t,vals={})=>TYPES[t].fields.map(([k,label,kind])=>kind==='area'
+    ?`<label class="f"><span>${label}</span><textarea data-k="${k}" rows="5">${esc(vals[k])}</textarea></label>`
+    :`<label class="f"><span>${label}</span><div class="inrow"><input data-k="${k}" value="${esc(vals[k])}" ${kind==='secret'?'type="password"':''} autocomplete="off" autocapitalize="none" spellcheck="false">${kind==='secret'?`<button type="button" class="mini" data-peek aria-label="Mostrar ou esconder">${ic('eye')}</button>`:''}${k==='pass'?'<button type="button" class="mini" data-gen>Gerar</button>':''}</div></label>`).join('');
+  openSheet(`<h3>${it?'Editar':'Guardar no cofre'}</h3>
+    ${it?'':`<div class="chips">${Object.entries(TYPES).map(([k,t])=>`<button class="chip" data-t="${k}" aria-pressed="${k===type}">${t.label}</button>`).join('')}</div>`}
+    <label class="f" id="eTitleF"><span>Título</span><input id="eTitle" value="${esc(it?it.data.title:'')}" autocomplete="off" placeholder="Ex.: Banco, RG, Wi-Fi de casa"></label>
+    <div id="eFields">${fieldHtml(type,it?it.data.fields:{})}</div>
+    <button class="btn" id="eSave">${it?'Salvar alterações':'Guardar no cofre'}</button>`);
+  const body=$('#sheetBody');
+  body.onclick=e=>{
+    const t=e.target.closest('[data-t]');
+    if(t){type=t.dataset.t;body.querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',b===t));$('#eFields').innerHTML=fieldHtml(type);return}
+    const pk=e.target.closest('[data-peek]');if(pk){const inp=pk.parentElement.querySelector('input');inp.type=inp.type==='password'?'text':'password';return}
+    if(e.target.closest('[data-gen]')){const inp=body.querySelector('[data-k="pass"]');inp.value=genPass();inp.type='text'}
+  };
+  $('#eSave').onclick=async()=>{
+    const title=$('#eTitle').value.trim();
+    if(!title){shake($('#eTitleF'));$('#eTitle').focus();return}
+    const fields={};body.querySelectorAll('[data-k]').forEach(i=>{if(i.value.trim())fields[i.dataset.k]=i.value});
+    const ts=Date.now();
+    await saveItem({type,title,fields,created:it?it.data.created:ts,updated:ts},id);
+    closeSheet();setView('vVault');toast(it?'Alterações salvas':'Guardado no cofre');
+  };
+}
+function showItem(id){
+  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
+  const T=TYPES[it.data.type],F=it.data.fields;
+  const rows=T.fields.filter(([k])=>F[k]).map(([k,label,kind])=>`<div class="kr"><div class="h"><small>${label}</small><span>${kind==='secret'?`<button class="mini sm" data-show="${k}" aria-label="Mostrar">${ic('eye')}</button>`:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar">${ic('copy')}</button></span></div><div class="v" data-v="${k}">${kind==='secret'?'••••••••••':esc(F[k])}</div></div>`).join('');
+  openSheet(`<div class="dhead"><span class="dot">${ic(T.icon)}</span><div><h3>${esc(it.data.title)}</h3><small>${T.label}, atualizado em ${fmtDate(it.data.updated)}</small></div></div>
+    <div class="list glass flat">${rows||'<div class="empty">Só o título foi guardado.</div>'}</div>
+    <details class="raw"><summary>Ver como está guardado</summary><p>Este é o registro real no armazenamento do aparelho. Sem a chave que nasce das 12 palavras, ele é ilegível.</p><pre class="mono">id: ${it.rec.id}\niv: ${it.rec.iv}\ncifrado: ${it.rec.ct}</pre></details>
+    <div class="pair" style="margin-top:6px"><button class="btn ghost" id="iEdit">Editar</button><button class="btn danger" id="iDel">Excluir</button></div>`);
+  $('#sheetBody').onclick=e=>{
+    const s=e.target.closest('[data-show]');if(s){const v=$('#sheetBody').querySelector(`[data-v="${s.dataset.show}"]`);const open=v.dataset.open==='1';v.textContent=open?'••••••••••':F[s.dataset.show];v.dataset.open=open?'0':'1';return}
+    const c=e.target.closest('[data-cp]');if(c)copy(F[c.dataset.cp]);
+  };
+  $('#iEdit').onclick=()=>editItem(id);
+  $('#iDel').onclick=async()=>{
+    if(!await confirmSheet('Excluir item',`“${esc(it.data.title)}” será apagado. Backups antigos ainda o contêm.`,'Excluir',true))return;
+    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderVault();toast('Item excluído');
+  };
+}
+
+/* ================= identidade e mensagens ================= */
+function didDoc(){
+  const d=ses.did;
+  return{'@context':['https://www.w3.org/ns/did/v1','https://w3id.org/security/suites/ed25519-2020/v1','https://w3id.org/security/suites/x25519-2020/v1'],id:d,
+    verificationMethod:[{id:`${d}#${ses.edMb}`,type:'Ed25519VerificationKey2020',controller:d,publicKeyMultibase:ses.edMb}],
+    authentication:[`${d}#${ses.edMb}`],assertionMethod:[`${d}#${ses.edMb}`],
+    keyAgreement:[{id:`${d}#${ses.xMb}`,type:'X25519KeyAgreementKey2020',controller:d,publicKeyMultibase:ses.xMb}]};
+}
+async function renderId(){
+  const meta=await DB.get('meta');
+  $('#idDid').textContent=ses.did;$('#idDid2').textContent=ses.did;$('#idX').textContent=ses.xMb;
+  $('#idCreated').textContent=meta?'Criada em '+fmtDate(meta.created):'';
+  $('#idDoc').textContent=JSON.stringify(didDoc(),null,2);
+}
+document.querySelectorAll('[data-copyid]').forEach(b=>b.onclick=()=>copy(b.dataset.copyid==='did'?ses.did:ses.xMb));
+wireSeg($('#mSeg'),(b,i)=>{$('#mA').hidden=i!==0;$('#mB').hidden=i!==1});
+$('#mMe').onclick=()=>{$('#mTo').value=ses.xMb};
+$('#mSeal').onclick=async()=>{
+  if(!$('#mTo').value.trim()){$('#mTo').focus();return toast('Informe a chave do destinatário',true)}
+  if(!$('#mText').value){$('#mText').focus();return toast('Escreva a mensagem',true)}
+  try{$('#mSealed').value=await sealFor($('#mTo').value,$('#mText').value);$('#mSealOut').hidden=false;toast('Mensagem cifrada')}
+  catch(e){toast(e.message,true)}
+};
+$('#mCopy').onclick=()=>copy($('#mSealed').value);
+$('#mOpen').onclick=async()=>{
+  const out=$('#mOpenOut');if(!$('#mIn').value.trim()){$('#mIn').focus();return}
+  try{const t=await openMsg($('#mIn').value);out.innerHTML=`<div class="list glass flat mt"><div class="kr"><div class="h"><small>Mensagem decifrada</small></div><div class="v">${esc(t)}</div></div></div>`}
+  catch(e){out.innerHTML=`<div class="mt">${verdictHtml(false,'Não foi possível decifrar',esc(e.message))}</div>`}
+};
+
+boot();
+</script>
+</body>
+</html>
