@@ -122,6 +122,11 @@ $('#iqGo').onclick=async()=>{
 };
 async function issue(sub,type,claims,days,holderName,nonce,log,groupId){
   if(type===GROUP_TYPE&&!days)throw new Error('Credencial de grupo exige validade.');
+  const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
+  if(type==='IdentityCredential'){
+    if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
+    if(typeof claims.kycValidado!=='boolean')throw new Error('O campo “kycValidado” só aceita true ou false.');
+  }
   const n=++st.seq,iat=now(),jti='urn:uuid:'+crypto.randomUUID();
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
   if(days)payload.exp=iat+days*86400;
@@ -140,9 +145,9 @@ $('#iGo').onclick=async()=>{
     const g=activeGroups().find(x=>x.id===$('#iGrp').value);
     if(!g){toast('Escolha um grupo',true);return}
     try{parseXKey(String(pedido.payload.x||''))}catch{toast('O pedido não traz a chave de cifragem. Peça um pedido novo pela carteira atualizada.',true);return}
-    $('#iJwt').value=await issue(pedido.did,type,{grupo:g.name,...claims,chaveCifragem:pedido.payload.x},g.days,pedido.payload.name,pedido.payload.nonce,
-      {act:'emissao',text:`${g.name}: ${pedido.payload.name||shortDid(pedido.did)} entrou no grupo`},g.id);
-  }else $('#iJwt').value=await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce);
+    try{$('#iJwt').value=await issue(pedido.did,type,{grupo:g.name,...claims,chaveCifragem:pedido.payload.x},g.days,pedido.payload.name,pedido.payload.nonce,
+      {act:'emissao',text:`${g.name}: ${pedido.payload.name||shortDid(pedido.did)} entrou no grupo`},g.id)}catch(e){toast(e.message,true);return}
+  }else try{$('#iJwt').value=await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce)}catch(e){toast(e.message,true);return}
   $('#iOk').innerHTML=verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrada no livro.`);
   $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
 };
@@ -218,8 +223,9 @@ $('#dGo').onclick=async()=>{
   if(did){try{await didToEdKey(did)}catch(e){return fail(e.message,$('#dDidF'))}}
   const prev=st.docs.find(d=>d.sha256===dInfo.sha256);
   const n=st.docs.length+1;
-  const jwt=await issue(did||'urn:sha256:'+dInfo.sha256,'DocumentRegistrationCredential',{documento:dInfo.name,sha256:dInfo.sha256,tamanho:dInfo.size,requerente:name,registro:n},0,name,null,
-    {act:'registro',text:`Documento “${dInfo.name}” registrado para ${name}`});
+  let jwt;
+  try{jwt=await issue(did||'urn:sha256:'+dInfo.sha256,'DocumentRegistrationCredential',{documento:dInfo.name,sha256:dInfo.sha256,tamanho:dInfo.size,requerente:name,registro:n},0,name,null,
+    {act:'registro',text:`Documento “${dInfo.name}” registrado para ${name}`})}catch(e){return fail(e.message)}
   st.docs.push({n,...dInfo,req:name,did:did||null,at:Date.now()});await save();
   $('#dJwt').value=jwt;
   $('#dOk').innerHTML=verdictHtml(true,`Registro nº ${n}`,prev?`Este mesmo arquivo já tinha o registro nº ${prev.n}. Um novo foi feito.`:did?'O requerente pode guardar o certificado na carteira.':'Sem DID, o certificado serve para conferência, mas não entra numa carteira.');

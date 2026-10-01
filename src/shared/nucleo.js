@@ -247,7 +247,8 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  IdentityCredential:{label:'Identidade',claims:[['nome',''],['documento','']]},
+  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
+  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
   AgeOver18Credential:{label:'Maioridade',claims:[['maiorDeIdade','true']]},
   EmploymentCredential:{label:'Vínculo profissional',claims:[['empresa',''],['cargo','']]},
   ResidenceCredential:{label:'Residência',claims:[['cidade',''],['uf','']]},
@@ -256,6 +257,25 @@ const VC_TYPES={
   MembroDoGrupo:{label:'Membro de grupo',claims:[['grupo',''],['nome',''],['apelido','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
+/* ================= dados pessoais (RN59) ================= */
+// Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
+const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
+const piiWords=k=>String(k).normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+function cpfOk(s){
+  const d=String(s).replace(/\D/g,'');
+  if(d.length!==11||/^(\d)\1{10}$/.test(d))return false;
+  const dv=n=>{let t=0;for(let i=0;i<n;i++)t+=+d[i]*(n+1-i);return t*10%11%10};
+  return dv(9)===+d[9]&&dv(10)===+d[10];
+}
+// CPF solto, com ou sem pontuação, e com dígitos verificadores válidos. Colado em letras ou dígitos (hash, chave) não conta.
+const CPF_RE=/(?<![\dA-Za-z])\d{3}\.?\d{3}\.?\d{3}-?\d{2}(?![\dA-Za-z])/g;
+function piiProblem(fields){
+  for(const[k,v]of Object.entries(fields)){
+    if(piiWords(k).some(w=>PII_WORDS.includes(w)))return`O campo “${k}” é dado pessoal e não entra em credencial.`;
+    if(typeof v==='string'&&(v.match(CPF_RE)||[]).some(cpfOk))return`O campo “${k}” parece conter um CPF, que não entra em credencial.`;
+  }
+  return null;
+}
 const vcLabel=t=>(VC_TYPES[t]||{}).label||t;
 const vcType=p=>((p.vc&&p.vc.type)||[]).find(t=>t!=='VerifiableCredential')||'CustomCredential';
 const vcClaims=p=>Object.entries((p.vc&&p.vc.credentialSubject)||{}).filter(([k])=>k!=='id');
