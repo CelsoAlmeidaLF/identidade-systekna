@@ -34,6 +34,8 @@ Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo ind
 - Ao criar ou recuperar a identidade, o app pede armazenamento persistente, para o navegador não apagar os dados quando faltar espaço.
 - No iPhone, o app instalado tem armazenamento separado do Safari: a identidade precisa ser criada ou recuperada dentro do app.
 - Ícones gerados por `node scripts/gerar-icones.js`.
+- **CSP** em cada página (`default-src 'none'`): só roda o script inline cujo hash SHA-256 o build calcula, e nada é carregado de fora do site. Um `<script>` ou `onerror` injetado é bloqueado.
+- A fonte Open Sans é servida de `fonts/` (licença OFL em `fonts/OFL.txt`): abrir o app não avisa o Google.
 
 ## 1.1 Base comum (núcleo compartilhado)
 
@@ -156,9 +158,22 @@ BASE_URL=https://celsoalmeidalf.github.io/identidade-systekna npm run test:e2e
 - A revogação só é visível para o próprio cartório. Em produção: Bitstring Status List publicada.
 - A confiança no emissor é uma lista local. Em produção: `did:web` do cartório ou registro de confiança público.
 - Sem divulgação seletiva: a apresentação revela todas as afirmações da credencial. Evolução: SD-JWT ou BBS+.
-- PIN de 6 dígitos sem hardware seguro. Chave do cartório fora de HSM.
+- PIN de 6 dígitos sem hardware seguro. Chave do cartório fora de HSM. Ver o modelo de ameaças do PIN abaixo.
 - Derivação HKDF própria, sem compatibilidade com outras carteiras SSI.
 - Publicado em `celsoalmeidalf.github.io/identidade-systekna/`: a origem é a mesma de todos os sites Pages da conta, então o armazenamento do navegador é compartilhado com eles. Serve para demonstração, não para identidades reais. Em produção: um subdomínio próprio para cada serviço.
+
+### Modelo de ameaças do PIN
+
+O PIN protege contra **quem pega o aparelho desbloqueado e só usa a tela**: o contador de tentativas (gravado antes de cada conferência) apaga os dados no 10º erro, inclusive em "Ver as 12 palavras" e "Trocar PIN".
+
+O PIN **não** protege contra quem consegue rodar código no navegador da pessoa (acesso ao perfil do navegador, extensão maliciosa, outro site na mesma origem, ferramentas de desenvolvedor):
+
+| O que o atacante tem | O que ele consegue |
+|---|---|
+| Só o arquivo do armazenamento, copiado para outro aparelho | Nada: a camada interna depende da chave do aparelho, que não sai do navegador |
+| Código rodando no próprio navegador | Chamar a conferência do PIN diretamente, sem passar pelo contador, e testar os 10⁶ PINs. Com PBKDF2 de 600.000 iterações, leva de horas a poucos dias em um computador comum |
+
+Por isso a segurança real da identidade são as **12 palavras**, e o PIN é uma trava de conveniência. A correção definitiva é tirar a decisão do navegador: desbloqueio por passkey/WebAuthn, em que o limite de tentativas fica no hardware (Fase 3).
 
 ## 9. Próximos passos sugeridos
 

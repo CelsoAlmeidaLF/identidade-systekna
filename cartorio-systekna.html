@@ -3,6 +3,8 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-I+GnsgkBs1JEByxki+azFmSEVTXB8JTGHCXJ7OYikLA='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="cartorio.webmanifest">
@@ -13,10 +15,11 @@
 <meta name="apple-mobile-web-app-title" content="Cartório">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>Cartório Digital Systekna — Governança</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="fonts/open-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
 <style>
+/* ===== fonte (Open Sans variável, servida pelo próprio site; licença em fonts/OFL.txt) ===== */
+@font-face{font-family:"Open Sans";font-style:normal;font-weight:300 700;font-stretch:100%;font-display:swap;src:url(fonts/open-sans-latin-ext.woff2) format('woff2');unicode-range:U+0100-02BA,U+02BD-02C5,U+02C7-02CC,U+02CE-02D7,U+02DD-02FF,U+0304,U+0308,U+0329,U+1D00-1DBF,U+1E00-1E9F,U+1EF2-1EFF,U+2020,U+20A0-20AB,U+20AD-20C0,U+2113,U+2C60-2C7F,U+A720-A7FF}
+@font-face{font-family:"Open Sans";font-style:normal;font-weight:300 700;font-stretch:100%;font-display:swap;src:url(fonts/open-sans-latin.woff2) format('woff2');unicode-range:U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD}
 /* ===== Systekna Aero 2.0 · claro ===== */
 :root{
   box-sizing:border-box;

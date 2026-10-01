@@ -4,7 +4,7 @@
 // armazenamento compartilhado). Os tokens passam de um para o outro pelo
 // valor das caixas de texto, como no copiar e colar manual.
 const { test, expect } = require('@playwright/test');
-const { WORDS, instituir, bloquearEDesbloquear, aba, toast, fecharSheet } = require('./helpers');
+const { WORDS, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, vigiarCsp } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -14,6 +14,7 @@ let didCarteira = '';
 let pedido = '';
 let credencial = '';
 let apresentacao = '';
+/** @type {string[]} */ const violacoesCsp = [];
 
 async function acaoCarteira(acao) {
   await carteira.click('#dockAdd');
@@ -59,6 +60,8 @@ async function conferirApresentacao(token) {
 test.beforeAll(async ({ browser }) => {
   carteira = await (await browser.newContext()).newPage();
   cartorio = await (await browser.newContext()).newPage();
+  vigiarCsp(carteira, violacoesCsp);
+  vigiarCsp(cartorio, violacoesCsp);
   await instituir(cartorio, 'cartorio-systekna.html', WORDS.cartorio);
   await instituir(carteira, 'carteira-systekna.html', WORDS.carteira);
   didCarteira = await carteira.evaluate(() => ses.did);
@@ -209,4 +212,8 @@ test('12 · bloquear e desbloquear preserva todos os atos', async () => {
   const depois = await cartorio.evaluate(() => st.book.map(e => e.hash));
   expect(depois).toEqual(antes);
   await expect(cartorio.locator('#pBook')).toContainText('Livro íntegro');
+});
+
+test('nenhuma violação de CSP em todo o fluxo acima', () => {
+  expect(violacoesCsp).toEqual([]);
 });

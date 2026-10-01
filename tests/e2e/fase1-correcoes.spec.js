@@ -3,7 +3,7 @@
 // Tokens com conteúdo fora do comum (nbf no futuro, exp no passado, typ errado) são assinados
 // direto na página com signJWT, a mesma função que os serviços usam.
 const { test, expect } = require('@playwright/test');
-const { WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe } = require('./helpers');
+const { vigiarCsp, WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -13,6 +13,7 @@ test.describe.configure({ mode: 'serial' });
 let didCarteira = '';
 let didCartorio = '';
 let didOutro = '';
+/** @type {string[]} */ const violacoesCsp = [];
 
 const guard = page => page.evaluate(async () => (await DB.get('guard')) || { fails: 0, until: 0 });
 
@@ -73,6 +74,7 @@ async function ajusteCarteira(chave) {
 
 test.beforeAll(async ({ browser }) => {
   [carteira, cartorio, outroCartorio] = await Promise.all([1, 2, 3].map(async () => (await browser.newContext()).newPage()));
+  for (const p of [carteira, cartorio, outroCartorio]) vigiarCsp(p, violacoesCsp);
   await instituir(cartorio, 'cartorio-systekna.html', WORDS.cartorio);
   await instituir(outroCartorio, 'cartorio-systekna.html', WORDS.outroCartorio);
   await instituir(carteira, 'carteira-systekna.html', WORDS.carteira);
@@ -225,4 +227,8 @@ test('1.6 · cartões antigos saem do cofre ao desbloquear e não voltam pelo ba
   await carteira.click('#riGo');
   await expect(toast(carteira)).toContainText('restaurado');
   expect(await carteira.evaluate(() => ses.items.filter(i => i.data.type === 'cartao').length)).toBe(0);
+});
+
+test('nenhuma violação de CSP em todo o fluxo acima', () => {
+  expect(violacoesCsp).toEqual([]);
 });

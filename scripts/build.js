@@ -4,6 +4,7 @@
 //
 // Em src/<app>/pagina.html, uma linha `<!-- @inclui caminho -->` é trocada pelo conteúdo do
 // arquivo (caminho relativo à página). O núcleo comum fica em src/shared/.
+const crypto = require('crypto');
 const fs = require('fs');
 const path = require('path');
 
@@ -22,11 +23,21 @@ function monta(arquivo, pilha = []) {
   });
 }
 
+// A CSP da página só libera o script inline cujo hash bate: o hash é calculado aqui, depois da montagem.
+function aplicaCsp(html, pagina) {
+  const scripts = [...html.matchAll(/<script>([\s\S]*?)<\/script>/g)].map(m => m[1]);
+  if (!html.includes('{{hash-do-script}}')) return html;
+  if (scripts.length !== 1) throw new Error(`${pagina}: a CSP espera exatamente 1 script inline, há ${scripts.length}`);
+  const hash = 'sha256-' + crypto.createHash('sha256').update(scripts[0], 'utf8').digest('base64');
+  return html.replaceAll('{{hash-do-script}}', hash);
+}
+
 const conferir = process.argv.includes('--check');
 let desatualizados = 0;
 for (const app of APPS) {
   const saida = path.join(RAIZ, `${app}-systekna.html`);
-  const html = monta(path.join(RAIZ, 'src', app, 'pagina.html'));
+  const pagina = path.join(RAIZ, 'src', app, 'pagina.html');
+  const html = aplicaCsp(monta(pagina), path.relative(RAIZ, pagina));
   const atual = fs.existsSync(saida) ? fs.readFileSync(saida, 'utf8') : null;
   if (conferir) {
     if (html !== atual) { desatualizados++; console.error(`✗ ${path.basename(saida)} está diferente de src/. Rode: npm run build`); }

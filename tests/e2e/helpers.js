@@ -54,7 +54,16 @@ async function fecharSheet(page) {
   await expect(page.locator('#sheet')).not.toHaveClass(/open/);
 }
 
+/**
+ * Guarda toda violação de CSP que o Chrome registrar no console desta página.
+ * Os fluxos completos rodam com isso ligado: a política não pode bloquear nada legítimo.
+ */
+function vigiarCsp(page, violacoes = []) {
+  page.on('console', m => { if (m.type() === 'error' && /Content Security Policy/i.test(m.text())) violacoes.push(m.text()); });
+  return violacoes;
+}
+
 /** Lê o payload de um JWT sem conferir a assinatura. */
 const payloadDe = tok => JSON.parse(Buffer.from(tok.split('.')[1], 'base64url').toString('utf8'));
 
-module.exports = { PIN, WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe };
+module.exports = { PIN, WORDS, telaDoPin, digitarPin, instituir, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe, vigiarCsp };
