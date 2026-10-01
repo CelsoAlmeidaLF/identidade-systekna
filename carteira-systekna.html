@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-D+z4G/iUQjwRfqI8cSj+X5nS0Sy5a/BIoujoZWXu/0U='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-sfiClTX+g4h4jjKvFAptWFt4BP7JM9nF6HSj8EAS4L0='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -1255,8 +1255,24 @@ const REMOVED_TYPES=['cartao'];
 const TYPES={
   senha:{label:'Senha',plural:'Senhas',icon:'key',fields:[['user','Usuário ou e-mail'],['pass','Senha','secret'],['url','Site ou app']]},
   nota:{label:'Nota',plural:'Notas',icon:'note',fields:[['text','Texto','area']]},
-  doc:{label:'Documento',plural:'Documentos',icon:'id',fields:[['num','Número','secret'],['issuer','Órgão emissor'],['exp','Validade']]}
+  doc:{label:'Documento',plural:'Documentos',icon:'id',fields:[['holder','Titular',,'Ex.: Eu, Mãe, Filho'],['kind','Tipo','select'],['num','Número','secret'],['issuer','Órgão emissor'],['exp','Validade','date']]}
 };
+// Documento é anotação do titular: não é prova e nunca vira credencial (RN59). Serve para ter à mão, ser avisado do vencimento e mandar cifrado.
+const DOC_KINDS={rg:'RG',cpf:'CPF',cnh:'CNH',passaporte:'Passaporte',sus:'Cartão SUS',outro:'Outro'};
+const ISO_DAY=/^\d{4}-\d{2}-\d{2}$/;
+const DOC_SOON_DAYS=60; // renovar CNH ou passaporte leva semanas
+const fmtCpf=s=>String(s).replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
+// Validade antiga em texto livre continua guardada e aparece como texto, sem aviso.
+function docState(exp){
+  if(!exp||!ISO_DAY.test(exp))return null;
+  const day=new Date(exp+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);
+  const n=Math.round((day-today)/86400000);
+  if(n<0)return['no','Vencido'];
+  if(n<=DOC_SOON_DAYS)return['warn',n===0?'Vence hoje':n===1?'Vence amanhã':`Vence em ${n} dias`];
+  return['ok','Válido até '+fmtDate(day)];
+}
+// Valor como a pessoa lê: o tipo pelo nome e a data no formato do Brasil.
+const fieldText=(k,v)=>k==='kind'?DOC_KINDS[v]||v:k==='exp'&&ISO_DAY.test(v)?fmtDate(new Date(v+'T00:00:00')):v;
 
 const APP={
   db:'systekna-carteira',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
@@ -1674,8 +1690,11 @@ function renderVault(){
   $('#vChips').innerHTML=[['all','Todos'],...Object.entries(TYPES).map(([k,t])=>[k,t.plural])].map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${vFilter===k}">${l}</button>`).join('');
   const n=items.length;$('#vCount').textContent=`Cofre aberto, ${n} ${n===1?'item cifrado':'itens cifrados'}`;
   const q=fold($('#vSearch').value);
-  const list=items.filter(i=>(vFilter==='all'||i.data.type===vFilter)&&(!q||fold(i.data.title+' '+(i.data.fields.user||'')+' '+(i.data.fields.url||'')+' '+(i.data.fields.issuer||'')).includes(q))).sort((a,b)=>b.data.updated-a.data.updated);
-  $('#vList').innerHTML=list.length?list.map(i=>{const T=TYPES[i.data.type];return `<button class="tx" data-id="${i.rec.id}"><span class="dot">${ic(T.icon)}</span><span class="t"><b>${esc(i.data.title)}</b><small>${T.label}, ${fmtDate(i.data.updated)}</small></span>${ic('chev')}</button>`}).join('')
+  const list=items.filter(i=>{const F=i.data.fields;return(vFilter==='all'||i.data.type===vFilter)&&(!q||fold([i.data.title,F.user,F.url,F.issuer,F.holder,DOC_KINDS[F.kind]].join(' ')).includes(q))}).sort((a,b)=>b.data.updated-a.data.updated);
+  $('#vList').innerHTML=list.length?list.map(i=>{
+    const T=TYPES[i.data.type],F=i.data.fields,doc=i.data.type==='doc',st=doc&&docState(F.exp);
+    const sub=doc?[DOC_KINDS[F.kind]||T.label,F.holder].filter(Boolean).join(', '):`${T.label}, ${fmtDate(i.data.updated)}`;
+    return `<button class="tx" data-id="${i.rec.id}"><span class="dot">${ic(T.icon)}</span><span class="t"><b>${esc(i.data.title)}</b><small>${esc(sub)}</small></span>${st&&st[0]!=='ok'?`<span class="pill ${st[0]}">${st[1]}</span>`:ic('chev')}</button>`}).join('')
     :`<div class="empty">${n?'Nada encontrado com esse filtro.':'O cofre está vazio. Toque em + e escolha Guardar no cofre.'}</div>`;
 }
 $('#vSearch').oninput=renderVault;
@@ -1685,9 +1704,11 @@ function genPass(n=20){const cs='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwx
 function editItem(id){
   const it=id&&ses.items.find(i=>i.rec.id===id);
   let type=it?it.data.type:'senha';
-  const fieldHtml=(t,vals={})=>TYPES[t].fields.map(([k,label,kind])=>kind==='area'
+  const fieldHtml=(t,vals={})=>TYPES[t].fields.map(([k,label,kind,ph])=>kind==='area'
     ?`<label class="f"><span>${label}</span><textarea data-k="${k}" rows="5">${esc(vals[k])}</textarea></label>`
-    :`<label class="f"><span>${label}</span><div class="inrow"><input data-k="${k}" value="${esc(vals[k])}" ${kind==='secret'?'type="password"':''} autocomplete="off" autocapitalize="none" spellcheck="false">${kind==='secret'?`<button type="button" class="mini" data-peek aria-label="Mostrar ou esconder">${ic('eye')}</button>`:''}${k==='pass'?'<button type="button" class="mini" data-gen>Gerar</button>':''}</div></label>`).join('');
+    :kind==='select'
+    ?`<label class="f"><span>${label}</span><select data-k="${k}"><option value="">Escolha</option>${Object.entries(DOC_KINDS).map(([v,l])=>`<option value="${v}" ${vals[k]===v?'selected':''}>${l}</option>`).join('')}</select></label>`
+    :`<label class="f" data-f="${k}"><span>${label}</span><div class="inrow"><input data-k="${k}" value="${esc(vals[k])}" ${kind==='secret'?'type="password"':kind==='date'&&(!vals[k]||ISO_DAY.test(vals[k]))?'type="date"':''} ${ph?`placeholder="${esc(ph)}"`:''} autocomplete="off" autocapitalize="none" spellcheck="false">${kind==='secret'?`<button type="button" class="mini" data-peek aria-label="Mostrar ou esconder">${ic('eye')}</button>`:''}${k==='pass'?'<button type="button" class="mini" data-gen>Gerar</button>':''}</div></label>`).join('');
   openSheet(`<h3>${it?'Editar':'Guardar no cofre'}</h3>
     ${it?'':`<div class="chips">${Object.entries(TYPES).map(([k,t])=>`<button class="chip" data-t="${k}" aria-pressed="${k===type}">${t.label}</button>`).join('')}</div>`}
     <label class="f" id="eTitleF"><span>Título</span><input id="eTitle" value="${esc(it?it.data.title:'')}" autocomplete="off" placeholder="Ex.: Banco, RG, Wi-Fi de casa"></label>
@@ -1704,6 +1725,10 @@ function editItem(id){
     const title=$('#eTitle').value.trim();
     if(!title){shake($('#eTitleF'));$('#eTitle').focus();return}
     const fields={};body.querySelectorAll('[data-k]').forEach(i=>{if(i.value.trim())fields[i.dataset.k]=i.value});
+    if(type==='doc'&&fields.kind==='cpf'&&fields.num){
+      if(!cpfOk(fields.num)){shake(body.querySelector('[data-f="num"]'));toast('CPF inválido: confira os números.',true);return}
+      fields.num=fmtCpf(fields.num);
+    }
     const ts=Date.now();
     await saveItem({type,title,fields,created:it?it.data.created:ts,updated:ts},id);
     closeSheet();setView('vVault');toast(it?'Alterações salvas':'Guardado no cofre');
@@ -1711,20 +1736,45 @@ function editItem(id){
 }
 function showItem(id){
   const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
-  const T=TYPES[it.data.type],F=it.data.fields;
-  const rows=T.fields.filter(([k])=>F[k]).map(([k,label,kind])=>`<div class="kr"><div class="h"><small>${label}</small><span>${kind==='secret'?`<button class="mini sm" data-show="${k}" aria-label="Mostrar">${ic('eye')}</button>`:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar">${ic('copy')}</button></span></div><div class="v" data-v="${k}">${kind==='secret'?'••••••••••':esc(F[k])}</div></div>`).join('');
+  const T=TYPES[it.data.type],F=it.data.fields,doc=it.data.type==='doc',st=doc&&docState(F.exp);
+  const rows=T.fields.filter(([k])=>F[k]).map(([k,label,kind])=>`<div class="kr"><div class="h"><small>${label}</small><span>${k==='exp'&&st?`<span class="pill ${st[0]}">${st[1]}</span>`:''}${kind==='secret'?`<button class="mini sm" data-show="${k}" aria-label="Mostrar">${ic('eye')}</button>`:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar">${ic('copy')}</button></span></div><div class="v" data-v="${k}">${kind==='secret'?'••••••••••':esc(fieldText(k,F[k]))}</div></div>`).join('');
   openSheet(`<div class="dhead"><span class="dot">${ic(T.icon)}</span><div><h3>${esc(it.data.title)}</h3><small>${T.label}, atualizado em ${fmtDate(it.data.updated)}</small></div></div>
     <div class="list glass flat">${rows||'<div class="empty">Só o título foi guardado.</div>'}</div>
     <details class="raw"><summary>Ver como está guardado</summary><p>Este é o registro real no armazenamento do aparelho. Sem a chave que nasce das 12 palavras, ele é ilegível.</p><pre class="mono">id: ${it.rec.id}\niv: ${it.rec.iv}\ncifrado: ${it.rec.ct}</pre></details>
+    ${doc?'<p class="hint">Anotação sua, guardada cifrada. Não é prova de identidade.</p><button class="btn" id="iSend">Enviar cifrado para um contato</button>':''}
     <div class="pair" style="margin-top:6px"><button class="btn ghost" id="iEdit">Editar</button><button class="btn danger" id="iDel">Excluir</button></div>`);
   $('#sheetBody').onclick=e=>{
     const s=e.target.closest('[data-show]');if(s){const v=$('#sheetBody').querySelector(`[data-v="${s.dataset.show}"]`);const open=v.dataset.open==='1';v.textContent=open?'••••••••••':F[s.dataset.show];v.dataset.open=open?'0':'1';return}
-    const c=e.target.closest('[data-cp]');if(c)copy(F[c.dataset.cp]);
+    const c=e.target.closest('[data-cp]');if(c)copy(fieldText(c.dataset.cp,F[c.dataset.cp]));
   };
+  if(doc)$('#iSend').onclick=()=>sendItem(id);
   $('#iEdit').onclick=()=>editItem(id);
   $('#iDel').onclick=async()=>{
     if(!await confirmSheet('Excluir item',`“${esc(it.data.title)}” será apagado. Backups antigos ainda o contêm.`,'Excluir',true))return;
     ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderVault();toast('Item excluído');
+  };
+}
+
+// Texto que o contato vai ler depois de decifrar: só os campos preenchidos, já legíveis.
+const itemText=it=>[it.data.title,...TYPES[it.data.type].fields.filter(([k])=>it.data.fields[k]).map(([k,label])=>`${label}: ${fieldText(k,it.data.fields[k])}`)].join('\n');
+function sendItem(id){
+  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
+  const all=contacts();
+  openSheet(`<h3>Enviar “${esc(it.data.title)}”</h3>
+    <p class="lead">O documento sai cifrado para a chave do contato. Só a carteira dele abre, mesmo que a mensagem passe pelo WhatsApp ou por e-mail.</p>
+    <div class="list glass flat" id="sdC">${all.length?all.map(c=>`<button class="tx" data-ct="${c.rec.id}"><span class="dot">${ic('user')}</span><span class="t"><b>${esc(c.data.name)}</b><small>${esc(shortDid(c.data.did))}</small></span>${ic('chev')}</button>`).join('')
+      :'<div class="empty">A agenda está vazia. Importe o cartão de contato da pessoa em Contatos.</div>'}</div>
+    <div id="sdOut" hidden></div>`);
+  $('#sdC').onclick=async e=>{
+    const b=e.target.closest('[data-ct]');if(!b)return;
+    const c=ses.items.find(i=>i.rec.id===b.dataset.ct);if(!c)return;
+    let pkg;try{pkg=await sealFor(c.data.x,itemText(it))}catch(err){return toast(err.message,true)}
+    $('#sdC').hidden=true;
+    $('#sdOut').innerHTML=`${verdictHtml(true,`Cifrado para ${esc(c.data.name)}`,'Copie e mande por qualquer canal. Na carteira, a pessoa abre em Identidade, Mensagens, Abrir.')}
+      <label class="f"><span>Mensagem cifrada</span><textarea class="mono" id="sdT" rows="4" readonly>${esc(pkg)}</textarea></label>
+      <button class="btn" id="sdCp">Copiar mensagem cifrada</button>`;
+    $('#sdOut').hidden=false;
+    $('#sdCp').onclick=()=>copy(pkg,'Mensagem copiada');
   };
 }
 

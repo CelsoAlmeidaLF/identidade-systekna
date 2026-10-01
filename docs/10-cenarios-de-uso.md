@@ -24,7 +24,7 @@ Em todos os cenários o transporte é manual: copiar o texto assinado e colar pe
 | U3 | Usuário | Provar que é membro de um grupo ou cliente | ✅ |
 | U4 | Usuário | Mandar um segredo cifrado para alguém | ✅ |
 | U5 | Usuário | Cofre de senhas e notas sem nuvem | ✅ |
-| U6 | Usuário | Ter à mão os números dos documentos da família | ✅ parcial (melhoria 💡) |
+| U6 | Usuário | Ter à mão os documentos da família e mandá-los cifrados | ✅ |
 | U7 | Usuário | Guardar o certificado de um documento registrado | ✅ |
 | U8 | Usuário | Trocar de celular sem perder nada | ✅ |
 | C1 | Empresa cliente | Provar quem fala em nome da empresa | ✅ |
@@ -137,13 +137,15 @@ Em todos os cenários o transporte é manual: copiar o texto assinado e colar pe
 - **Como usar:** guarde senhas (com gerador de 20 caracteres), códigos de recuperação de 2FA, senha do Wi-Fi e combinações. Tudo fica cifrado no aparelho, com busca e cópia por campo.
 - **Diferença para um gerenciador comum:** nada sai do aparelho. O backup é um texto cifrado que só a sua identidade abre (U8).
 
-### U6. Ter à mão os números dos documentos da família ✅ parcial
+### U6. Ter à mão os documentos da família e mandá-los cifrados ✅
 
-- **Situação:** recepção do hospital pede o cartão SUS da mãe, a escola pede o RG do filho, a reserva pede o passaporte.
-- **Como fazer hoje:** item **Documento** no cofre, com o título dizendo de quem e qual é (ex.: "SUS — Mãe"), o número (mascarado) e o órgão. Use o botão de copiar.
-- **Limites hoje:** o tipo é genérico, a validade é texto livre (não avisa do vencimento), o CPF não é conferido e não guarda foto.
-- **É só uma anotação sua:** não é prova de identidade e nenhum verificador aceita como credencial.
-- **Melhoria proposta 💡:** campos **Titular** e **Tipo** (RG, CPF, CNH, Passaporte, SUS, Título, Outro), **validade como data** com o mesmo aviso de vencimento das credenciais, máscara e conferência do CPF. Na F4, botão **Enviar cifrado para contato**. Se nada disso entrar no curto prazo, avaliar remover o tipo, como foi feito com o cartão.
+- **Situação:** a recepção do hospital pede o cartão SUS da mãe, a escola pede o RG do filho, o contador pede o CPF.
+- **Como fazer:** no cofre, item **Documento** com **titular** (Eu, Mãe, Filho), **tipo** (RG, CPF, CNH, Passaporte, Cartão SUS, Outro), número (mascarado), órgão e **validade como data**. Use o botão de copiar no campo.
+- **Aviso de vencimento:** a partir de 60 dias antes, a lista e o detalhe mostram "Vence em N dias"; depois, "Vencido". Bom para CNH e passaporte, que levam semanas para renovar.
+- **CPF conferido:** a carteira só guarda CPF com dígitos verificadores válidos e já com a pontuação.
+- **Mandar para alguém:** **Enviar cifrado para um contato** escolhe a pessoa na agenda e gera um `smsg1.…`. Só a carteira dela abre, em Identidade → Mensagens → Abrir. Melhor que foto do documento aberta no WhatsApp. Ainda não prova quem enviou (🔜 F4).
+- **É só uma anotação sua:** não é prova de identidade e nenhum verificador aceita como credencial. A prova é a credencial **Identidade** com `kycValidado` emitida por um emissor que conferiu os documentos.
+- **Próximo passo 💡:** pedir a conferência (KYC) a partir dos documentos guardados, com os dados indo cifrados para o emissor, e mostrar o selo "Conferido por …" no documento.
 
 ### U7. Guardar o certificado de um documento registrado ✅
 
@@ -223,7 +225,7 @@ Em todos os cenários o transporte é manual: copiar o texto assinado e colar pe
 | E5, U4 | RF-CT-16, RF-CT-17 |
 | E6 | RF-CR-01…03 |
 | U2 | RF-CT-01, RF-CT-01a, RF-CT-02, F1.2 (emissores confiáveis) |
-| U5, U6 | RF-CT-09…13 |
+| U5, U6 | RF-CT-09…13, RF-CT-14a, RF-CT-14b |
 | U8 | RF-CM-05, RF-CM-20, RF-CM-21 |
 | C1 | RF-CR-05, RF-CR-07…10, RF-CR-19 |
 | C2 | F6 (`IdentidadeConferida`), F7 (livro público), RF-CR-16 |
