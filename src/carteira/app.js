@@ -94,7 +94,8 @@ function askCred(){
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    // x: a chave de cifragem vai junto para entrar na credencial de grupo.
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),x:ses.xMb,nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');

@@ -219,7 +219,7 @@ details.raw pre{margin:0;white-space:pre-wrap;max-height:220px;overflow:auto}
 
 /* dock */
 .dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;width:min(444px,calc(100vw - 24px));height:66px;
-  display:none;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px;border-radius:22px}
+  display:none;grid-template-columns:repeat(var(--n,5),1fr);align-items:center;padding:0 6px;border-radius:22px}
 body[data-screen="sApp"] .dock{display:grid}
 .dock button{height:52px;border:0;background:none;cursor:pointer;display:grid;place-items:center;align-content:center;gap:2px;font:500 10px var(--font);color:var(--faint)}
 .dock button svg.i{width:22px;height:22px}
@@ -279,6 +279,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-EmploymentCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-ResidenceCredential{--cg:linear-gradient(150deg,#7FC9F0 0%,#2C7FBF 45%,#173E66 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
+.g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
 /* passos (sequência real) */

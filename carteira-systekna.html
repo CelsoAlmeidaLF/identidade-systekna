@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-VZLOU3FBf3OWPCKU6Ro5X4GQLBQJkXftfx9SUSg9O1c='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pll/KQbt2TrmkJcNIkiFiEBJvxeUqNgLwvuhUJ8uMSg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -238,7 +238,7 @@ details.raw pre{margin:0;white-space:pre-wrap;max-height:220px;overflow:auto}
 
 /* dock */
 .dock{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(12px + env(safe-area-inset-bottom,0px));z-index:30;width:min(444px,calc(100vw - 24px));height:66px;
-  display:none;grid-template-columns:repeat(5,1fr);align-items:center;padding:0 6px;border-radius:22px}
+  display:none;grid-template-columns:repeat(var(--n,5),1fr);align-items:center;padding:0 6px;border-radius:22px}
 body[data-screen="sApp"] .dock{display:grid}
 .dock button{height:52px;border:0;background:none;cursor:pointer;display:grid;place-items:center;align-content:center;gap:2px;font:500 10px var(--font);color:var(--faint)}
 .dock button svg.i{width:22px;height:22px}
@@ -298,6 +298,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-EmploymentCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-ResidenceCredential{--cg:linear-gradient(150deg,#7FC9F0 0%,#2C7FBF 45%,#173E66 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
+.g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
 /* passos (sequência real) */
@@ -738,6 +739,8 @@ const VC_TYPES={
   EmploymentCredential:{label:'Vínculo profissional',claims:[['empresa',''],['cargo','']]},
   ResidenceCredential:{label:'Residência',claims:[['cidade',''],['uf','']]},
   DocumentRegistrationCredential:{label:'Registro de documento',claims:[]},
+  // Uma por grupo de um emissor (F1). Leva a chave X25519 do titular, que vem no pedido, e sempre tem validade.
+  MembroDoGrupo:{label:'Membro de grupo',claims:[['grupo',''],['nome',''],['apelido','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
 const vcLabel=t=>(VC_TYPES[t]||{}).label||t;
@@ -1301,7 +1304,8 @@ function askCred(){
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    // x: a chave de cifragem vai junto para entrar na credencial de grupo.
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),x:ses.xMb,nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
