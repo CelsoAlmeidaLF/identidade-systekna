@@ -8,7 +8,7 @@ const TYPES={
 };
 
 const APP={
-  db:'systekna-carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
+  db:'systekna-carteira',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
   importHint:'Junta itens e credenciais ao que já está aqui',
   howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
   <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O cartório confere essa assinatura e só então sabe que quem pede controla o DID.</p>

@@ -1,7 +1,7 @@
 /* ================= serviço ================= */
 let st=null;
 const APP={
-  db:'systekna-cartorio',dataKeys:['state'],createdMsg:'Cartório instituído',autoDefault:10,
+  db:'systekna-cartorio',label:'Cartório',dataKeys:['state'],createdMsg:'Cartório instituído',autoDefault:10,
   importHint:'Substitui o livro e os registros deste cartório',
   howHtml:`<p><b>Papel.</b> O cartório é emissor e verificador. Ele tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
   <p><b>Emissão.</b> Só emite para quem prova controlar um DID: o titular envia um pedido assinado pela carteira. A credencial leva o DID do titular, o nome do cartório e um número de status.</p>

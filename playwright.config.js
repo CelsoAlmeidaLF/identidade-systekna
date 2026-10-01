@@ -17,7 +17,7 @@ module.exports = defineConfig({
   expect: { timeout: 20_000 },
   reporter: [['list'], ['html', { open: 'never' }]],
   use: {
-    baseURL: BASE_URL || `http://127.0.0.1:${PORT}/`,
+    baseURL: BASE_URL || `http://localhost:${PORT}/`,
     // Usa o Chrome instalado no sistema (WebCrypto com Ed25519 e X25519).
     channel: 'chrome',
     trace: 'retain-on-failure',

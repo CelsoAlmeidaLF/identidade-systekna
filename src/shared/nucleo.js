@@ -178,6 +178,64 @@ async function unlockWithPin(pin){
     return{fails:g.fails};
   }
 }
+/* ================= biometria (passkey com PRF) ================= */
+// O autenticador do aparelho só entrega o segredo PRF depois da digital ou do rosto, e é esse
+// segredo que abre a identidade. Sem PRF, a biometria seria um "sim" conferido em JavaScript e
+// poderia ser burlada como o contador do PIN; por isso, sem PRF, a opção não é oferecida.
+class BioError extends Error{constructor(code){super(code);this.code=code}}
+async function bioAvailable(){
+  try{
+    if(!window.PublicKeyCredential||!await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable())return false;
+    // getClientCapabilities pode ficar pendente no Chrome: espera no máximo 1 s. Sem resposta, a opção
+    // aparece mesmo assim, porque a ativação confere a PRF de novo e explica se faltar.
+    if(PublicKeyCredential.getClientCapabilities){
+      const caps=await Promise.race([PublicKeyCredential.getClientCapabilities().catch(()=>null),new Promise(r=>setTimeout(()=>r(null),1000))]);
+      if(caps&&caps['extension:prf']===false)return false;
+    }
+    return true;
+  }catch{return false}
+}
+async function bioKey(prf,salt){return S.importKey('raw',await hkdf(new Uint8Array(prf),'unlock/webauthn-prf',salt),{name:'AES-GCM'},false,['encrypt','decrypt'])}
+async function bioPrf(credId,salt){
+  const a=await navigator.credentials.get({publicKey:{challenge:rnd(32),allowCredentials:[{type:'public-key',id:credId}],
+    userVerification:'required',timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
+  const r=a.getClientExtensionResults().prf;
+  if(!r||!r.results||!r.results.first)throw new BioError('prf');
+  return r.results.first;
+}
+// Avisa o gerenciador de senhas que a passkey não vale mais (Chrome 132+). Nos outros, a pessoa remove à mão.
+function forgetPasskey(credId){
+  try{PublicKeyCredential.signalUnknownCredential&&PublicKeyCredential.signalUnknownCredential({rpId:location.hostname,credentialId:b64u.enc(new Uint8Array(credId))}).catch(()=>{})}catch{}
+}
+async function enableBio(ent){
+  const salt=rnd(32);
+  const c=await navigator.credentials.create({publicKey:{
+    rp:{name:document.title},user:{id:rnd(16),name:`${APP.label} · ${shortDid(ses.did)}`,displayName:APP.label},
+    challenge:rnd(32),pubKeyCredParams:[{type:'public-key',alg:-8},{type:'public-key',alg:-7},{type:'public-key',alg:-257}],
+    authenticatorSelection:{authenticatorAttachment:'platform',residentKey:'preferred',userVerification:'required'},
+    timeout:60000,extensions:{prf:{eval:{first:salt}}}}});
+  const ext=c.getClientExtensionResults().prf;
+  if(!ext||!ext.enabled){forgetPasskey(c.rawId);throw new BioError('noprf')}
+  const prf=ext.results&&ext.results.first?ext.results.first:await bioPrf(c.rawId,salt);
+  // Mesmas duas camadas do PIN: chave do aparelho por dentro, segredo da biometria por fora.
+  const inner=await seal(await deviceKey(true),ent,'device');
+  const outer=await seal(await bioKey(prf,salt),te.encode(JSON.stringify(inner)),'bio');
+  await DB.set('bioLock',{v:1,cred:b64u.enc(new Uint8Array(c.rawId)),salt:b64u.enc(salt),...outer});
+}
+async function unlockWithBio(){
+  const L=await DB.get('bioLock'),dk=await deviceKey(false);
+  if(!L||!dk)throw new BioError('missing');
+  const salt=b64u.dec(L.salt),prf=await bioPrf(b64u.dec(L.cred),salt);
+  let inner;
+  try{inner=JSON.parse(td.decode(await unseal(await bioKey(prf,salt),L,'bio',true)))}catch{throw new BioError('key')}
+  const ent=await unseal(dk,inner,'device',true);
+  await DB.set('guard',{fails:0,until:0});
+  return ent;
+}
+const bioErrMsg=e=>e&&e.name==='NotAllowedError'?'Biometria cancelada ou não reconhecida. Tente de novo ou use o PIN.'
+  :e&&e.code==='missing'?'A chave deste aparelho sumiu. Recupere com as 12 palavras.'
+  :e&&(e.code==='key'||e.code==='prf')?'A biometria deste aparelho mudou. Entre com o PIN e ative de novo nos Ajustes.'
+  :'Não foi possível usar a biometria. Use o PIN.';
 const pinFailMsg=f=>{const left=MAX_FAILS-f;return f>=SOFT_FAILS?`PIN incorreto. Espere ${30*2**(f-SOFT_FAILS)} s. Mais ${left} ${left>1?'erros apagam':'erro apaga'} tudo.`:'PIN incorreto.'};
 const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210987'.includes(p)||/^(\d\d)\1\1$/.test(p)||/^(\d{3})\1$/.test(p);
 const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
@@ -390,6 +448,7 @@ $('#recGo').onclick=async()=>{
       const go=await confirmSheet('Outra identidade','Estas palavras pertencem a uma identidade diferente da que está neste aparelho. Os dados atuais não abrem com elas e serão apagados.','Substituir',true);
       if(!go)return;
       for(const k of APP.dataKeys)await DB.del(k);
+      await DB.del('bioLock');
       await DB.del('meta');
     }
     pinSetup(r.ent,r.lang,'sRecover');
@@ -433,6 +492,16 @@ async function showLock(msg){
     await openAnim();enterApp();
   }});
   if(msg)pad.say(msg);
+  const bio=$('#bioBtn');
+  bio.hidden=!await DB.get('bioLock');
+  bio.onclick=async()=>{
+    bio.disabled=true;pad.say('Confirme com a biometria…');
+    let ent;
+    try{ent=await unlockWithBio()}catch(e){bio.disabled=false;return pad.reset(bioErrMsg(e),true)}
+    bio.disabled=false;pad.say('Abrindo…');
+    await startSession(ent,meta.lang);
+    await openAnim();enterApp();
+  };
 }
 function openAnim(){
   return new Promise(r=>{
@@ -464,6 +533,7 @@ function mountCommonSettings(el){
   <div class="list glass flat">
     <button class="tx" data-cs="words"><span class="dot" data-ic="note"></span><span class="t"><b>Ver as 12 palavras</b><small>Pede o PIN</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="pin"><span class="dot" data-ic="key"></span><span class="t"><b>Trocar PIN</b><small>Pede o PIN atual</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="bio" hidden><span class="dot" data-ic="shield"></span><span class="t"><b>Desbloqueio por biometria</b><small>Digital ou rosto, pelo chip de segurança do aparelho</small></span><span class="rv" id="csBio"></span></button>
     <button class="tx" data-cs="auto"><span class="dot" data-ic="clock"></span><span class="t"><b>Bloqueio automático</b><small>Sem uso por este tempo, tudo fecha</small></span><span class="rv" id="csAuto"></span></button>
     <button class="tx" data-cs="lock"><span class="dot" data-ic="lock"></span><span class="t"><b>Bloquear agora</b></span></button>
   </div>
@@ -481,7 +551,7 @@ function mountCommonSettings(el){
     <button class="tx" data-cs="how"><span class="dot" data-ic="shield"></span><span class="t"><b>Como funciona</b></span>${ic('chev')}</button>
     <button class="tx danger" data-cs="wipe"><span class="dot" style="background:rgba(194,65,47,.1);color:var(--out)" data-ic="trash"></span><span class="t"><b>Apagar tudo deste aparelho</b><small>Recuperável só com as 12 palavras e um backup</small></span></button>
   </div>`;
-  paintIcons(el);refreshInstall();
+  paintIcons(el);refreshInstall();refreshBio();
   $('#csAuto').textContent=autoMin()+' min';
   el.onclick=e=>{const b=e.target.closest('[data-cs]');if(b)CS[b.dataset.cs]()};
 }
@@ -504,6 +574,12 @@ function reauth(title){
     makePad($('#raPad'),{onPin:async(pin,a)=>{if(await sessionPin(pin,a))res(true)}});
   });
 }
+async function refreshBio(){
+  const row=document.querySelector('[data-cs="bio"]');if(!row)return;
+  const on=!!await DB.get('bioLock');
+  row.hidden=!on&&!await bioAvailable();
+  $('#csBio').textContent=on?'Ativado':'Desativado';
+}
 const CS={
   async words(){
     if(!await reauth('Ver as 12 palavras'))return;
@@ -525,6 +601,21 @@ const CS={
   },
   auto(){const opts=[1,3,5,10,30],n=opts[(opts.indexOf(autoMin())+1)%opts.length];store.set('auto',n);$('#csAuto').textContent=n+' min';toast(`Bloqueia após ${n} min sem uso`)},
   lock(){lockNow()},
+  async bio(){
+    const L=await DB.get('bioLock');
+    if(L){
+      if(!await confirmSheet('Desativar biometria','O desbloqueio volta a ser só pelo PIN. A passkey pode ser removida no gerenciador de senhas do aparelho.','Desativar'))return;
+      forgetPasskey(b64u.dec(L.cred));await DB.del('bioLock');refreshBio();toast('Biometria desativada');return;
+    }
+    if(!await reauth('Ativar biometria'))return;
+    closeSheet();
+    try{await enableBio(ses.ent)}
+    catch(e){
+      return toast(e&&e.code==='noprf'?'Este aparelho não oferece biometria com chave de cifragem. Continue usando o PIN.'
+        :e&&e.name==='NotAllowedError'?'Biometria cancelada':'Não foi possível ativar a biometria',true);
+    }
+    refreshBio();toast('Biometria ativada');
+  },
   async export(){
     const b=await seal(ses.vaultKey,{v:1,app:APP.db,did:ses.did,at:Date.now(),data:await APP.exportData()},'backup');
     const txt=['scb1',b.iv,b.ct].join('.');

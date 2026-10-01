@@ -48,6 +48,7 @@ Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo ind
   - PBKDF2-SHA256 com 600.000 iterações;
   - chave do aparelho não exportável (IndexedDB).
 - **Tentativas**: espera crescente a partir do 5º erro; o 10º erro apaga os dados locais. A tentativa é gravada antes de o PIN ser conferido, e o mesmo contador vale para desbloquear, ver as 12 palavras e trocar o PIN.
+- **Biometria (opcional)**: passkey do aparelho com a extensão **PRF**. O autenticador só entrega o segredo PRF depois da digital ou do rosto, e esse segredo (via HKDF) abre uma segunda cópia da entropia, também presa à chave do aparelho. Ativar pede o PIN. Sem PRF, a opção não é ativada, porque uma biometria conferida só em JavaScript poderia ser burlada. Biometria recusada não gasta tentativa de PIN: o limite fica no hardware.
 - **Bloqueio automático** configurável. Recarregar a página sempre bloqueia.
 - **Backup** `scb1.<iv>.<ct>` cifrado com a chave derivada das 12 palavras.
 - Todos os tokens são **JWT EdDSA** com `kid = did#chave`. A verificação lê a chave pública direto do DID, sem consultar servidor, e exige o `typ` esperado em cada etapa.
@@ -129,7 +130,7 @@ A apresentação é aprovada quando nenhuma checagem falha.
 
 ## 7. Critérios de aceite (automatizados, Chrome 154)
 
-O núcleo criptográfico é conferido contra vetores oficiais (BIP39/Trezor, RFC 5869, RFC 8032, RFC 7748, base58, did:key) em `tests/e2e/vetores-oficiais.spec.js`, com as fontes em `tests/fixtures/`. Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` e o PWA em `tests/e2e/pwa.spec.js` (Playwright, Chrome do sistema):
+O núcleo criptográfico é conferido contra vetores oficiais (BIP39/Trezor, RFC 5869, RFC 8032, RFC 7748, base58, did:key) em `tests/e2e/vetores-oficiais.spec.js`, com as fontes em `tests/fixtures/`. Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js`, o PWA em `tests/e2e/pwa.spec.js` e a biometria em `tests/e2e/biometria.spec.js` (sensor simulado pelo autenticador virtual do Chrome) (Playwright, Chrome do sistema):
 
 ```
 npm install
@@ -173,7 +174,9 @@ O PIN **não** protege contra quem consegue rodar código no navegador da pessoa
 | Só o arquivo do armazenamento, copiado para outro aparelho | Nada: a camada interna depende da chave do aparelho, que não sai do navegador |
 | Código rodando no próprio navegador | Chamar a conferência do PIN diretamente, sem passar pelo contador, e testar os 10⁶ PINs. Com PBKDF2 de 600.000 iterações, leva de horas a poucos dias em um computador comum |
 
-Por isso a segurança real da identidade são as **12 palavras**, e o PIN é uma trava de conveniência. A correção definitiva é tirar a decisão do navegador: desbloqueio por passkey/WebAuthn, em que o limite de tentativas fica no hardware (Fase 3).
+Por isso a segurança real da identidade são as **12 palavras**, e o PIN é uma trava de conveniência.
+
+A **biometria** não tem essa fraqueza: o segredo que abre a identidade sai do chip de segurança do aparelho só depois da digital ou do rosto, e nenhum código na página consegue pedir esse segredo sem a pessoa. Mas, enquanto o PIN continuar ativo como alternativa, a cópia protegida pelo PIN continua sujeita ao ataque acima. Próximo passo possível: opção "usar só biometria", que apaga a cópia do PIN (a recuperação passa a ser só pelas 12 palavras).
 
 ## 9. Próximos passos sugeridos
 
