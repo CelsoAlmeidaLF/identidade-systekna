@@ -102,7 +102,7 @@ test.describe('1.1 · contador de tentativas do PIN', () => {
     await telaDoPin(carteira, 'Digite seu PIN');
     expect((await guard(carteira)).fails).toBe(1);
 
-    // Restaura o cofre e desbloqueia: o PIN certo zera o contador.
+    // Restaura o registro do PIN e desbloqueia: o PIN certo zera o contador.
     await carteira.evaluate(l => DB.set('lock', l), lock);
     await digitarPin(carteira);
     await expect(carteira.locator('#sApp')).toBeVisible();
@@ -203,7 +203,7 @@ test('1.5 · status não verificável é recusado por padrão e aceito só com p
   await expect(out.locator('.chk.na').filter({ hasText: 'o status não pode ser conferido aqui' })).toHaveCount(1);
 });
 
-test('1.6 · cartões antigos saem do cofre ao desbloquear e não voltam pelo backup', async () => {
+test('1.6 · cartões antigos são apagados ao desbloquear e não voltam pelo backup', async () => {
   const ts = Date.now();
   await carteira.evaluate(t => saveItem({ type: 'cartao', title: 'Cartão antigo', fields: { name: 'Maria', num: '4111111111111111', exp: '12/30', cvv: '123' }, created: t, updated: t }), ts);
   expect(await carteira.evaluate(() => ses.items.filter(i => i.data.type === 'cartao').length)).toBe(1);
@@ -214,7 +214,7 @@ test('1.6 · cartões antigos saem do cofre ao desbloquear e não voltam pelo ba
   await fecharSheet(carteira);
 
   await bloquearEDesbloquear(carteira);
-  await expect(toast(carteira)).toHaveText('1 cartão removido do cofre');
+  await expect(toast(carteira)).toHaveText('1 cartão antigo removido');
   const restantes = await carteira.evaluate(async () => {
     const recs = (await DB.get('items')) || [];
     const tipos = await Promise.all(recs.map(async r => (await unseal(ses.vaultKey, r, r.id)).type));
@@ -225,7 +225,7 @@ test('1.6 · cartões antigos saem do cofre ao desbloquear e não voltam pelo ba
   await ajusteCarteira('import');
   await carteira.fill('#riT', backup);
   await carteira.click('#riGo');
-  await expect(toast(carteira)).toContainText('restaurado');
+  await expect(toast(carteira)).toContainText('restaurad');
   expect(await carteira.evaluate(() => ses.items.filter(i => i.data.type === 'cartao').length)).toBe(0);
 });
 

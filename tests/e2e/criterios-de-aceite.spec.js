@@ -10,7 +10,6 @@ test.describe.configure({ mode: 'serial' });
 
 /** @type {import('@playwright/test').Page} */ let carteira;
 /** @type {import('@playwright/test').Page} */ let emissor;
-let didCarteira = '';
 let pedido = '';
 let credencial = '';
 let apresentacao = '';
@@ -64,7 +63,6 @@ test.beforeAll(async ({ browser }) => {
   vigiarCsp(emissor, violacoesCsp);
   await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
   await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
-  didCarteira = await carteira.evaluate(() => ses.did);
 });
 
 test.afterAll(async () => {
@@ -150,38 +148,6 @@ test('08 · após a revogação, uma nova apresentação é recusada', async () 
   const out = await conferirApresentacao(/** @type {string} */ (nova));
   await expect(out).toContainText('Apresentação recusada');
   await expect(out.locator('.chk.no')).toContainText('Revogada');
-});
-
-test('09 e 10 · documento registrado confere, arquivo alterado falha e o certificado entra na carteira', async () => {
-  const original = { name: 'contrato.txt', mimeType: 'text/plain', buffer: Buffer.from('Contrato de teste Systekna\n') };
-  const alterado = { ...original, buffer: Buffer.from('Contrato de teste Systekna!\n') };
-
-  await aba(emissor, 'vDocs');
-  await emissor.setInputFiles('#dFile', original);
-  await expect(emissor.locator('#dInfo')).toContainText('SHA-256');
-  await emissor.fill('#dName', 'Maria Teste');
-  await emissor.fill('#dDid', didCarteira);
-  await emissor.click('#dGo');
-  await expect(emissor.locator('#dOk')).toContainText('Registro nº 1');
-  const certificado = await emissor.inputValue('#dJwt');
-
-  await emissor.click('#dSeg button:has-text("Conferir")');
-  await emissor.fill('#cT', certificado);
-
-  await emissor.setInputFiles('#cFile', original);
-  await expect(emissor.locator('#cInfo')).toContainText('SHA-256');
-  await emissor.click('#cGo');
-  await expect(emissor.locator('#cOut')).toContainText('Documento autêntico');
-
-  await emissor.setInputFiles('#cFile', alterado);
-  await expect(emissor.locator('#cInfo')).toContainText('SHA-256');
-  await emissor.click('#cGo');
-  await expect(emissor.locator('#cOut')).toContainText('Documento não confere');
-
-  // Critério 10: com DID informado, o certificado vai para a carteira.
-  await receberNaCarteira(certificado);
-  await expect(carteira.locator('#cList')).toContainText('Registro de documento');
-  await expect(carteira.locator('#cList')).toContainText('contrato.txt');
 });
 
 test('11 · adulterar um ato do livro é detectado no ato exato', async () => {

@@ -1,37 +1,16 @@
 /* ================= serviço ================= */
-// Tipos que o cofre não guarda mais: são apagados ao abrir e ignorados ao restaurar backup.
+// A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
+// completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
+const KEPT_TYPES=['cred'];
+// Cartões de pagamento não são guardados (RN10): são apagados ao abrir e ignorados ao restaurar backup.
 const REMOVED_TYPES=['cartao'];
-const TYPES={
-  senha:{label:'Senha',plural:'Senhas',icon:'key',fields:[['user','Usuário ou e-mail'],['pass','Senha','secret'],['url','Site ou app']]},
-  nota:{label:'Nota',plural:'Notas',icon:'note',fields:[['text','Texto','area']]},
-  doc:{label:'Documento',plural:'Documentos',icon:'id',fields:[['holder','Titular',,'Ex.: Eu, Mãe, Filho'],['kind','Tipo','select'],['num','Número','secret'],['issuer','Órgão emissor'],['exp','Validade','date']]}
-};
-// Documento é anotação do titular: não é prova e nunca vira credencial (RN59). Serve para ter à mão, ser avisado do vencimento e mandar cifrado.
-const DOC_KINDS={rg:'RG',cpf:'CPF',cnh:'CNH',passaporte:'Passaporte',sus:'Cartão SUS',outro:'Outro'};
-const ISO_DAY=/^\d{4}-\d{2}-\d{2}$/;
-const DOC_SOON_DAYS=60; // renovar CNH ou passaporte leva semanas
-const fmtCpf=s=>String(s).replace(/\D/g,'').replace(/(\d{3})(\d{3})(\d{3})(\d{2})/,'$1.$2.$3-$4');
-// Validade antiga em texto livre continua guardada e aparece como texto, sem aviso.
-function docState(exp){
-  if(!exp||!ISO_DAY.test(exp))return null;
-  const day=new Date(exp+'T00:00:00'),today=new Date();today.setHours(0,0,0,0);
-  const n=Math.round((day-today)/86400000);
-  if(n<0)return['no','Vencido'];
-  if(n<=DOC_SOON_DAYS)return['warn',n===0?'Vence hoje':n===1?'Vence amanhã':`Vence em ${n} dias`];
-  return['ok','Válido até '+fmtDate(day)];
-}
-// Valor como a pessoa lê: o tipo pelo nome e a data no formato do Brasil.
-const fieldText=(k,v)=>k==='kind'?DOC_KINDS[v]||v:k==='exp'&&ISO_DAY.test(v)?fmtDate(new Date(v+'T00:00:00')):v;
 
 const APP={
   db:'systekna-carteira',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
-  importHint:'Junta itens e credenciais ao que já está aqui',
+  importHint:'Junta as credenciais do backup às que já estão aqui',
   howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
   <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O emissor confere essa assinatura e só então sabe que quem pede controla o DID.</p>
   <p><b>Credencial.</b> É uma afirmação sobre você assinada pela chave do emissor. Ela fica cifrada aqui e não serve sozinha como prova.</p>
-  <p><b>Emissores confiáveis.</b> A carteira só dá selo às credenciais dos emissores cujo convite você importou. As outras ficam marcadas como de emissor desconhecido. A confiança não passa adiante: confiar num emissor não faz confiar nos emissores em que ele confia.</p>
-  <p><b>Contatos.</b> O cartão de contato é assinado pelo dono e leva o DID, a chave de cifragem, o apelido e as credenciais de grupo que ele escolheu mostrar. Um grupo só ganha selo se a credencial for de um emissor confiável, estiver no prazo e tiver sido emitida para o dono do cartão.</p>
-  <p><b>Conferir pessoa.</b> Você manda um desafio assinado para o DID do contato, e só quem tem a chave daquele DID consegue devolver a resposta. Serve contra o golpe do "troquei de número".</p>
   <p><b>Apresentação.</b> Quem verifica gera um desafio novo. A carteira embrulha a credencial e assina junto com esse desafio. Assim o verificador confere que a credencial é verdadeira e que foi o dono quem apresentou, agora. Uma cópia antiga não passa.</p>
   <p><b>PIN.</b> Ele só destrava as chaves neste aparelho, em duas camadas: PBKDF2-SHA256 com 600 mil iterações e uma chave do aparelho que o navegador não deixa exportar. Seis dígitos são 1 milhão de combinações, então em produção o PIN deve ser conferido por hardware seguro.</p>`,
   async load(){
@@ -42,19 +21,19 @@ const APP={
     ses.purged=n-ses.items.length;
     if(ses.purged)await persistItems();
   },
-  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão removido':'cartões removidos'} do cofre`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
-  onView(v){if(v==='vCreds')renderCreds();if(v==='vVault')renderVault();if(v==='vContacts')renderContacts()},
+  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  onView(v){if(v==='vCreds')renderCreds()},
   onLock(){
-    ['#cList','#vList','#mOpenOut','#ctIss','#ctPeople','#ctChips'].forEach(s=>$(s).innerHTML='');ctFilter='all';usedChecks.clear();
+    ['#cList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
     ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
     $('#mSealOut').hidden=true;
   },
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
     let n=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});n++}catch{}}
-    await persistItems();renderCreds();renderVault();
-    return `${n} ${n===1?'item restaurado':'itens restaurados'}`;
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(KEPT_TYPES.includes(d.type))n++}catch{}}
+    await persistItems();renderCreds();
+    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}`;
   }
 };
 async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
@@ -80,35 +59,20 @@ function credState(d){
   return['ok','Até '+fmtDate(d.exp*1000)];
 }
 const usable=d=>credState(d)[0]!=='no';
-const GROUP_TYPE='MembroDoGrupo';
-const credClaim=(d,k)=>(vcClaims(decodeJWT(d.jwt).payload).find(c=>c[0]===k)||[])[1];
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype===GROUP_TYPE)return credClaim(d,'grupo')||'Grupo';
   if(d.vtype==='AgeOver18Credential')return 'Maior de 18 anos';
-  if(d.vtype==='DocumentRegistrationCredential')return (cl.find(c=>c[0]==='documento')||[,'Documento'])[1];
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 function credCard(it,asDiv){
   const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
   return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
-/* ================= emissores confiáveis ================= */
-const issuers=()=>ses.items.filter(i=>i.data.type==='issuer').sort((a,b)=>a.data.name.localeCompare(b.data.name));
-const trustedIssuer=did=>issuers().find(i=>i.data.did===did);
-// Nome do emissor: o que veio no convite aceito; sem convite, o que a credencial declara.
-const issuerLabel=(did,fallback)=>{const t=trustedIssuer(did);return t?t.data.name:fallback};
-
 function renderCreds(){
   if(!ses)return;
   const list=creds();
-  // Seções por emissor: os confiáveis primeiro, depois os desconhecidos.
-  const by=new Map();
-  for(const i of list){const k=i.data.issuerDid;if(!by.has(k))by.set(k,[]);by.get(k).push(i)}
-  const secs=[...by.entries()].map(([did,its])=>({did,its,trusted:!!trustedIssuer(did),name:issuerLabel(did,its[0].data.issuerName)}))
-    .sort((a,b)=>(b.trusted-a.trusted)||a.name.localeCompare(b.name));
   $('#cNote').hidden=!list.length;
-  $('#cList').innerHTML=list.length?secs.map(x=>`<section class="csec" data-issuer="${esc(x.did)}"><div class="sec-h">${esc(x.name)}${x.trusted?'':' <span class="pill warn">Emissor desconhecido</span>'}</div><div class="creds">${x.its.map(i=>credCard(i)).join('')}</div></section>`).join('')
+  $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Pedir credencial</b>. O pedido é assinado e prova que você controla este DID.</span></li>
       <li><span>Leve o pedido ao <b>Emissor de Credenciais</b>, que confere a assinatura e emite a credencial.</span></li>
@@ -121,27 +85,21 @@ function actionMenu(){
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
     ${row('ask','send','Pedir credencial','Gera um pedido assinado para o emissor')}
     ${row('get','inbox','Receber credencial','Cola a credencial que o emissor emitiu')}
-    ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}
-    ${row('trust','shield','Confiar em um emissor','Cola o convite de um emissor')}
-    ${row('answer','check','Responder conferência','Prova a um contato que é você mesmo')}
-    ${row('item','vault','Guardar no cofre','Senha, nota ou documento')}</div>`);
-  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:()=>askCred(),get:receiveCred,show:()=>present(),trust:trustIssuer,answer:answerCheck,item:()=>editItem()})[b.dataset.act]()};
+    ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}</div>`);
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present()})[b.dataset.act]()};
 }
 
-// pre: renovação de credencial de grupo (tipo, nome e grupo já preenchidos).
-function askCred(pre){
+function askCred(){
   openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
-    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([k])=>k!=='DocumentRegistrationCredential').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
+    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
-  if(pre){$('#aqN').value=pre.name||'';$('#aqT').value=GROUP_TYPE;$('#aqO').value=`Renovação: ${pre.grupo}`}
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
-    const iat=now(),renew=pre&&$('#aqT').value===GROUP_TYPE?{grupo:pre.grupo}:{};
-    // x: a chave de cifragem vai junto para entrar na credencial de grupo.
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),x:ses.xMb,...renew,nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    const iat=now();
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
@@ -175,14 +133,12 @@ function showCred(id){
   openSheet(`${credCard(it,true)}
     <div class="sec-h">Afirmações</div><div class="list glass flat">${rows||'<div class="empty">Sem afirmações.</div>'}</div>
     <div class="sec-h">Origem</div><div class="list glass flat">
-      <div class="kr"><div class="h"><small>Emissor</small>${trustedIssuer(d.issuerDid)?'<span class="pill ok">Confiável</span>':'<span class="pill warn">Emissor desconhecido</span>'}</div><div class="v">${esc(issuerLabel(d.issuerDid,d.issuerName))}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
+      <div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
       <div class="kr"><div class="h"><small>Emitida em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
     <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o emissor assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
-    ${d.vtype===GROUP_TYPE&&st!=='ok'?'<button class="btn" id="scR">Pedir renovação</button>':''}
-    <button class="btn${d.vtype===GROUP_TYPE&&st!=='ok'?' ghost':''}" id="scP">Apresentar</button>
+    <button class="btn" id="scP">Apresentar</button>
     <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
   $('#scP').onclick=()=>present(id);
-  $('#scR')&&($('#scR').onclick=()=>askCred({name:credClaim(d,'nome'),grupo:credClaim(d,'grupo')}));
   $('#scD').onclick=async()=>{
     if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no emissor continua igual, e você pode pedir outra.','Remover',true))return;
     ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCreds();toast('Credencial removida');
@@ -219,311 +175,6 @@ function present(preId){
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });
-  };
-}
-
-/* ================= contatos: pessoas ================= */
-const contacts=()=>ses.items.filter(i=>i.data.type==='contact').sort((a,b)=>a.data.name.localeCompare(b.data.name));
-const contactOf=did=>contacts().find(c=>c.data.did===did);
-// Selos de um contato, recalculados a cada vez: confiar ou deixar de confiar num emissor, e o vencimento, mudam o resultado.
-function badges(c){
-  return c.data.groups.map(g=>{
-    const t=trustedIssuer(g.issuerDid),late=g.exp<=now();
-    return{...g,issuerName:t?t.data.name:g.issuerName,ok:!!t&&!late,why:!t?'Emissor não confiável':late?'Vencida':'Até '+fmtDate(g.exp*1000)};
-  });
-}
-const badgeKey=b=>b.issuerDid+'|'+b.grupo;
-let ctFilter='all';
-const CARD_DAYS=30;
-
-/* Confere cada credencial anexada ao cartão: assinatura do emissor, tipo de grupo e titular igual ao dono do cartão. */
-async function cardGroups(owner,toks){
-  const out=[];
-  for(const tok of Array.isArray(toks)?toks.slice(0,20):[]){
-    try{
-      const r=await verifyJWT(tok,'vc+jwt'),q=r.payload;
-      if(!r.ok||vcType(q)!==GROUP_TYPE||q.sub!==owner||!q.exp)continue;
-      const grupo=String((q.vc.credentialSubject||{}).grupo||'').trim();if(!grupo)continue;
-      out.push({grupo,issuerDid:r.did,issuerName:vcIssuerName(q),exp:q.exp,jti:q.jti});
-    }catch{}
-  }
-  return out;
-}
-
-function renderPeople(){
-  const all=contacts(),bs=new Map();
-  for(const c of all)for(const b of badges(c))if(b.ok)bs.set(badgeKey(b),b);
-  if(ctFilter!=='all'&&!bs.has(ctFilter))ctFilter='all';
-  $('#ctChips').innerHTML=bs.size?[['all','Todos'],...[...bs.entries()].map(([k,b])=>[k,`${b.grupo} · ${b.issuerName}`])].map(([k,l])=>`<button class="chip" data-cf="${esc(k)}" aria-pressed="${ctFilter===k}">${esc(l)}</button>`).join(''):'';
-  const list=ctFilter==='all'?all:all.filter(c=>badges(c).some(b=>b.ok&&badgeKey(b)===ctFilter));
-  $('#ctN').textContent=all.length?`${all.length} no total`:'';
-  $('#ctPeople').innerHTML=list.length?list.map(c=>{const ok=badges(c).filter(b=>b.ok);return `<button class="tx" data-ct="${c.rec.id}"><span class="dot">${ic('user')}</span><span class="t"><b>${esc(c.data.name)}</b><small>${ok.length?esc(ok.map(b=>`${b.grupo} · ${b.issuerName}`).join(', ')):'Sem selo de grupo'}</small></span>${ic('chev')}</button>`}).join('')
-    :`<div class="glass flat card"><b>Nenhum contato ainda</b><ol class="steps">
-      <li><span>Importe o convite do emissor do seu grupo e peça a credencial do grupo.</span></li>
-      <li><span>Toque em <b>Meu cartão</b>, escolha os grupos que quer mostrar e mande o cartão.</span></li>
-      <li><span>Quem receber o seu cartão importa em <b>Importar cartão</b>, e você faz o mesmo com o dele.</span></li></ol></div>`;
-}
-$('#ctChips').onclick=e=>{const b=e.target.closest('[data-cf]');if(b){ctFilter=b.dataset.cf;renderPeople()}};
-$('#ctPeople').onclick=e=>{const b=e.target.closest('[data-ct]');if(b)showContact(b.dataset.ct)};
-
-$('#ctMine').onclick=()=>{
-  const gs=creds().filter(c=>c.data.vtype===GROUP_TYPE&&usable(c.data));
-  openSheet(`<h3>Meu cartão</h3><p class="sub">O cartão leva o seu DID, a sua chave de cifragem e só os grupos que você escolher. Ele é assinado por você e vale por ${CARD_DAYS} dias para importar.</p>
-    <label class="f" id="mcNF"><span>Apelido</span><input id="mcN" autocomplete="nickname" placeholder="Como os contatos vão ver você"></label>
-    <div class="sec-h">Grupos que o cartão mostra</div>
-    ${gs.length?`<div class="list glass flat" id="mcG">${gs.map(c=>`<button class="choice" data-mg="${c.rec.id}" aria-pressed="false"><span class="rd"></span><span class="t"><b>${esc(credMain(c.data))}</b><small>${esc(issuerLabel(c.data.issuerDid,c.data.issuerName))}</small></span></button>`).join('')}</div>`
-      :'<p class="hint">Você ainda não tem credencial de grupo. O cartão vai sem selos.</p>'}
-    <button class="btn" id="mcGo">Gerar cartão</button><div id="mcOut"></div>`);
-  $('#mcG')&&($('#mcG').onclick=e=>{const b=e.target.closest('[data-mg]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')});
-  $('#mcGo').onclick=async()=>{
-    const apelido=$('#mcN').value.trim();if(!apelido){shake($('#mcNF'));$('#mcN').focus();return}
-    const pick=[...document.querySelectorAll('#mcG [data-mg][aria-pressed="true"]')].map(b=>ses.items.find(i=>i.rec.id===b.dataset.mg).data.jwt);
-    const iat=now(),tok=await signJWT('contato+jwt',{iss:ses.did,sub:ses.did,apelido,x:ses.xMb,creds:pick,iat,exp:iat+CARD_DAYS*86400});
-    $('#mcOut').innerHTML=`<label class="f"><span>Cartão assinado${pick.length?`, com ${pick.length} ${pick.length===1?'grupo':'grupos'}`:', sem grupos'}</span><textarea class="mono" id="mcJ" rows="5" readonly>${tok}</textarea></label><button class="btn ghost" id="mcC">Copiar cartão</button>`;
-    $('#mcC').onclick=()=>copy(tok,'Cartão copiado');toast('Cartão gerado');
-  };
-};
-
-$('#ctImport').onclick=()=>{
-  openSheet(`<h3>Importar cartão</h3><p class="sub">Cole o cartão que o contato mandou. A carteira confere a assinatura dele e a de cada grupo.</p>
-    <label class="f" id="icF"><span>Cartão de contato</span><textarea class="mono" id="icT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="icH"></p>
-    <button class="btn" id="icGo">Conferir cartão</button><div id="icStep"></div>`);
-  $('#icGo').onclick=async()=>{
-    const H=$('#icH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#icF'));$('#icStep').innerHTML=''};
-    H.textContent='';H.classList.remove('bad');
-    let r;try{r=await verifyJWT($('#icT').value)}catch(e){return fail(e.message)}
-    const p=r.payload;
-    if(r.header.typ!=='contato+jwt')return fail('Isto não é um cartão de contato. Ele é gerado em Contatos, Meu cartão.');
-    if(!r.ok)return fail('A assinatura do cartão não confere: ele foi alterado ou não é de quem diz.');
-    if(!p.exp||p.exp<now())return fail('Este cartão venceu. Peça um novo ao contato.');
-    if(r.did===ses.did)return fail('Este cartão é o seu.');
-    try{parseXKey(String(p.x||''))}catch{return fail('O cartão não traz uma chave de cifragem válida.')}
-    const groups=await cardGroups(r.did,p.creds),had=contactOf(r.did);
-    const apelido=String(p.apelido||'').trim().slice(0,60)||shortDid(r.did);
-    const tmp={data:{groups}},shown=badges(tmp);
-    const dropped=(Array.isArray(p.creds)?p.creds.length:0)-groups.length;
-    $('#icStep').innerHTML=`<div class="list glass flat mt"><div class="kr"><div class="h"><small>Contato</small></div><div class="v">${esc(apelido)}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
-      <div class="kr"><div class="h"><small>Grupos</small></div><div class="v">${shown.length?shown.map(b=>`<span class="pill ${b.ok?'ok':'warn'}">${esc(b.grupo)} · ${esc(b.issuerName)}${b.ok?'':': '+esc(b.why)}</span>`).join(' '):'Nenhum'}</div></div></div>
-      ${dropped>0?`<p class="hint bad">${dropped} ${dropped===1?'credencial anexada foi descartada':'credenciais anexadas foram descartadas'}: assinatura inválida, tipo errado ou emitida para outra pessoa.</p>`:''}
-      <label class="f"><span>Nome na sua agenda</span><input id="icN" value="${esc(had?had.data.name:apelido)}" autocomplete="off"></label>
-      <button class="btn" id="icOk">${had?'Atualizar contato':'Salvar na agenda'}</button>`;
-    $('#icOk').onclick=async()=>{
-      const ts=Date.now(),name=$('#icN').value.trim()||apelido;
-      await saveItem({type:'contact',did:r.did,x:p.x,apelido,name,groups,created:had?had.data.created:ts,updated:ts},had&&had.rec.id);
-      closeSheet();renderPeople();toast(had?'Contato atualizado':'Contato salvo');
-    };
-  };
-};
-
-function showContact(id){
-  const c=ses.items.find(i=>i.rec.id===id);if(!c)return;
-  const bs=badges(c);
-  openSheet(`<div class="dhead"><span class="dot">${ic('user')}</span><div><h3>${esc(c.data.name)}</h3><small>Apelido no cartão: ${esc(c.data.apelido)}</small></div></div>
-    <div class="list glass flat">
-      <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(c.data.did)}</div></div>
-      <div class="kr"><div class="h"><small>Chave de cifragem</small></div><div class="v mono">${esc(c.data.x)}</div></div></div>
-    <div class="sec-h">Grupos</div>
-    <div class="list glass flat" id="scG">${bs.length?bs.map(b=>`<div class="tx"><span class="dot">${ic(b.ok?'badge':'alert')}</span><span class="t"><b>${esc(b.grupo)}</b><small>${esc(b.issuerName)}</small></span><span class="pill ${b.ok?'ok':'warn'}">${esc(b.why)}</span></div>`).join(''):'<div class="empty">O cartão não mostrou grupos.</div>'}</div>
-    <label class="f"><span>Nome na agenda</span><div class="inrow"><input id="scN" value="${esc(c.data.name)}" autocomplete="off"><button class="mini" id="scNS">Salvar</button></div></label>
-    <button class="btn" id="scK">Conferir pessoa</button>
-    <button class="btn ghost" id="scM">Escrever mensagem cifrada</button>
-    <button class="btn ghost" id="scX" style="color:var(--out)">Remover da agenda</button>`);
-  $('#scNS').onclick=async()=>{const n=$('#scN').value.trim();if(!n||n===c.data.name)return;await saveItem({...c.data,name:n,updated:Date.now()},c.rec.id);renderPeople();toast('Nome salvo');showContact(id)};
-  $('#scK').onclick=()=>checkPerson(id);
-  $('#scM').onclick=()=>{closeSheet();setView('vId');setSeg($('#mSeg'),0);$('#mA').hidden=false;$('#mB').hidden=true;$('#mTo').value=c.data.x;$('#mText').focus()};
-  $('#scX').onclick=async()=>{
-    if(!await confirmSheet('Remover contato',`${esc(c.data.name)} sai da sua agenda. Para voltar, importe o cartão de novo.`,'Remover',true))return;
-    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderPeople();toast('Contato removido');
-  };
-}
-
-/* ================= conferir pessoa ================= */
-// Desafios já respondidos nesta sessão: a mesma resposta não aprova duas vezes.
-const usedChecks=new Set();
-const CHECK_TTL=600;
-async function checkPerson(id){
-  const c=ses.items.find(i=>i.rec.id===id);if(!c)return;
-  const iat=now(),tok=await signJWT('conferencia+jwt',{iss:ses.did,aud:c.data.did,name:c.data.name,nonce:b64u.enc(rnd(18)),iat,exp:iat+CHECK_TTL});
-  openSheet(`<h3>Conferir ${esc(c.data.name)}</h3><p class="sub">Mande o desafio para a pessoa. Na carteira dela, em + e Responder conferência, sai a resposta. Só quem tem a chave deste DID consegue responder.</p>
-    <label class="f"><span>Desafio, válido por 10 minutos</span><textarea class="mono" id="kpJ" rows="4" readonly>${tok}</textarea></label><button class="btn ghost" id="kpC">Copiar desafio</button>
-    <label class="f" id="kpF"><span>Resposta da pessoa</span><textarea class="mono" id="kpR" rows="4" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label>
-    <button class="btn" id="kpGo">Conferir resposta</button><div id="kpOut"></div>`);
-  $('#kpC').onclick=()=>copy(tok,'Desafio copiado');
-  $('#kpGo').onclick=async()=>{
-    if(!$('#kpR').value.trim()){shake($('#kpF'));return}
-    const v=await checkAnswer($('#kpR').value,c.data.did);
-    $('#kpOut').innerHTML=verdictHtml(v.ok,v.ok?`É mesmo ${esc(c.data.name)}`:'Não confere',esc(v.msg));
-  };
-}
-/* A resposta tem de vir do DID do contato e carregar um desafio que esta carteira assinou para ele, ainda no prazo. */
-async function checkAnswer(tok,who){
-  let r;try{r=await verifyJWT(tok)}catch(e){return{ok:false,msg:e.message}}
-  if(r.header.typ!=='resposta+jwt')return{ok:false,msg:'Isto não é uma resposta de conferência.'};
-  if(!r.ok)return{ok:false,msg:'A assinatura da resposta não confere.'};
-  if(r.did!==who)return{ok:false,msg:'A resposta foi assinada por outro DID. Quem respondeu não é este contato.'};
-  if(r.payload.aud!==ses.did)return{ok:false,msg:'A resposta foi feita para outra pessoa.'};
-  if(!r.payload.exp||r.payload.exp<now())return{ok:false,msg:'A resposta venceu. Mande um desafio novo.'};
-  let q;try{q=await verifyJWT(r.payload.desafio,'conferencia+jwt')}catch{return{ok:false,msg:'A resposta não traz um desafio válido.'}}
-  if(!q.ok||q.did!==ses.did)return{ok:false,msg:'O desafio da resposta não foi gerado por esta carteira.'};
-  if(q.payload.aud!==who)return{ok:false,msg:'O desafio era para outra pessoa.'};
-  if(q.payload.exp<now())return{ok:false,msg:'O desafio venceu. Mande um novo.'};
-  if(usedChecks.has(q.payload.nonce))return{ok:false,msg:'Esta resposta já foi usada. Pode ser uma cópia reaproveitada.'};
-  usedChecks.add(q.payload.nonce);
-  return{ok:true,msg:'A resposta foi assinada pela chave deste DID, agora, para o seu desafio.'};
-}
-function answerCheck(){
-  openSheet(`<h3>Responder conferência</h3><p class="sub">Cole o desafio que o contato mandou. A resposta prova que este DID é seu.</p>
-    <label class="f" id="raF"><span>Desafio</span><textarea class="mono" id="raT" rows="4" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="raH"></p>
-    <button class="btn" id="raGo">Ler desafio</button><div id="raStep"></div>`);
-  $('#raGo').onclick=async()=>{
-    const H=$('#raH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#raF'));$('#raStep').innerHTML=''};
-    H.textContent='';H.classList.remove('bad');
-    let r;try{r=await verifyJWT($('#raT').value)}catch(e){return fail(e.message)}
-    if(r.header.typ!=='conferencia+jwt')return fail(r.header.typ==='desafio+jwt'?'Isto é um desafio de verificador. Use Apresentar credencial.':'Isto não é um desafio de conferência.');
-    if(!r.ok)return fail('A assinatura do desafio não confere. Não responda.');
-    if(r.payload.aud!==ses.did)return fail('Este desafio foi feito para outra pessoa.');
-    if(!r.payload.exp||r.payload.exp<now())return fail('Este desafio venceu. Peça um novo.');
-    const who=contactOf(r.did);
-    $('#raStep').innerHTML=`<div class="list glass flat mt"><div class="kr"><div class="h"><small>Quem pede</small>${who?'':'<span class="pill warn">Fora da agenda</span>'}</div><div class="v">${esc(who?who.data.name:'Contato desconhecido')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div></div>
-      <button class="btn" id="raSign">Assinar resposta</button><div id="raOut"></div>`;
-    $('#raSign').onclick=async()=>{
-      const iat=now(),ans=await signJWT('resposta+jwt',{iss:ses.did,aud:r.did,desafio:r.tok,iat,exp:iat+300});
-      $('#raOut').innerHTML=`<label class="f"><span>Resposta, válida por 5 minutos</span><textarea class="mono" id="raJ" rows="4" readonly>${ans}</textarea></label><button class="btn ghost" id="raC">Copiar resposta</button>`;
-      $('#raC').onclick=()=>copy(ans,'Resposta copiada');toast('Resposta assinada');
-    };
-  };
-}
-
-/* ================= contatos: emissores confiáveis ================= */
-function renderContacts(){
-  if(!ses)return;
-  renderPeople();
-  const iss=issuers();
-  $('#ctIss').innerHTML=iss.length?iss.map(i=>`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(i.data.name)}</b><small class="mono">${esc(shortDid(i.data.did))}</small></span><button class="mini sm" data-untrust="${i.rec.id}" aria-label="Deixar de confiar em ${esc(i.data.name)}">${ic('trash')}</button></div>`).join('')
-    :'<div class="empty">Nenhum emissor ainda. Peça o convite a quem emite as credenciais do seu grupo.</div>';
-}
-$('#ctIssAdd').onclick=()=>trustIssuer();
-$('#ctIss').onclick=async e=>{
-  const b=e.target.closest('[data-untrust]');if(!b)return;
-  const it=ses.items.find(i=>i.rec.id===b.dataset.untrust);if(!it)return;
-  if(!await confirmSheet('Deixar de confiar',`As credenciais de ${esc(it.data.name)} perdem o selo nesta carteira e na agenda. Elas continuam guardadas.`,'Deixar de confiar',true))return;
-  ses.items=ses.items.filter(i=>i!==it);await persistItems();renderContacts();renderCreds();toast('Emissor removido');
-};
-function trustIssuer(){
-  openSheet(`<h3>Confiar em um emissor</h3><p class="sub">Cole o convite que o emissor mandou. A carteira confere a assinatura e mostra quem é antes de você aceitar.</p>
-    <label class="f" id="tiF"><span>Convite</span><textarea class="mono" id="tiT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="tiH"></p>
-    <button class="btn" id="tiGo">Conferir convite</button><div id="tiStep"></div>`);
-  $('#tiGo').onclick=async()=>{
-    const H=$('#tiH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#tiF'));$('#tiStep').innerHTML=''};
-    H.textContent='';H.classList.remove('bad');
-    let r;try{r=await verifyJWT($('#tiT').value)}catch(e){return fail(e.message)}
-    if(r.header.typ!=='emissor+jwt')return fail('Isto não é um convite de emissor. No emissor, ele fica em Governança.');
-    if(!r.ok)return fail('A assinatura do convite não confere: ele foi alterado ou não é deste emissor.');
-    if(!r.payload.exp||r.payload.exp<now())return fail('Este convite venceu. Peça um novo ao emissor.');
-    const name=String(r.payload.name||'').trim()||shortDid(r.did),had=trustedIssuer(r.did);
-    $('#tiStep').innerHTML=`<div class="list glass flat mt"><div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(name)}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div></div>
-      <p class="hint">Confira com quem mandou que o nome e o começo do DID são estes.</p><button class="btn" id="tiOk">${had?'Atualizar nome':'Confiar neste emissor'}</button>`;
-    $('#tiOk').onclick=async()=>{
-      const ts=Date.now();
-      await saveItem({type:'issuer',did:r.did,name,created:had?had.data.created:ts,updated:ts},had&&had.rec.id);
-      closeSheet();renderContacts();renderCreds();toast(had?'Nome do emissor atualizado':'Emissor confiável adicionado');
-    };
-  };
-}
-
-/* ================= cofre de dados ================= */
-let vFilter='all';
-function renderVault(){
-  if(!ses)return;
-  const items=ses.items.filter(i=>TYPES[i.data.type]);
-  $('#vChips').innerHTML=[['all','Todos'],...Object.entries(TYPES).map(([k,t])=>[k,t.plural])].map(([k,l])=>`<button class="chip" data-f="${k}" aria-pressed="${vFilter===k}">${l}</button>`).join('');
-  const n=items.length;$('#vCount').textContent=`Cofre aberto, ${n} ${n===1?'item cifrado':'itens cifrados'}`;
-  const q=fold($('#vSearch').value);
-  const list=items.filter(i=>{const F=i.data.fields;return(vFilter==='all'||i.data.type===vFilter)&&(!q||fold([i.data.title,F.user,F.url,F.issuer,F.holder,DOC_KINDS[F.kind]].join(' ')).includes(q))}).sort((a,b)=>b.data.updated-a.data.updated);
-  $('#vList').innerHTML=list.length?list.map(i=>{
-    const T=TYPES[i.data.type],F=i.data.fields,doc=i.data.type==='doc',st=doc&&docState(F.exp);
-    const sub=doc?[DOC_KINDS[F.kind]||T.label,F.holder].filter(Boolean).join(', '):`${T.label}, ${fmtDate(i.data.updated)}`;
-    return `<button class="tx" data-id="${i.rec.id}"><span class="dot">${ic(T.icon)}</span><span class="t"><b>${esc(i.data.title)}</b><small>${esc(sub)}</small></span>${st&&st[0]!=='ok'?`<span class="pill ${st[0]}">${st[1]}</span>`:ic('chev')}</button>`}).join('')
-    :`<div class="empty">${n?'Nada encontrado com esse filtro.':'O cofre está vazio. Toque em + e escolha Guardar no cofre.'}</div>`;
-}
-$('#vSearch').oninput=renderVault;
-$('#vChips').onclick=e=>{const b=e.target.closest('.chip');if(b){vFilter=b.dataset.f;renderVault()}};
-$('#vList').onclick=e=>{const b=e.target.closest('[data-id]');if(b)showItem(b.dataset.id)};
-function genPass(n=20){const cs='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789!@#$%&*?-_';let s='';while(s.length<n){const b=rnd(1)[0];if(b<cs.length*Math.floor(256/cs.length))s+=cs[b%cs.length]}return s}
-function editItem(id){
-  const it=id&&ses.items.find(i=>i.rec.id===id);
-  let type=it?it.data.type:'senha';
-  const fieldHtml=(t,vals={})=>TYPES[t].fields.map(([k,label,kind,ph])=>kind==='area'
-    ?`<label class="f"><span>${label}</span><textarea data-k="${k}" rows="5">${esc(vals[k])}</textarea></label>`
-    :kind==='select'
-    ?`<label class="f"><span>${label}</span><select data-k="${k}"><option value="">Escolha</option>${Object.entries(DOC_KINDS).map(([v,l])=>`<option value="${v}" ${vals[k]===v?'selected':''}>${l}</option>`).join('')}</select></label>`
-    :`<label class="f" data-f="${k}"><span>${label}</span><div class="inrow"><input data-k="${k}" value="${esc(vals[k])}" ${kind==='secret'?'type="password"':kind==='date'&&(!vals[k]||ISO_DAY.test(vals[k]))?'type="date"':''} ${ph?`placeholder="${esc(ph)}"`:''} autocomplete="off" autocapitalize="none" spellcheck="false">${kind==='secret'?`<button type="button" class="mini" data-peek aria-label="Mostrar ou esconder">${ic('eye')}</button>`:''}${k==='pass'?'<button type="button" class="mini" data-gen>Gerar</button>':''}</div></label>`).join('');
-  openSheet(`<h3>${it?'Editar':'Guardar no cofre'}</h3>
-    ${it?'':`<div class="chips">${Object.entries(TYPES).map(([k,t])=>`<button class="chip" data-t="${k}" aria-pressed="${k===type}">${t.label}</button>`).join('')}</div>`}
-    <label class="f" id="eTitleF"><span>Título</span><input id="eTitle" value="${esc(it?it.data.title:'')}" autocomplete="off" placeholder="Ex.: Banco, RG, Wi-Fi de casa"></label>
-    <div id="eFields">${fieldHtml(type,it?it.data.fields:{})}</div>
-    <button class="btn" id="eSave">${it?'Salvar alterações':'Guardar no cofre'}</button>`);
-  const body=$('#sheetBody');
-  body.onclick=e=>{
-    const t=e.target.closest('[data-t]');
-    if(t){type=t.dataset.t;body.querySelectorAll('[data-t]').forEach(b=>b.setAttribute('aria-pressed',b===t));$('#eFields').innerHTML=fieldHtml(type);return}
-    const pk=e.target.closest('[data-peek]');if(pk){const inp=pk.parentElement.querySelector('input');inp.type=inp.type==='password'?'text':'password';return}
-    if(e.target.closest('[data-gen]')){const inp=body.querySelector('[data-k="pass"]');inp.value=genPass();inp.type='text'}
-  };
-  $('#eSave').onclick=async()=>{
-    const title=$('#eTitle').value.trim();
-    if(!title){shake($('#eTitleF'));$('#eTitle').focus();return}
-    const fields={};body.querySelectorAll('[data-k]').forEach(i=>{if(i.value.trim())fields[i.dataset.k]=i.value});
-    if(type==='doc'&&fields.kind==='cpf'&&fields.num){
-      if(!cpfOk(fields.num)){shake(body.querySelector('[data-f="num"]'));toast('CPF inválido: confira os números.',true);return}
-      fields.num=fmtCpf(fields.num);
-    }
-    const ts=Date.now();
-    await saveItem({type,title,fields,created:it?it.data.created:ts,updated:ts},id);
-    closeSheet();setView('vVault');toast(it?'Alterações salvas':'Guardado no cofre');
-  };
-}
-function showItem(id){
-  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
-  const T=TYPES[it.data.type],F=it.data.fields,doc=it.data.type==='doc',st=doc&&docState(F.exp);
-  const rows=T.fields.filter(([k])=>F[k]).map(([k,label,kind])=>`<div class="kr"><div class="h"><small>${label}</small><span>${k==='exp'&&st?`<span class="pill ${st[0]}">${st[1]}</span>`:''}${kind==='secret'?`<button class="mini sm" data-show="${k}" aria-label="Mostrar">${ic('eye')}</button>`:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar">${ic('copy')}</button></span></div><div class="v" data-v="${k}">${kind==='secret'?'••••••••••':esc(fieldText(k,F[k]))}</div></div>`).join('');
-  openSheet(`<div class="dhead"><span class="dot">${ic(T.icon)}</span><div><h3>${esc(it.data.title)}</h3><small>${T.label}, atualizado em ${fmtDate(it.data.updated)}</small></div></div>
-    <div class="list glass flat">${rows||'<div class="empty">Só o título foi guardado.</div>'}</div>
-    <details class="raw"><summary>Ver como está guardado</summary><p>Este é o registro real no armazenamento do aparelho. Sem a chave que nasce das 12 palavras, ele é ilegível.</p><pre class="mono">id: ${it.rec.id}\niv: ${it.rec.iv}\ncifrado: ${it.rec.ct}</pre></details>
-    ${doc?'<p class="hint">Anotação sua, guardada cifrada. Não é prova de identidade.</p><button class="btn" id="iSend">Enviar cifrado para um contato</button>':''}
-    <div class="pair" style="margin-top:6px"><button class="btn ghost" id="iEdit">Editar</button><button class="btn danger" id="iDel">Excluir</button></div>`);
-  $('#sheetBody').onclick=e=>{
-    const s=e.target.closest('[data-show]');if(s){const v=$('#sheetBody').querySelector(`[data-v="${s.dataset.show}"]`);const open=v.dataset.open==='1';v.textContent=open?'••••••••••':F[s.dataset.show];v.dataset.open=open?'0':'1';return}
-    const c=e.target.closest('[data-cp]');if(c)copy(fieldText(c.dataset.cp,F[c.dataset.cp]));
-  };
-  if(doc)$('#iSend').onclick=()=>sendItem(id);
-  $('#iEdit').onclick=()=>editItem(id);
-  $('#iDel').onclick=async()=>{
-    if(!await confirmSheet('Excluir item',`“${esc(it.data.title)}” será apagado. Backups antigos ainda o contêm.`,'Excluir',true))return;
-    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderVault();toast('Item excluído');
-  };
-}
-
-// Texto que o contato vai ler depois de decifrar: só os campos preenchidos, já legíveis.
-const itemText=it=>[it.data.title,...TYPES[it.data.type].fields.filter(([k])=>it.data.fields[k]).map(([k,label])=>`${label}: ${fieldText(k,it.data.fields[k])}`)].join('\n');
-function sendItem(id){
-  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
-  const all=contacts();
-  openSheet(`<h3>Enviar “${esc(it.data.title)}”</h3>
-    <p class="lead">O documento sai cifrado para a chave do contato. Só a carteira dele abre, mesmo que a mensagem passe pelo WhatsApp ou por e-mail.</p>
-    <div class="list glass flat" id="sdC">${all.length?all.map(c=>`<button class="tx" data-ct="${c.rec.id}"><span class="dot">${ic('user')}</span><span class="t"><b>${esc(c.data.name)}</b><small>${esc(shortDid(c.data.did))}</small></span>${ic('chev')}</button>`).join('')
-      :'<div class="empty">A agenda está vazia. Importe o cartão de contato da pessoa em Contatos.</div>'}</div>
-    <div id="sdOut" hidden></div>`);
-  $('#sdC').onclick=async e=>{
-    const b=e.target.closest('[data-ct]');if(!b)return;
-    const c=ses.items.find(i=>i.rec.id===b.dataset.ct);if(!c)return;
-    let pkg;try{pkg=await sealFor(c.data.x,itemText(it))}catch(err){return toast(err.message,true)}
-    $('#sdC').hidden=true;
-    $('#sdOut').innerHTML=`${verdictHtml(true,`Cifrado para ${esc(c.data.name)}`,'Copie e mande por qualquer canal. Na carteira, a pessoa abre em Identidade, Mensagens, Abrir.')}
-      <label class="f"><span>Mensagem cifrada</span><textarea class="mono" id="sdT" rows="4" readonly>${esc(pkg)}</textarea></label>
-      <button class="btn" id="sdCp">Copiar mensagem cifrada</button>`;
-    $('#sdOut').hidden=false;
-    $('#sdCp').onclick=()=>copy(pkg,'Mensagem copiada');
   };
 }
 

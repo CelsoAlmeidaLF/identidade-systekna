@@ -252,9 +252,6 @@ const VC_TYPES={
   AgeOver18Credential:{label:'Maioridade',claims:[['maiorDeIdade','true']]},
   EmploymentCredential:{label:'Vínculo profissional',claims:[['empresa',''],['cargo','']]},
   ResidenceCredential:{label:'Residência',claims:[['cidade',''],['uf','']]},
-  DocumentRegistrationCredential:{label:'Registro de documento',claims:[]},
-  // Uma por grupo de um emissor (F1). Leva a chave X25519 do titular, que vem no pedido, e sempre tem validade.
-  MembroDoGrupo:{label:'Membro de grupo',claims:[['grupo',''],['nome',''],['apelido','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
 /* ================= dados pessoais (RN59) ================= */

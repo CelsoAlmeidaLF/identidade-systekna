@@ -41,7 +41,7 @@ async function emitir() {
 }
 
 /** Quantas emissões e atos o emissor tem: uma emissão recusada não pode mexer em nenhum dos dois. */
-const contagem = () => emissor.evaluate(() => ({ emitidas: st.issued.length, atos: st.book.length, docs: st.docs.length }));
+const contagem = () => emissor.evaluate(() => ({ emitidas: st.issued.length, atos: st.book.length }));
 
 test.beforeAll(async ({ browser }) => {
   carteira = await (await browser.newContext()).newPage();
@@ -155,24 +155,6 @@ test('nome do titular com CPF no pedido é recusado', async () => {
   await emissor.click('#iGo');
   await expect(toast(emissor)).toHaveText('O campo “titular” parece conter um CPF, que não entra em credencial.');
   expect(await contagem()).toEqual(antes);
-});
-
-test('registro de documento com CPF no nome do arquivo é recusado', async () => {
-  const antes = await contagem();
-  await aba(emissor, 'vDocs');
-  await emissor.setInputFiles('#dFile', { name: `rg ${CPF_VALIDO}.txt`, mimeType: 'text/plain', buffer: Buffer.from('teste\n') });
-  await expect(emissor.locator('#dInfo')).toContainText('SHA-256');
-  await emissor.fill('#dName', 'Maria Teste');
-  await emissor.click('#dGo');
-  await expect(emissor.locator('#dH')).toHaveText('O campo “documento” parece conter um CPF, que não entra em credencial.');
-  await expect(emissor.locator('#dOut')).toBeHidden();
-  expect(await contagem()).toEqual(antes);
-
-  // Arquivo com nome comum registra normalmente.
-  await emissor.setInputFiles('#dFile', { name: 'contrato.txt', mimeType: 'text/plain', buffer: Buffer.from('teste\n') });
-  await expect(emissor.locator('#dInfo')).toContainText('contrato.txt');
-  await emissor.click('#dGo');
-  await expect(emissor.locator('#dOk')).toContainText('Registro nº 1');
 });
 
 test('nenhuma violação de CSP', () => {

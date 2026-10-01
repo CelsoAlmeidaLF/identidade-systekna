@@ -6,31 +6,27 @@ const APP={
   howHtml:`<p><b>Papel.</b> O emissor também verifica credenciais. Ele tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
   <p><b>Emissão.</b> Só emite para quem prova controlar um DID: o titular envia um pedido assinado pela carteira. A credencial leva o DID do titular, o nome do emissor e um número de status.</p>
   <p><b>Verificação.</b> O desafio é um número aleatório válido por 10 minutos e aceito uma única vez. Na apresentação, o emissor confere a assinatura do titular, o desafio, a assinatura de quem emitiu a credencial, se ela é do titular, se quem a emitiu é confiável, a revogação e a validade.</p>
-  <p><b>Grupos.</b> Cada grupo (Família, Amigos, Clientes) recebe uma credencial própria por pessoa, com validade obrigatória. Revogar alguém de um grupo não mexe nos outros. A credencial leva a chave de cifragem da pessoa, para quem confia neste emissor poder escrever para ela.</p>
-  <p><b>Convite.</b> É um token assinado com o DID e o nome deste emissor. Quem o importa na carteira passa a confiar nas credenciais emitidas aqui.</p>
   <p><b>Revogação.</b> Fica no registro deste emissor e vale para tudo o que ele verifica. Em produção, a lista de status é publicada para que qualquer verificador consulte.</p>
   <p><b>Livro.</b> Cada ato guarda o hash SHA-256 do ato anterior e é assinado pelo emissor. Alterar ou apagar um ato quebra a corrente, e a conferência de integridade mostra onde.</p>
-  <p><b>Documentos.</b> O registro guarda só o SHA-256 do arquivo. O certificado é uma credencial assinada, que o requerente pode guardar na carteira.</p>
   <p><b>Limite.</b> Os dados ficam cifrados neste aparelho. Num emissor real, o livro e a lista de status ficariam replicados em servidores, e a chave do emissor num módulo de hardware (HSM).</p>`,
   async load(){
     const r=await DB.get('state');
     st=r?await unseal(ses.vaultKey,r,'state'):null;
-    if(!st){st={name:'Emissor de Credenciais Systekna',issued:[],trust:[],book:[],challenges:[],docs:[],groups:[],seq:0,verifs:0};await ato('abertura','Livro aberto e emissor criado',ses.did);await save()}
-    st.groups=st.groups||[];
+    if(!st){st={name:'Emissor de Credenciais Systekna',issued:[],trust:[],book:[],challenges:[],seq:0,verifs:0};await ato('abertura','Livro aberto e emissor criado',ses.did);await save()}
   },
   enter(){$('#whoLabel').textContent=st.name;fillTypeSelects();mountCommonSettings($('#commonSet'));setView('vPanel')},
   onView(v){if(v==='vPanel')renderPanel();if(v==='vGov')renderGov()},
   onLock(){
-    st=null;pedido=null;dInfo=null;cInfo=null;
-    ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#dInfo','#cInfo','#cOut','#gTrust','#gGroups','#gIssued','#iOk','#dOk'].forEach(s=>$(s).innerHTML='');
-    ['#iqT','#iJwt','#vChalT','#vpT','#dJwt','#cT','#dName','#dDid'].forEach(s=>$(s).value='');
-    ['#iForm','#iOut','#vChal','#dOut'].forEach(s=>$(s).hidden=true);
+    st=null;pedido=null;
+    ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#gTrust','#gIssued','#iOk'].forEach(s=>$(s).innerHTML='');
+    ['#iqT','#iJwt','#vChalT','#vpT'].forEach(s=>$(s).value='');
+    ['#iForm','#iOut','#vChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Emissor de Credenciais';
   },
   exportData:async()=>st,
   async importData(d){
     if(!d||!d.book)return 'Backup sem livro de registros';
-    st=d;st.groups=st.groups||[];await save();$('#whoLabel').textContent=st.name;renderPanel();
+    st=d;await save();$('#whoLabel').textContent=st.name;renderPanel();
     return `Emissor restaurado com ${st.book.length} atos`;
   }
 };
@@ -66,9 +62,9 @@ const unverifiableMsg='Emitida por outro emissor: o status não pode ser conferi
 async function renderPanel(){
   if(!st)return;
   $('#pName').textContent=st.name;
-  $('#sA').textContent=st.issued.filter(i=>issStatus(i)[0]==='ok'&&i.type!=='DocumentRegistrationCredential').length;
+  $('#sA').textContent=st.issued.filter(i=>issStatus(i)[0]==='ok').length;
   $('#sR').textContent=st.issued.filter(i=>i.revoked).length;
-  $('#sD').textContent=st.docs.length;$('#sV').textContent=st.verifs;
+  $('#sT').textContent=st.trust.length;$('#sV').textContent=st.verifs;
   $('#pAtos').innerHTML=st.book.slice(-6).reverse().map(e=>atoRow(e)).join('');
   const c=await checkBook();
   $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo emissor.`)
@@ -82,27 +78,15 @@ $('#pAll').onclick=()=>{
 
 /* ================= emissão ================= */
 function fillTypeSelects(){
-  const opts=Object.entries(VC_TYPES).filter(([k])=>k!=='DocumentRegistrationCredential').map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  const opts=Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   $('#iType').innerHTML=opts;
   $('#vType').innerHTML=`<option value="any">Qualquer credencial</option>`+Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 }
 let pedido=null;
 const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><input data-ck value="${esc(k)}" autocomplete="off" autocapitalize="none"></label><label class="f"><span>Valor</span><input data-cv value="${esc(v)}" autocomplete="off"></label><button class="mini" data-rm aria-label="Remover campo">${ic('minus')}</button></div>`;
-const GROUP_TYPE='MembroDoGrupo';
-const activeGroups=()=>st.groups.filter(g=>!g.archived);
 function drawClaims(){
-  const type=$('#iType').value,grp=type===GROUP_TYPE;
-  // Credencial de grupo: o grupo vem da lista, a validade é a do grupo e a chave de cifragem vem do pedido.
-  $('#iGrpF').hidden=!grp;$('#iDaysF').hidden=grp;$('#iAdd').hidden=grp;
-  if(grp){
-    const gs=activeGroups(),want=pedido&&pedido.payload.grupo;
-    $('#iGrp').innerHTML=gs.map(g=>`<option value="${g.id}" ${g.name===want?'selected':''}>${esc(g.name)} (${fmtDays(g.days)})</option>`).join('');
-    if(!gs.length){$('#iClaims').innerHTML='<p class="hint bad">Crie um grupo em Governança antes de emitir.</p>';return}
-  }
-  const defs=VC_TYPES[type].claims.filter(([k])=>!(grp&&k==='grupo'));
-  $('#iClaims').innerHTML=defs.map(([k,v])=>claimRow(k,k==='nome'&&pedido?pedido.payload.name||'':v)).join('');
+  $('#iClaims').innerHTML=VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,k==='nome'&&pedido?pedido.payload.name||'':v)).join('');
 }
-const fmtDays=d=>d%365===0?(d/365===1?'1 ano':d/365+' anos'):d%30===0?(d/30===1?'1 mês':d/30+' meses'):d+' dias';
 $('#iType').onchange=drawClaims;
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
 $('#iAdd').onclick=()=>{$('#iClaims').insertAdjacentHTML('beforeend',claimRow('',''));$('#iClaims').lastElementChild.querySelector('input').focus()};
@@ -117,11 +101,10 @@ $('#iqGo').onclick=async()=>{
   if(st.issued.some(i=>i.nonce&&i.nonce===r.payload.nonce))return fail('Este pedido já foi atendido. Peça um novo ao titular.');
   pedido=r;
   $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
-  if(VC_TYPES[r.payload.wanted]&&r.payload.wanted!=='DocumentRegistrationCredential')$('#iType').value=r.payload.wanted;
+  if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
   drawClaims();$('#iForm').hidden=false;
 };
-async function issue(sub,type,claims,days,holderName,nonce,log,groupId){
-  if(type===GROUP_TYPE&&!days)throw new Error('Credencial de grupo exige validade.');
+async function issue(sub,type,claims,days,holderName,nonce){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
   if(type==='IdentityCredential'){
     if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
@@ -131,8 +114,8 @@ async function issue(sub,type,claims,days,holderName,nonce,log,groupId){
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
   if(days)payload.exp=iat+days*86400;
   const jwt=await signJWT('vc+jwt',payload);
-  st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false,...(groupId?{groupId}:{})});
-  await ato(log?log.act:'emissao',log?log.text:`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
+  st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false});
+  await ato('emissao',`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
   await save();return jwt;
 }
 $('#iGo').onclick=async()=>{
@@ -141,13 +124,7 @@ $('#iGo').onclick=async()=>{
   $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
   if(!Object.keys(claims).length){toast('Preencha ao menos um campo com valor',true);return}
   const type=$('#iType').value;
-  if(type===GROUP_TYPE){
-    const g=activeGroups().find(x=>x.id===$('#iGrp').value);
-    if(!g){toast('Escolha um grupo',true);return}
-    try{parseXKey(String(pedido.payload.x||''))}catch{toast('O pedido não traz a chave de cifragem. Peça um pedido novo pela carteira atualizada.',true);return}
-    try{$('#iJwt').value=await issue(pedido.did,type,{grupo:g.name,...claims,chaveCifragem:pedido.payload.x},g.days,pedido.payload.name,pedido.payload.nonce,
-      {act:'emissao',text:`${g.name}: ${pedido.payload.name||shortDid(pedido.did)} entrou no grupo`},g.id)}catch(e){toast(e.message,true);return}
-  }else try{$('#iJwt').value=await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce)}catch(e){toast(e.message,true);return}
+  try{$('#iJwt').value=await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce)}catch(e){toast(e.message,true);return}
   $('#iOk').innerHTML=verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrada no livro.`);
   $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
 };
@@ -206,60 +183,16 @@ $('#vpGo').onclick=async()=>{
   st.verifs++;await ato('verificacao',`Apresentação ${ok?'aprovada':'recusada'}${r.q?': '+vcLabel(vcType(r.q))+' de '+who:''}`,r.holder||null);await save();
 };
 
-/* ================= documentos ================= */
-let dInfo=null,cInfo=null;
-wireSeg($('#dSeg'),(b,i)=>{$('#dReg').hidden=i!==0;$('#dChk').hidden=i!==1});
-const fmtSize=n=>n<1024?n+' B':n<1048576?(n/1024).toFixed(1)+' KB':(n/1048576).toFixed(1)+' MB';
-async function hashFile(f){return{name:f.name,size:f.size,sha256:hex(await sha256(await f.arrayBuffer()))}}
-const fileHtml=i=>`<div class="list glass flat fileinfo"><div class="kr"><div class="h"><small>Arquivo</small></div><div class="v">${esc(i.name)} (${fmtSize(i.size)})</div></div><div class="kr"><div class="h"><small>Impressão digital SHA-256</small></div><div class="v mono">${i.sha256}</div></div></div>`;
-$('#dFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('#dInfo').innerHTML='<p class="hint">Calculando a impressão digital…</p>';dInfo=await hashFile(f);$('#dInfo').innerHTML=fileHtml(dInfo);$('#dOut').hidden=true};
-$('#cFile').onchange=async e=>{const f=e.target.files[0];if(!f)return;$('#cInfo').innerHTML='<p class="hint">Calculando a impressão digital…</p>';cInfo=await hashFile(f);$('#cInfo').innerHTML=fileHtml(cInfo)};
-$('#dGo').onclick=async()=>{
-  const H=$('#dH'),fail=(m,el)=>{H.textContent=m;H.classList.add('bad');if(el)shake(el)};
-  H.textContent='';H.classList.remove('bad');
-  if(!dInfo)return fail('Escolha o arquivo a registrar.');
-  const name=$('#dName').value.trim();if(!name)return fail('Informe o requerente.',$('#dNameF'));
-  const did=$('#dDid').value.trim();
-  if(did){try{await didToEdKey(did)}catch(e){return fail(e.message,$('#dDidF'))}}
-  const prev=st.docs.find(d=>d.sha256===dInfo.sha256);
-  const n=st.docs.length+1;
-  let jwt;
-  try{jwt=await issue(did||'urn:sha256:'+dInfo.sha256,'DocumentRegistrationCredential',{documento:dInfo.name,sha256:dInfo.sha256,tamanho:dInfo.size,requerente:name,registro:n},0,name,null,
-    {act:'registro',text:`Documento “${dInfo.name}” registrado para ${name}`})}catch(e){return fail(e.message)}
-  st.docs.push({n,...dInfo,req:name,did:did||null,at:Date.now()});await save();
-  $('#dJwt').value=jwt;
-  $('#dOk').innerHTML=verdictHtml(true,`Registro nº ${n}`,prev?`Este mesmo arquivo já tinha o registro nº ${prev.n}. Um novo foi feito.`:did?'O requerente pode guardar o certificado na carteira.':'Sem DID, o certificado serve para conferência, mas não entra numa carteira.');
-  $('#dOut').hidden=false;toast('Documento registrado');
-};
-$('#dCopy').onclick=()=>copy($('#dJwt').value,'Certificado copiado');
-$('#cGo').onclick=async()=>{
-  const out=$('#cOut'),checks=[],add=(ok,label,detail)=>checks.push({ok,label,detail});
-  if(!cInfo){toast('Escolha o arquivo',true);return}
-  if(!$('#cT').value.trim()){shake($('#cF'));return}
-  try{
-    const r=await verifyJWT($('#cT').value,'vc+jwt'),q=r.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
-    if(vcType(q)!=='DocumentRegistrationCredential')throw new Error('Este token não é um certificado de registro de documento.');
-    add(r.ok,'Assinatura do emissor',r.ok?`Assinado por ${esc(vcIssuerName(q))}.`:'O certificado foi alterado.');
-    const tn=trustedName(r.did);add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na lista de confiança.');
-    if(r.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Registro ativo',!rec?'Não consta no registro.':rec.revoked?`Cancelado: ${esc(rec.reason)}.`:`Registro nº ${esc(cs.registro)} ativo.`)}
-    else add(unverifiableStatus(),'Registro ativo',unverifiableMsg);
-    add(cs.sha256===cInfo.sha256,'Arquivo idêntico',cs.sha256===cInfo.sha256?'A impressão digital confere byte a byte.':'O arquivo é diferente do registrado. Basta um byte para mudar a impressão.');
-    const ok=checks.every(c=>c.ok!==false);
-    out.innerHTML=verdictHtml(ok,ok?'Documento autêntico':'Documento não confere',ok?`“${esc(cs.documento)}”, registrado para ${esc(cs.requerente)} em ${fmtDate(q.iat*1000)}.`:'Veja abaixo o que não passou.')+`<div class="list glass flat mt">${checks.map(chkRow).join('')}</div>`;
-  }catch(e){out.innerHTML=verdictHtml(false,'Não foi possível conferir',esc(e.message))}
-};
-
 /* ================= governança ================= */
 function renderGov(){
   if(!st)return;
-  renderGroups();
   $('#gName').value=st.name;$('#gDid').textContent=ses.did;
   $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
   $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este emissor</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
   const list=st.issued.slice().reverse();
   $('#gIssN').textContent=list.length?`${list.length} no total`:'';
-  $('#gIssued').innerHTML=list.length?list.slice(0,40).map(i=>{const[c,l]=issStatus(i);return `<button class="tx" data-iss="${i.n}"><span class="dot">${ic(i.type==='DocumentRegistrationCredential'?'file':'badge')}</span><span class="t"><b>${esc(vcLabel(i.type))}</b><small>${esc(i.holderName||shortDid(i.sub))}, ${fmtDate(i.iat*1000)}</small></span><span class="pill ${c}">${l}</span></button>`}).join('')
+  $('#gIssued').innerHTML=list.length?list.slice(0,40).map(i=>{const[c,l]=issStatus(i);return `<button class="tx" data-iss="${i.n}"><span class="dot">${ic('badge')}</span><span class="t"><b>${esc(vcLabel(i.type))}</b><small>${esc(i.holderName||shortDid(i.sub))}, ${fmtDate(i.iat*1000)}</small></span><span class="pill ${c}">${l}</span></button>`}).join('')
     :'<div class="empty">Nenhuma credencial emitida ainda.</div>';
 }
 $('#gNameS').onclick=async()=>{
@@ -267,66 +200,6 @@ $('#gNameS').onclick=async()=>{
   st.name=n;await ato('nome',`Nome público alterado para ${n}`);await save();$('#whoLabel').textContent=n;toast('Nome salvo');
 };
 $('#gDidC').onclick=()=>copy(ses.did,'DID copiado');
-$('#gInv').onclick=async()=>{
-  const iat=now(),tok=await signJWT('emissor+jwt',{iss:ses.did,name:st.name,iat,exp:iat+30*86400});
-  openSheet(`<h3>Convite</h3><p class="sub">Mande para quem vai confiar neste emissor. Na carteira, a pessoa importa em + e Confiar em um emissor. Vale por 30 dias para importar.</p>
-    <label class="f"><span>Convite de ${esc(st.name)}</span><textarea class="mono" id="gInvT" rows="5" readonly>${tok}</textarea></label><button class="btn" id="gInvC">Copiar convite</button>`);
-  $('#gInvC').onclick=()=>copy(tok,'Convite copiado');
-};
-
-/* ================= grupos ================= */
-const groupMembers=g=>{
-  // Uma linha por pessoa: a credencial mais recente dela no grupo (renovações geram credenciais novas).
-  const last=new Map();
-  for(const i of st.issued)if(i.groupId===g.id)last.set(i.sub,i);
-  return[...last.values()].reverse();
-};
-const DAY_OPTS=[30,90,180,365];
-function renderGroups(){
-  $('#gGroups').innerHTML=st.groups.length?st.groups.map(g=>{
-    const on=groupMembers(g).filter(i=>issStatus(i)[0]==='ok').length;
-    return `<button class="tx" data-grp="${g.id}"><span class="dot">${ic('user')}</span><span class="t"><b>${esc(g.name)}</b><small>${on} ${on===1?'membro ativo':'membros ativos'}, validade de ${fmtDays(g.days)}</small></span>${g.archived?'<span class="pill">Arquivado</span>':ic('chev')}</button>`;
-  }).join(''):'<div class="empty">Nenhum grupo ainda. Crie Família, Amigos ou Clientes.</div>';
-}
-const daySelect=(id,cur)=>`<select id="${id}">${DAY_OPTS.map(d=>`<option value="${d}" ${d===cur?'selected':''}>${fmtDays(d)}</option>`).join('')}</select>`;
-$('#gGrpAdd').onclick=()=>{
-  openSheet(`<h3>Criar grupo</h3><p class="sub">Cada pessoa do grupo recebe uma credencial própria. Quando ela vence, a carteira pede renovação.</p>
-    <label class="f" id="ngF"><span>Nome do grupo</span><input id="ng" autocomplete="off" placeholder="Ex.: Família"></label>
-    <label class="f"><span>Validade das credenciais</span>${daySelect('ngD',180)}</label><p class="hint" id="ngH"></p>
-    <button class="btn" id="ngGo">Criar grupo</button>`);
-  $('#ngGo').onclick=async()=>{
-    const name=$('#ng').value.trim(),H=$('#ngH');
-    if(!name)return shake($('#ngF'));
-    if(st.groups.some(g=>!g.archived&&fold(g.name)===fold(name))){H.textContent='Já existe um grupo com este nome.';H.classList.add('bad');return shake($('#ngF'))}
-    const g={id:b64u.enc(rnd(9)),name,days:+$('#ngD').value,archived:false,at:Date.now()};
-    st.groups.push(g);await ato('grupo',`Grupo ${name} criado`,g.id);await save();
-    closeSheet();renderGroups();fillGroupSelectIfOpen();toast('Grupo criado');
-  };
-};
-function fillGroupSelectIfOpen(){if(!$('#iForm').hidden&&$('#iType').value===GROUP_TYPE)drawClaims()}
-$('#gGroups').onclick=e=>{const b=e.target.closest('[data-grp]');if(b)showGroup(b.dataset.grp)};
-function showGroup(id){
-  const g=st.groups.find(x=>x.id===id);if(!g)return;
-  const ms=groupMembers(g);
-  openSheet(`<div class="dhead"><span class="dot">${ic('user')}</span><div><h3>${esc(g.name)}</h3><small>Criado em ${fmtDate(g.at)}</small></div></div>
-    <label class="f"><span>Nome, vale para as próximas credenciais</span><div class="inrow"><input id="sgN" value="${esc(g.name)}" autocomplete="off"><button class="mini" id="sgNS">Salvar</button></div></label>
-    <label class="f"><span>Validade das próximas credenciais</span>${daySelect('sgD',g.days)}</label>
-    <div class="sec-h">Membros</div>
-    <div class="list glass flat" id="sgM">${ms.length?ms.map(i=>{const[c,l]=issStatus(i);return `<button class="tx" data-iss="${i.n}"><span class="dot">${ic('badge')}</span><span class="t"><b>${esc(i.holderName||shortDid(i.sub))}</b><small>${i.exp?'Até '+fmtDate(i.exp*1000):''}</small></span><span class="pill ${c}">${l}</span></button>`}).join(''):'<div class="empty">Ninguém neste grupo ainda.</div>'}</div>
-    <button class="btn ghost" id="sgA">${g.archived?'Reativar grupo':'Arquivar grupo'}</button>`);
-  $('#sgNS').onclick=async()=>{
-    const n=$('#sgN').value.trim();if(!n||n===g.name)return;
-    if(st.groups.some(x=>x!==g&&!x.archived&&fold(x.name)===fold(n)))return toast('Já existe um grupo com este nome',true);
-    await ato('grupo',`Grupo ${g.name} renomeado para ${n}`,g.id);g.name=n;await save();renderGroups();toast('Nome salvo');
-  };
-  $('#sgD').onchange=async()=>{g.days=+$('#sgD').value;await ato('grupo',`Grupo ${g.name}: validade de ${fmtDays(g.days)}`,g.id);await save();renderGroups();toast('Validade salva')};
-  $('#sgM').onclick=e=>{const b=e.target.closest('[data-iss]');if(b)showIssued(+b.dataset.iss)};
-  $('#sgA').onclick=async()=>{
-    g.archived=!g.archived;
-    await ato('grupo',`Grupo ${g.name} ${g.archived?'arquivado':'reativado'}`,g.id);await save();
-    closeSheet();renderGroups();toast(g.archived?'Grupo arquivado. As credenciais já emitidas continuam valendo até vencer.':'Grupo reativado');
-  };
-}
 $('#gPol').onclick=async()=>{
   const accept=!st.acceptUnverifiable;
   if(accept&&!await confirmSheet('Aceitar status não verificável','Credenciais de emissores confiáveis passam a ser aprovadas mesmo sem conferir se foram revogadas. Uma credencial revogada por outro emissor pode passar.','Aceitar',true))return;

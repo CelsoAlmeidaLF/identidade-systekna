@@ -68,25 +68,6 @@
       <p class="note" id="cNote" hidden>Para usar uma credencial, toque nela e escolha Apresentar. Você assina um desafio novo a cada uso, então ninguém consegue reaproveitar uma cópia.</p>
     </section>
 
-    <section class="view" id="vContacts">
-      <h2>Contatos</h2>
-      <div class="pair"><button class="btn ghost" id="ctMine">Meu cartão</button><button class="btn ghost" id="ctImport">Importar cartão</button></div>
-      <div class="sec-h">Pessoas <small id="ctN"></small></div>
-      <div class="chips" id="ctChips"></div>
-      <div class="list glass flat" id="ctPeople"></div>
-      <div class="sec-h">Emissores confiáveis <button class="link" id="ctIssAdd" style="margin:0;padding:0;font-size:13px">Importar convite</button></div>
-      <div class="list glass flat" id="ctIss"></div>
-      <p class="note">Só as credenciais destes emissores ganham selo. Confiar num emissor não faz confiar nos emissores em que ele confia.</p>
-    </section>
-
-    <section class="view" id="vVault">
-      <h2>Cofre</h2>
-      <div class="status glass flat"><span class="dot" data-ic="lock" style="background:rgba(35,134,58,.12);color:var(--in)"></span><div><b id="vCount">Cofre aberto</b><small>Cifrado neste aparelho com AES-256-GCM</small></div></div>
-      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="vSearch" type="search" placeholder="Buscar no cofre" aria-label="Buscar no cofre"></label>
-      <div class="chips" id="vChips"></div>
-      <div class="list glass flat" id="vList"></div>
-    </section>
-
     <section class="view" id="vId">
       <h2>Identidade</h2>
       <div class="idcard">
@@ -124,7 +105,7 @@
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:6"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button data-v="vContacts" aria-current="false"><span data-ic="people"></span>Contatos</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button data-v="vVault" aria-current="false"><span data-ic="vault"></span>Cofre</button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidade</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidade</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
 
 <!-- @inclui ../shared/folha.html -->
 <script>
