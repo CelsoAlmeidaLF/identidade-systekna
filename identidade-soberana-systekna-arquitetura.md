@@ -9,6 +9,23 @@ Ambiente de teste com dois serviços independentes, em HTML/JS únicos e sem ser
 
 Os serviços não compartilham armazenamento. Tudo o que passa de um para o outro é texto assinado, copiado e colado. Em produção, esse transporte seria QR Code, link ou API.
 
+## 0. Estrutura do código
+
+Os dois HTML publicados são **gerados**. O código é editado em `src/`:
+
+| Pasta | Conteúdo |
+|---|---|
+| `src/shared/` | Núcleo comum: `nucleo.js` (criptografia, PIN, JWT, interface base, PWA), `estilo.css`, `telas.html` (confirmação, recuperação, PIN), `folha.html` |
+| `src/carteira/` | `pagina.html` (cabeçalho e telas próprias) e `app.js` (credenciais, cofre, identidade) |
+| `src/cartorio/` | `pagina.html` e `app.js` (emissão, verificação, documentos, governança, livro) |
+
+```
+npm run build        # gera carteira-systekna.html e cartorio-systekna.html
+npm test             # confere que os HTML estão em dia com src/ e roda todos os testes
+```
+
+Em `pagina.html`, a linha `<!-- @inclui caminho -->` é trocada pelo arquivo indicado. O resultado continua sendo um HTML único que abre sem servidor.
+
 ## 1. App instalável (PWA)
 
 - Cada serviço é um app próprio, com manifesto (`carteira.webmanifest`, `cartorio.webmanifest`), ícones em `icons/` e escopo limitado ao seu HTML. Os dois podem ser instalados lado a lado.
@@ -110,7 +127,7 @@ A apresentação é aprovada quando nenhuma checagem falha.
 
 ## 7. Critérios de aceite (automatizados, Chrome 154)
 
-Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` e o PWA em `tests/e2e/pwa.spec.js` (Playwright, Chrome do sistema):
+O núcleo criptográfico é conferido contra vetores oficiais (BIP39/Trezor, RFC 5869, RFC 8032, RFC 7748, base58, did:key) em `tests/e2e/vetores-oficiais.spec.js`, com as fontes em `tests/fixtures/`. Os 12 critérios rodam em `tests/e2e/criterios-de-aceite.spec.js`, as correções da Fase 1 em `tests/e2e/fase1-correcoes.spec.js` e o PWA em `tests/e2e/pwa.spec.js` (Playwright, Chrome do sistema):
 
 ```
 npm install

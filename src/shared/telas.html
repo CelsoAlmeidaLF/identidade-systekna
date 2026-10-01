@@ -1,0 +1,33 @@
+<section class="screen" id="sConfirm">
+  <div class="wrap">
+    <button class="back" data-go="sWords"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Ver palavras</button>
+    <h2>Confirme 3 palavras</h2>
+    <p class="sub">Assim garantimos que a anotação está certa antes de continuar.</p>
+    <div id="confirmFields"></div>
+    <p class="hint" id="confirmHint"></p>
+    <button class="btn" id="confirmGo">Confirmar palavras</button>
+  </div>
+</section>
+
+<section class="screen" id="sRecover">
+  <div class="wrap">
+    <button class="back" id="recBack"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
+    <h2>Recuperar identidade</h2>
+    <p class="sub">Digite as 12 palavras na ordem, separadas por espaço. Em português ou inglês.</p>
+    <label class="f" id="recField"><span>Palavras de recuperação</span>
+      <textarea id="recWords" rows="4" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="palavra1 palavra2 palavra3 …"></textarea></label>
+    <p class="hint" id="recHint">0 de 12 palavras</p>
+    <button class="btn" id="recGo">Validar palavras</button>
+  </div>
+</section>
+
+<section class="screen" id="sPin">
+  <div class="wrap center" style="padding-top:6vh">
+    <div class="orb sm" id="pinOrb" data-ic="lock"></div>
+    <h2 id="pinTitle">Digite seu PIN</h2>
+    <p class="sub" id="pinSub"></p>
+    <div class="pad" id="pinPad"></div>
+    <button class="link" id="pinLink">Esqueci meu PIN</button>
+  </div>
+</section>
+
