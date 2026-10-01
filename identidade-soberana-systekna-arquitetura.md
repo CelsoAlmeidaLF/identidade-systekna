@@ -179,11 +179,23 @@ Por isso a segurança real da identidade são as **12 palavras**, e o PIN é uma
 
 A **biometria** não tem essa fraqueza: o segredo que abre a identidade sai do chip de segurança do aparelho só depois da digital ou do rosto, e nenhum código na página consegue pedir esse segredo sem a pessoa. Mas, enquanto o PIN continuar ativo como alternativa, a cópia protegida pelo PIN continua sujeita ao ataque acima. A opção **"Usar só biometria"** apaga essa cópia: sem ela, não há o que testar por força bruta, e a recuperação passa a ser só pelas 12 palavras.
 
-## 9. Próximos passos sugeridos
+## 9. Próximos passos
 
-1. QR Code para pedido, desafio e apresentação (leitura pela câmera).
+O planejamento está em [`plan.md`](plan.md): a carteira para amigos, família e clientes, no mesmo app, com os ambientes familiar e comercial separados por emissor, grupo e perfil.
+
+| Fase | Entrega |
+|---|---|
+| F0 | Domínio próprio para a carteira e o emissor, em origens separadas |
+| F1 | Grupos no emissor, emissores confiáveis e agenda de contatos na carteira, perfis "Pessoal" e "Profissional" |
+| F2 | Recibos e combinados assinados (proposta, aceite e quitação) |
+| F3 | Recuperação com ajuda da família (Shamir *k* de *n* entre guardiões) |
+| F4 | Mensagens e arquivos cifrados com remetente (`smsg2`) |
+| F5 | Login em sites com a carteira |
+| F6 | Cadastro KYC lacrado em envelope, aberto só com 2 de 3 custodiantes |
+
+Fora do plano atual, para quando houver uso fora dos círculos de confiança:
+
+1. QR Code para pedido, desafio e apresentação (adiado).
 2. Lista de status de revogação publicável e consultável pela carteira.
 3. Divulgação seletiva (provar maioridade sem mostrar a data de nascimento).
 4. `did:web` para o emissor e registro público de emissores.
-5. Hospedagem dos dois serviços no GitHub Pages ou no SHTTPS, em origens separadas.
-6. **Login em sites com a carteira** ("Entrar com carteira Systekna"): o site gera um desafio (nonce, `aud` = domínio do site, prazo), a carteira mostra o domínio real de quem pede, a pessoa confirma com PIN ou biometria e a carteira devolve um `vp+jwt`. O servidor do site confere assinatura, nonce de uso único, `aud` e prazo, e abre a sessão com o DID como usuário. Começar pelo popup com `postMessage` (mesmo navegador), com um site de exemplo e um verificador em Node que reaproveita `src/shared/nucleo.js`, mais testes E2E (login aprovado, nonce repetido, `aud` errado, desafio vencido). Depois: redirecionamento OpenID4VP/SIOPv2 e a Digital Credentials API.
