@@ -87,7 +87,8 @@ test('03 · credenciamento guiado no mesmo aparelho: o serviço pede, a raiz emi
   await page.fill('#iqT', pedido);
   await page.click('#iqGo');
   await expect(page.locator('#iType')).toHaveValue('AccreditationCredential');
-  await page.locator('#iClaims [data-cv]').nth(1).fill('Portal Systekna');
+  // Os apps que o serviço escreveu no pedido já vêm preenchidos.
+  await expect(page.locator('#iClaims [data-cv]').nth(1)).toHaveValue('Portal Systekna');
   await page.click('#iGo');
   await expect(page.locator('#iOut')).toBeVisible();
   const credenciamento = await page.inputValue('#iJwt');
@@ -95,15 +96,16 @@ test('03 · credenciamento guiado no mesmo aparelho: o serviço pede, a raiz emi
 
   await abrirEmissor('Systekna Serviços');
   expect(await did()).toBe(didServico);
+  // A raiz ainda não é confiável aqui: o próprio importar oferece confiar nela, mostrando o DID.
   await aba(page, 'vGov');
-  await page.click('#gTrustAdd');
-  await page.fill('#tn', 'Systekna');
-  await page.fill('#td', didRaiz);
-  await page.click('#tGo');
   await page.click('#gCred [data-cr="imp"]');
   await page.fill('#ciT', credenciamento);
   await page.click('#ciGo');
+  await expect(page.locator('#ciTrust')).toContainText('Emissor de Credenciais Systekna');
+  await expect(page.locator('#ciTrust')).toContainText('ainda não está na lista de confiança');
+  await page.click('#ciTrustGo');
   await expect(toast(page)).toHaveText('Credenciamento importado');
+  await expect(page.locator('#gTrust')).toContainText('Emissor de Credenciais Systekna');
   await expect(page.locator('#whoLabel')).toHaveText('Systekna Serviços · Serviço');
   await aba(page, 'vIssue');
   await expect(page.locator('#iType option')).toHaveText(['Crachá']);

@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lC5IbBwbLFMrJFwhxOp6WGswSZdLRbPIikEZ/qWmx9g='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XmNSwYgWLIgOySaHV2PCQVBA7LMGNL1Fp2net3GUoLA='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="emissor.webmanifest">
@@ -377,7 +377,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.12.1</p>
+<p class="ver boot" aria-hidden="true">Versão 0.12.2</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -390,7 +390,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.12.1</p>
+    <p class="ver">Versão 0.12.2</p>
   </div>
 </section>
 
@@ -439,7 +439,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.12.1</p>
+    <p class="ver">Versão 0.12.2</p>
   </div>
 </section>
 
@@ -592,7 +592,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.12.1';
+const APP_VERSION='0.12.2';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1434,7 +1434,7 @@ const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><in
 function drawClaims(){
   const badge=$('#iType').value==='BadgeCredential';
   // Crachá: em vez de campos livres, o SRV marca os apps que aprova.
-  $('#iClaims').innerHTML=badge?'':VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':v)).join('');
+  $('#iClaims').innerHTML=badge?'':VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':k==='apps'&&pedido?appsList(pedido.payload.note).join(', '):v)).join('');
   $('#iAdd').hidden=badge;
   drawBadgePicks();
 }
@@ -1746,11 +1746,24 @@ function askAccreditation(){
   $('#caC').onclick=()=>copy($('#caJ').value,'Pedido copiado');
 }
 function importAccreditation(){
-  openSheet(`<h3>Importar credenciamento</h3><p class="sub">Cole o credenciamento que a STK emitiu para este emissor. A STK precisa estar nos emissores confiáveis.</p>
-    <label class="f" id="ciF"><span>Credenciamento</span><textarea class="mono" id="ciT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="ciH"></p>
+  openSheet(`<h3>Importar credenciamento</h3><p class="sub">Cole o credenciamento que a STK emitiu para este emissor. Se a STK ainda não estiver nos emissores confiáveis, dá para confiar nela aqui.</p>
+    <label class="f" id="ciF"><span>Credenciamento</span><textarea class="mono" id="ciT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="ciH"></p><div id="ciTrust" hidden></div>
     <button class="btn" id="ciGo">Conferir e importar</button>`);
   $('#ciGo').onclick=async()=>{
     const H=$('#ciH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#ciF'))};
+    H.textContent='';H.classList.remove('bad');$('#ciTrust').hidden=true;
+    // Credenciamento válido para este emissor, mas de quem ainda não está na lista: oferece confiar ali mesmo, mostrando o DID.
+    let v=null;try{v=await verifyJWT($('#ciT').value.trim(),'vc+jwt')}catch{}
+    if(v&&v.ok&&vcType(v.payload)==='AccreditationCredential'&&v.payload.sub===ses.did&&!trustedName(v.did)){
+      const nome=vcIssuerName(v.payload);
+      $('#ciTrust').innerHTML=`<p class="hint">O credenciamento vem de <b>${esc(nome)}</b> (<span class="mono">${esc(shortDid(v.did))}</span>), que ainda não está na lista de confiança. Confira se é a STK.</p><button class="btn" id="ciTrustGo">Confiar em ${esc(nome)} e importar</button>`;
+      $('#ciTrust').hidden=false;
+      $('#ciTrustGo').onclick=async()=>{
+        if(!trustedName(v.did)){st.trust.push({name:nome,did:v.did,at:Date.now()});await ato('confianca',`${nome} adicionado aos emissores confiáveis`,v.did);await save()}
+        $('#ciGo').onclick();
+      };
+      return;
+    }
     const r=await checkLinked($('#ciT').value.trim(),'AccreditationCredential',ses.did,'O credenciamento',{status:false});
     if(!r.ok)return fail(r.detail);
     const q=r.payload,c=q.vc.credentialSubject;

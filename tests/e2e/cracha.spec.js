@@ -190,6 +190,7 @@ test('04 · o SRV pede credenciamento e a STK credencia os apps dele', async () 
   await fecharSheet(servico);
   await conferirPedido(stk, pedido);
   await expect(stk.locator('#iType')).toHaveValue('AccreditationCredential');
+  await expect(stk.locator('#iClaims [data-cv]').nth(1)).toHaveValue('App Agenda, App Financeiro');
   await emitir(stk, ['Serviço 1', 'App Agenda,  App Financeiro']);
   credenciamento = await emitido(stk);
   expect(payloadDe(credenciamento).vc.credentialSubject.apps).toBe('App Agenda, App Financeiro');
@@ -200,7 +201,7 @@ test('05 · o SRV importa o credenciamento (depois de confiar na STK) e passa a 
   await servico.click('#gCred [data-cr="imp"]');
   await servico.fill('#ciT', credenciamento);
   await servico.click('#ciGo');
-  await expect(servico.locator('#ciH')).toContainText('que não está na lista de confiança');
+  await expect(servico.locator('#ciTrust')).toContainText('ainda não está na lista de confiança');
   await fecharSheet(servico);
   await confiarEm(servico, 'STK', await stk.evaluate(() => ses.did));
   await servico.click('#gCred [data-cr="imp"]');
