@@ -29,6 +29,7 @@
   <div class="wrap center">
     <div class="orb" data-ic="gov"></div>
     <h1>Emissor de Credenciais</h1>
+    <div class="slotbar" id="slotBarW" hidden></div>
     <p class="lead">Governança da identidade soberana: emite credenciais, verifica apresentações, revoga e mantém um livro encadeado e assinado.</p>
     <button class="btn" id="goCreate">Criar o emissor</button>
     <button class="btn ghost" id="goRecover">Recuperar com 12 palavras</button>
@@ -119,6 +120,8 @@
         <label class="f" style="margin-top:0"><span>Nome público, vai nas próximas credenciais</span><div class="inrow"><input id="gName" autocomplete="off"><button class="mini" id="gNameS">Salvar</button></div></label>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID do emissor</small><span><button class="mini sm" id="gDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="gDid"></div></div>
       </div>
+      <div class="sec-h">Emissores neste aparelho</div>
+      <div class="list glass flat" id="gSlots"></div>
       <div class="sec-h">Emissores confiáveis <button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></div>
       <div class="list glass flat" id="gTrust"></div>
       <div class="sec-h">Credenciamento</div>

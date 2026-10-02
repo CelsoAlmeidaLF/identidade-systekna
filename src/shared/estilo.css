@@ -284,6 +284,10 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-AccessCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
+/* emissor ativo (vários emissores no aparelho) */
+.slotbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:6px 0 14px;font-size:14px}
+.slotbar .note{flex-basis:100%;font-size:12.5px;text-align:center;opacity:.85}
+
 /* passos (sequência real) */
 .steps{list-style:none;counter-reset:s;margin:0;padding:6px 0}
 .steps li{counter-increment:s;display:flex;gap:12px;align-items:flex-start;padding:12px 16px;font-size:14px;color:var(--soft)}
