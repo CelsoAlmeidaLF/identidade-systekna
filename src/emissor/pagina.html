@@ -77,24 +77,24 @@
     </section>
 
     <section class="view" id="vIssue">
-      <h2>Emitir</h2>
-      <p class="sub">O titular gera um pedido assinado na carteira dele. Conferido o pedido, o emissor assina a credencial para aquele DID.</p>
+      <h2>Aprovar</h2>
+      <p class="sub">Cole o pedido que veio da carteira. A raiz (STK) aprova Identidades (DID:KEY) e credencia serviços; o serviço aprova Crachás (CV:KEY) para os apps dele.</p>
       <label class="f" id="iqF"><span>Pedido do titular</span><textarea class="mono" id="iqT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label>
       <p class="hint" id="iqH"></p>
       <button class="btn" id="iqGo">Conferir pedido</button>
       <div id="iForm" hidden>
         <div id="iWho"></div>
-        <label class="f"><span>Tipo de credencial</span><select id="iType"></select></label>
+        <label class="f" id="iTypeF"><span>O que aprovar</span><select id="iType"></select></label>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
         <div id="iAcc" hidden></div>
         <label class="f" id="iDaysF"><span>Validade</span><select id="iDays"><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="1825">5 anos</option><option value="0">Sem validade</option></select></label>
-        <button class="btn" id="iGo">Emitir credencial</button>
+        <button class="btn" id="iGo">Aprovar</button>
       </div>
       <div id="iOut" hidden>
         <div id="iOk"></div>
-        <label class="f"><span>Credenciais emitidas, entregue ao titular (uma por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
-        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova emissão</button></div>
+        <label class="f"><span>Aprovado: entregue ao titular (uma credencial por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
+        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova aprovação</button></div>
       </div>
     </section>
 
@@ -130,7 +130,7 @@
       <div class="list glass flat" id="gCred"></div>
       <div class="sec-h">Política de verificação</div>
       <div class="list glass flat"><button class="tx" id="gPol"><span class="dot" data-ic="shield"></span><span class="t"><b>Status não verificável</b><small>Credencial de outro emissor, sem como conferir a revogação</small></span><span class="rv" id="gPolV"></span></button></div>
-      <div class="sec-h">Credenciais emitidas <small id="gIssN"></small></div>
+      <div class="sec-h">Credenciais aprovadas <small id="gIssN"></small></div>
       <div class="list glass flat" id="gIssued"></div>
       <div id="commonSet"></div>
     </section>
@@ -138,7 +138,7 @@
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Emitir</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Aprovar</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
 
 <!-- @inclui ../shared/folha.html -->
 <script>

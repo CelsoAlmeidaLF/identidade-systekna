@@ -30,6 +30,7 @@ async function receberNaCarteira(token) {
 async function gerarDesafio(tipo = 'any') {
   await aba(emissor, 'vVerify');
   await emissor.selectOption('#vType', tipo);
+  if (tipo === 'BadgeCredential') await emissor.fill('#vApp', 'App Qualquer');
   await emissor.click('#vGen');
   await expect(emissor.locator('#vChal')).toBeVisible();
   return emissor.inputValue('#vChalT');
@@ -90,7 +91,7 @@ test('02 · pedido válido é conferido e o mesmo pedido reenviado é recusado',
 
   // Emite a credencial para que o pedido conste como atendido.
   await emissor.click('#iGo');
-  await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
+  await expect(emissor.locator('#iOk')).toContainText('Credencial aprovada');
   credencial = await emissor.inputValue('#iJwt');
 
   await emissor.click('#iNew');
@@ -129,7 +130,7 @@ test('06 · credencial colada sem apresentação é recusada com explicação', 
 });
 
 test('07 · desafio que exige um tipo que a carteira não tem mostra "nenhuma credencial serve"', async () => {
-  const resultado = await apresentar(await gerarDesafio('CustomCredential'));
+  const resultado = await apresentar(await gerarDesafio('BadgeCredential'));
   expect(resultado).toBeNull();
   await fecharSheet(carteira);
 });

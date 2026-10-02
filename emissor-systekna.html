@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-OZmorUloBN+SA6dg8E37rTuyM29OuLPSa/AgIK9uD4A='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-evzafGpgc/PMpP4K50RCR6M3b1l3u0pg2D+kvT6Rj14='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="emissor.webmanifest">
@@ -294,19 +294,30 @@ body[data-screen="sApp"] .dock{display:grid}
 .cred .r1{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .cred .r1 b{font-weight:600;font-size:15px}
 .cred .main{font:300 24px/1.15 var(--font);letter-spacing:-.01em;text-shadow:0 1px 2px rgba(0,30,70,.35);word-break:break-word}
+.cred .key{font:500 12px/1.2 var(--mono);opacity:.92;margin-top:-8px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.cred .key b{font:700 11px var(--font);letter-spacing:.04em;padding:2px 6px;border-radius:6px;background:rgba(255,255,255,.2);margin-right:4px}
 .cred .r3{display:flex;justify-content:space-between;align-items:flex-end;gap:10px;font-size:12px;opacity:.92}
 .cred .r3 span:first-child{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .cred.dim{filter:saturate(.35) brightness(.9)}
+/* bolinha do serviço (SRV): mesma cor no crachá e nos acessos do mesmo serviço */
+.srvdot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:0;background:var(--sc);box-shadow:0 0 0 1.5px rgba(255,255,255,.75)}
 .g-IdentityCredential{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
-.g-AccessCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
+/* Cor por camada: azul = Identidade (DID, quem é), verde = Crachá (membro do serviço),
+   roxo = Acesso (CV, o que pode usar e em qual sistema), cinza = Personalizado. */
+.g-AccessCredential{--cg:linear-gradient(150deg,#C3A6F7 0%,#7E4FD9 45%,#3A1D78 100%)}
 .g-BadgeCredential{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
-.g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
+.g-CustomCredential{--cg:linear-gradient(150deg,#AEB8C6 0%,#5F6C7F 45%,#2A3240 100%)}
 
 /* emissor ativo (vários emissores no aparelho) */
 .slotbar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:center;margin:6px 0 14px;font-size:14px}
 .slotbar .note{flex-basis:100%;font-size:12.5px;text-align:center;opacity:.85}
+
+/* legenda das cores dos cartões */
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;margin:0 2px 12px;font-size:12.5px;color:var(--soft)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:11px;height:11px;border-radius:50%;background:var(--cg);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35)}
 
 /* passos (sequência real) */
 .steps{list-style:none;counter-reset:s;margin:0;padding:6px 0}
@@ -366,7 +377,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.11.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.12.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -379,7 +390,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.11.0</p>
+    <p class="ver">Versão 0.12.0</p>
   </div>
 </section>
 
@@ -428,7 +439,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.11.0</p>
+    <p class="ver">Versão 0.12.0</p>
   </div>
 </section>
 
@@ -455,24 +466,24 @@ body[data-screen="sApp"] .dock{display:grid}
     </section>
 
     <section class="view" id="vIssue">
-      <h2>Emitir</h2>
-      <p class="sub">O titular gera um pedido assinado na carteira dele. Conferido o pedido, o emissor assina a credencial para aquele DID.</p>
+      <h2>Aprovar</h2>
+      <p class="sub">Cole o pedido que veio da carteira. A raiz (STK) aprova Identidades (DID:KEY) e credencia serviços; o serviço aprova Crachás (CV:KEY) para os apps dele.</p>
       <label class="f" id="iqF"><span>Pedido do titular</span><textarea class="mono" id="iqT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label>
       <p class="hint" id="iqH"></p>
       <button class="btn" id="iqGo">Conferir pedido</button>
       <div id="iForm" hidden>
         <div id="iWho"></div>
-        <label class="f"><span>Tipo de credencial</span><select id="iType"></select></label>
+        <label class="f" id="iTypeF"><span>O que aprovar</span><select id="iType"></select></label>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
         <div id="iAcc" hidden></div>
         <label class="f" id="iDaysF"><span>Validade</span><select id="iDays"><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="1825">5 anos</option><option value="0">Sem validade</option></select></label>
-        <button class="btn" id="iGo">Emitir credencial</button>
+        <button class="btn" id="iGo">Aprovar</button>
       </div>
       <div id="iOut" hidden>
         <div id="iOk"></div>
-        <label class="f"><span>Credenciais emitidas, entregue ao titular (uma por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
-        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova emissão</button></div>
+        <label class="f"><span>Aprovado: entregue ao titular (uma credencial por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
+        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova aprovação</button></div>
       </div>
     </section>
 
@@ -508,7 +519,7 @@ body[data-screen="sApp"] .dock{display:grid}
       <div class="list glass flat" id="gCred"></div>
       <div class="sec-h">Política de verificação</div>
       <div class="list glass flat"><button class="tx" id="gPol"><span class="dot" data-ic="shield"></span><span class="t"><b>Status não verificável</b><small>Credencial de outro emissor, sem como conferir a revogação</small></span><span class="rv" id="gPolV"></span></button></div>
-      <div class="sec-h">Credenciais emitidas <small id="gIssN"></small></div>
+      <div class="sec-h">Credenciais aprovadas <small id="gIssN"></small></div>
       <div class="list glass flat" id="gIssued"></div>
       <div id="commonSet"></div>
     </section>
@@ -516,7 +527,7 @@ body[data-screen="sApp"] .dock{display:grid}
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Emitir</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Aprovar</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
@@ -582,7 +593,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.11.0';
+const APP_VERSION='0.12.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -775,18 +786,18 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
-  IdentityCredential:{label:'Identidade',claims:[['nome','']]},
-  // Crachá: o serviço (SRV) declara que a pessoa, com Identidade aprovada pela STK, é membro dele.
-  BadgeCredential:{label:'Crachá',claims:[['categoria','membro']]},
-  // Acesso: o SRV libera um dos seus serviços, com o papel. Só vale junto com o crachá do mesmo SRV.
-  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']]},
-  // Credenciamento: a STK autoriza outro emissor a dar acesso aos apps listados. É de emissor para emissor.
+  // Identidade (DID:KEY): quem é o usuário. Aprovada pela STK; leva só o nome.
+  IdentityCredential:{label:'Identidade',chave:'DID:KEY',claims:[['nome','']]},
+  // Crachá (CV:KEY): o que o usuário acessa e em qual sistema. Aprovado pelo serviço (SRV), um por app.
+  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app',''],['papel','leitor']]},
+  // Credenciamento: a STK autoriza um serviço a aprovar crachás para os apps listados. É de emissor para emissor.
   AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
-  CustomCredential:{label:'Personalizado',claims:[['campo','']]}
+  // Tipos antigos: só para mostrar credenciais já guardadas; não se pedem nem se emitem mais.
+  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']],legado:true},
+  CustomCredential:{label:'Personalizado',claims:[['campo','']],legado:true}
 };
 // Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
-const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor);
+const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor&&!v.legado);
 /* ================= acesso e papéis (F10) ================= */
 // Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
 // "pode" é a política de referência; cada sistema que verifica mantém a sua.
@@ -802,7 +813,7 @@ const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
 const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
 const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-// O acesso serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
+// O crachá serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
 const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
@@ -1408,11 +1419,11 @@ $('#pAll').onclick=()=>{
 };
 
 /* ================= emissão ================= */
-// Papel do emissor: com credenciamento é serviço (SRV) e dá Crachá e Acesso; sem ele é raiz (STK)
-// e aprova Identidades e credencia serviços. Personalizado vale para os dois.
+// Papel do emissor: sem credenciamento é raiz (STK) e aprova Identidades e credencia serviços;
+// com credenciamento é serviço (SRV) e aprova Crachás para os apps dele.
 // Uma vez credenciado, o emissor segue serviço: se o credenciamento vencer, ele para de dar acesso, não vira raiz.
 const isService=()=>st.credenciamentos.length>0;
-const ROOT_TYPES=['IdentityCredential','AccreditationCredential','CustomCredential'],SRV_TYPES=['BadgeCredential','AccessCredential','CustomCredential'];
+const ROOT_TYPES=['IdentityCredential','AccreditationCredential'],SRV_TYPES=['BadgeCredential'];
 const issuableTypes=()=>isService()?SRV_TYPES:ROOT_TYPES;
 function fillTypeSelects(){
   const opts=issuableTypes().map(k=>`<option value="${k}">${VC_TYPES[k].label}</option>`).join('');
@@ -1420,23 +1431,26 @@ function fillTypeSelects(){
   $('#vType').innerHTML=`<option value="any">Qualquer credencial</option>`+holderTypes().map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   $('#vPapel').innerHTML=Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 }
-$('#vType').onchange=()=>{$('#vAcc').hidden=$('#vType').value!=='AccessCredential'};
+$('#vType').onchange=()=>{$('#vAcc').hidden=$('#vType').value!=='BadgeCredential'};
 let pedido=null;
 const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><input data-ck value="${esc(k)}" autocomplete="off" autocapitalize="none"></label><label class="f"><span>Valor</span><input data-cv value="${esc(v)}" autocomplete="off"></label><button class="mini" data-rm aria-label="Remover campo">${ic('minus')}</button></div>`;
 function drawClaims(){
-  $('#iClaims').innerHTML=VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':v)).join('');
-  drawAccessPicks();
+  const badge=$('#iType').value==='BadgeCredential';
+  // Crachá: em vez de campos livres, o SRV marca os apps que aprova, cada um com o papel.
+  $('#iClaims').innerHTML=badge?'':VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':v)).join('');
+  $('#iAdd').hidden=badge;
+  drawBadgePicks();
 }
-// No crachá, o SRV já marca os serviços que libera (os pedidos vêm marcados), cada um com o papel.
-function drawAccessPicks(){
+// Um crachá (CV:KEY) por app marcado. Os apps pedidos já vêm marcados.
+function drawBadgePicks(){
   const box=$('#iAcc'),cr=activeAccreditation(),badge=$('#iType').value==='BadgeCredential';
   box.hidden=!badge||!cr;if(box.hidden){box.innerHTML='';return}
   const want=appsList(pedido&&pedido.payload.servicos).map(normApp);
-  box.innerHTML=`<div class="sec-h">Acessos que vão com o crachá</div><div class="list glass flat">${appsList(cr.apps).map(a=>`<div class="tx" data-acc="${esc(a)}"><label class="t" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-on ${want.includes(normApp(a))?'checked':''}><b>${esc(a)}</b>${want.includes(normApp(a))?'<small>pedido</small>':''}</label><select data-papel aria-label="Papel em ${esc(a)}">${Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></div>`).join('')}</div>`;
+  box.innerHTML=`<div class="sec-h">Crachás a aprovar (um por app)</div><div class="list glass flat">${appsList(cr.apps).map(a=>`<div class="tx" data-acc="${esc(a)}"><label class="t" style="display:flex;gap:10px;align-items:center"><input type="checkbox" data-on ${want.includes(normApp(a))?'checked':''}><b>${esc(a)}</b>${want.includes(normApp(a))?'<small>pedido</small>':''}</label><select data-papel aria-label="Papel em ${esc(a)}">${Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></div>`).join('')}</div>`;
 }
 $('#iType').onchange=()=>{
-  // Acesso e credenciamento sempre com validade de até 1 ano.
-  if(['BadgeCredential','AccessCredential','AccreditationCredential'].includes($('#iType').value)&&(!+$('#iDays').value||+$('#iDays').value>PRAZO_MAX_DIAS))$('#iDays').value='365';
+  // Crachá e credenciamento sempre com validade de até 1 ano.
+  if(['BadgeCredential','AccreditationCredential'].includes($('#iType').value)&&(!+$('#iDays').value||+$('#iDays').value>PRAZO_MAX_DIAS))$('#iDays').value='365';
   drawClaims();
 };
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
@@ -1454,12 +1468,14 @@ $('#iqGo').onclick=async()=>{
   $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
   if(VC_TYPES[r.payload.wanted]&&!issuableTypes().includes(r.payload.wanted))
     $('#iWho').insertAdjacentHTML('beforeend',verdictHtml(false,`Este emissor não emite ${vcLabel(r.payload.wanted)}`,esc(typeRoleMsg(r.payload.wanted))));
-  else if(['BadgeCredential','AccessCredential'].includes(r.payload.wanted)){
+  else if(r.payload.wanted==='BadgeCredential'){
     const idr=await checkIdentity(r.payload.identidade,r.did);
     $('#iWho').insertAdjacentHTML('beforeend',verdictHtml(idr.ok,idr.ok?'Identidade aprovada':'Identidade não aceita',esc(idr.detail)));
-    if(r.payload.servicos)$('#iWho').insertAdjacentHTML('beforeend',verdictHtml(true,'Serviços pedidos',esc(appsList(r.payload.servicos).join(', '))));
+    if(r.payload.servicos)$('#iWho').insertAdjacentHTML('beforeend',verdictHtml(true,'Apps pedidos',esc(appsList(r.payload.servicos).join(', '))));
   }
   if(issuableTypes().includes(r.payload.wanted))$('#iType').value=r.payload.wanted;
+  // Serviço só aprova crachá: o seletor de tipo some.
+  $('#iTypeF').hidden=issuableTypes().length<2;
   $('#iType').onchange();$('#iForm').hidden=false;
 };
 function prazoProblem(days,what){
@@ -1476,8 +1492,9 @@ async function revokeAll(list,reason){
 // Credenciamento recebido da STK e ainda válido (o mais recente).
 const activeAccreditation=()=>st.credenciamentos.filter(c=>!c.exp||c.exp>now()).sort((a,b)=>b.iat-a.iat)[0];
 const typeRoleMsg=type=>isService()
-  ?'Este emissor é um serviço credenciado: ele dá Crachá e Acesso aos serviços dele. Identidades e credenciamentos são aprovados pela STK.'
-  :'Só um serviço credenciado pela STK dá Crachá e Acesso. Este emissor aprova Identidades e credencia serviços.';
+  ?'Este emissor é um serviço credenciado: ele aprova Crachás para os apps dele. Identidades e credenciamentos são aprovados pela STK.'
+  :type==='BadgeCredential'?'Crachá é aprovado pelo serviço credenciado pela STK. Este emissor aprova Identidades e credencia serviços.'
+  :'Este emissor aprova Identidades e credencia serviços.';
 async function issue(sub,type,claims,days,holderName,nonce,ctx={}){
   if(!issuableTypes().includes(type))throw new Error(typeRoleMsg(type));
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
@@ -1493,34 +1510,22 @@ async function issue(sub,type,claims,days,holderName,nonce,ctx={}){
   }
   let evidence=null;
   if(type==='BadgeCredential'){
-    const extra=Object.keys(claims).find(k=>k!=='categoria');
-    if(extra)throw new Error(`O Crachá leva só a categoria (membro, funcionário, cliente…). Tire o campo “${extra}”.`);
-    if(!String(claims.categoria||'').trim())throw new Error('Informe a categoria do crachá (membro, funcionário, cliente…).');
-    prazoProblem(days,'O Crachá');
-    claims={categoria:String(claims.categoria).trim()};
-    // Um crachá ativo por pessoa neste SRV: o novo substitui o anterior.
-    antigos=activeOf(sub,'BadgeCredential');motivo='Substituído por novo crachá';
-  }
-  if(type==='AccessCredential'){
+    // Crachá (CV:KEY): app e papel, para quem tem Identidade aprovada pela STK.
     const extra=Object.keys(claims).find(k=>!['app','papel'].includes(k));
-    if(extra)throw new Error(`O Acesso leva só app e papel. Tire o campo “${extra}”.`);
-    if(!String(claims.app||'').trim())throw new Error('Informe o app do acesso.');
+    if(extra)throw new Error(`O Crachá leva só app e papel. Tire o campo “${extra}”.`);
+    if(!String(claims.app||'').trim())throw new Error('Informe o app do crachá.');
     if(!PAPEIS[String(claims.papel||'').toLowerCase()])throw new Error('O papel deve ser leitor, operador ou admin.');
-    prazoProblem(days,'O Acesso');
-    // O acesso exige o crachá deste SRV.
-    if(!activeOf(sub,'BadgeCredential').length)throw new Error('Esta pessoa ainda não tem crachá deste serviço. Emita o crachá primeiro.');
-    claims={app:String(claims.app).trim(),papel:String(claims.papel).toLowerCase()};
-    antigos=activeOf(sub,'AccessCredential').filter(i=>normApp(i.claims.app)===normApp(claims.app));motivo='Substituído por novo acesso';
-  }
-  if(type==='BadgeCredential'||type==='AccessCredential'){
-    // Só para quem apresenta Identidade aprovada por emissor confiável (a STK).
+    prazoProblem(days,'O Crachá');
     const idr=await checkIdentity(ctx.identidade,sub);if(!idr.ok)throw new Error(idr.detail);
     holderName=idr.nome||holderName;
-    // Serviço credenciado: só os apps autorizados, e o credenciamento vai junto como prova.
+    claims={app:String(claims.app).trim(),papel:String(claims.papel).toLowerCase()};
+    // Só os apps do credenciamento, e o credenciamento vai dentro do crachá como prova.
     const cr=activeAccreditation();
     if(!cr)throw new Error('O credenciamento deste serviço venceu. Peça um novo à STK.');
-    if(type==='AccessCredential'&&!appsList(cr.apps).some(a=>normApp(a)===normApp(claims.app)))throw new Error(`O credenciamento de ${cr.issuerName} não inclui o app “${claims.app}”. Apps autorizados: ${cr.apps}.`);
+    if(!appsList(cr.apps).some(a=>normApp(a)===normApp(claims.app)))throw new Error(`O credenciamento de ${cr.issuerName} não inclui o app “${claims.app}”. Apps autorizados: ${cr.apps}.`);
     evidence=[{type:'Credenciamento',jwt:cr.jwt}];
+    // Um crachá ativo por pessoa e app: o novo substitui o anterior.
+    antigos=activeOf(sub,'BadgeCredential').filter(i=>normApp(i.claims.app)===normApp(claims.app));motivo='Substituído por novo crachá';
   }
   if(type==='AccreditationCredential'){
     const extra=Object.keys(claims).find(k=>!['servico','apps'].includes(k));
@@ -1544,21 +1549,23 @@ async function issue(sub,type,claims,days,holderName,nonce,ctx={}){
 }
 $('#iGo').onclick=async()=>{
   if(!pedido)return;
-  const claims={};
-  $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
-  if(!Object.keys(claims).length){toast('Preencha ao menos um campo com valor',true);return}
-  const type=$('#iType').value,days=+$('#iDays').value,ctx={identidade:pedido.payload.identidade};
-  // Crachá: os acessos marcados saem junto, depois do crachá (o acesso exige o crachá).
-  const picks=type==='BadgeCredential'?[...$('#iAcc').querySelectorAll('[data-acc]')].filter(r=>r.querySelector('[data-on]').checked).map(r=>({app:r.dataset.acc,papel:r.querySelector('[data-papel]').value})):[];
-  const toks=[];
-  try{
-    toks.push(await issue(pedido.did,type,claims,days,pedido.payload.name,pedido.payload.nonce,ctx));
-    for(const a of picks)toks.push(await issue(pedido.did,'AccessCredential',a,days,pedido.payload.name,null,ctx));
-  }catch(e){if(!toks.length){toast(e.message,true);return}toast(e.message,true)}
+  const type=$('#iType').value,days=+$('#iDays').value,ctx={identidade:pedido.payload.identidade},toks=[];
+  if(type==='BadgeCredential'){
+    // Um crachá por app marcado.
+    const picks=[...$('#iAcc').querySelectorAll('[data-acc]')].filter(r=>r.querySelector('[data-on]').checked).map(r=>({app:r.dataset.acc,papel:r.querySelector('[data-papel]').value}));
+    if(!picks.length){toast(activeAccreditation()?'Marque ao menos um app':'O credenciamento deste serviço venceu. Peça um novo à STK.',true);return}
+    try{for(const [i,a] of picks.entries())toks.push(await issue(pedido.did,type,a,days,pedido.payload.name,i?null:pedido.payload.nonce,ctx))}
+    catch(e){toast(e.message,true);if(!toks.length)return}
+  }else{
+    const claims={};
+    $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
+    if(!Object.keys(claims).length){toast('Preencha ao menos um campo com valor',true);return}
+    try{toks.push(await issue(pedido.did,type,claims,days,pedido.payload.name,pedido.payload.nonce,ctx))}catch(e){toast(e.message,true);return}
+  }
   $('#iJwt').value=toks.join('\n');
-  const extra=toks.length>1?` e ${toks.length-1} ${toks.length===2?'acesso':'acessos'}`:'';
-  $('#iOk').innerHTML=verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))}${extra} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrada no livro.`);
-  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
+  const what=type==='BadgeCredential'?(toks.length>1?`${toks.length} crachás`:'Crachá'):vcLabel(type);
+  $('#iOk').innerHTML=verdictHtml(true,'Credencial aprovada',`${esc(what)} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrado no livro.`);
+  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial aprovada');
 };
 $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
 $('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iqT').focus()};
@@ -1566,9 +1573,9 @@ $('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').text
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{
   const nonce=b64u.enc(rnd(18)),iat=now(),type=$('#vType').value,purpose=$('#vPurpose').value.trim()||'Verificação';
-  // Desafio de acesso: diz o app e o papel mínimo.
-  const acc=type==='AccessCredential'?{app:$('#vApp').value.trim(),papelMin:$('#vPapel').value}:{};
-  if(type==='AccessCredential'&&!acc.app){shake($('#vAppF'));$('#vApp').focus();return}
+  // Desafio de crachá: diz o app e o papel mínimo.
+  const acc=type==='BadgeCredential'?{app:$('#vApp').value.trim(),papelMin:$('#vPapel').value}:{};
+  if(type==='BadgeCredential'&&!acc.app){shake($('#vAppF'));$('#vApp').focus();return}
   $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,...acc,iat,exp:iat+600});
   st.challenges=st.challenges.filter(c=>c.exp>iat-86400);
   st.challenges.push({nonce,type,purpose,...acc,iat,exp:iat+600,used:false});await save();
@@ -1597,16 +1604,16 @@ async function checkVP(tok){
   add(vc.ok,'Assinatura do emissor',vc.ok?`Assinada por ${esc(vcIssuerName(q))}.`:'A credencial foi alterada depois de emitida.');
   add(q.sub===vp.did,'Credencial pertence ao titular',q.sub===vp.did?'O DID da credencial é o mesmo de quem apresentou.':'A credencial é de outra pessoa.');
   const tn=trustedName(vc.did);
-  const srv=t==='AccessCredential'||t==='BadgeCredential';
+  const srv=t==='BadgeCredential'||t==='AccessCredential';
   if(srv){
-    // Crachá e acesso só valem com o credenciamento dentro deles, de um emissor confiável, mesmo que o serviço
-    // esteja na lista de confiança: assim a chave de um serviço nunca vale como raiz.
+    // Crachá (e o Acesso antigo) só valem com o credenciamento dentro deles, de um emissor confiável, mesmo que o
+    // serviço esteja na lista de confiança: assim a chave de um serviço nunca vale como raiz.
     const ev=((q.vc.evidence||[]).find(e=>e&&e.type==='Credenciamento')||{}).jwt;
     const cr=ev?await checkLinked(ev,'AccreditationCredential',vc.did,'O credenciamento'):{ok:false,detail:'A credencial não traz o credenciamento do serviço.'};
-    const c=(q.vc.credentialSubject||{}),acc=t==='AccessCredential';
-    const inclui=cr.ok&&(!acc||appsList(cr.payload.vc.credentialSubject.apps).some(a=>normApp(a)===normApp(c.app)));
+    const c=(q.vc.credentialSubject||{});
+    const inclui=cr.ok&&appsList(cr.payload.vc.credentialSubject.apps).some(a=>normApp(a)===normApp(c.app));
     add(inclui,'Emissor confiável',!cr.ok?esc(cr.detail):!inclui?`O credenciamento de ${esc(vcIssuerName(q))} não inclui o app ${esc(c.app)}.`
-      :`${esc(vcIssuerName(q))} é credenciado por ${esc(cr.issuerName)}${acc?` para ${esc(c.app)}`:''}.`);
+      :`${esc(vcIssuerName(q))} é credenciado por ${esc(cr.issuerName)} para ${esc(c.app)}.`);
   }else add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na sua lista de confiança.');
   if(vc.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Não revogada',!rec?'Não consta no registro de emissões.':rec.revoked?`Revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativa no registro de emissões.')}
   else add(unverifiableStatus(),'Não revogada',unverifiableMsg);
@@ -1614,22 +1621,17 @@ async function checkVP(tok){
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
   add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Expirou em ${fmtDate(q.exp*1000)}.`:`Válida até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
   if(ch&&ch.type!=='any')add(t===ch.type,'Tipo exigido',t===ch.type?`${esc(vcLabel(t))}, como pedido.`:`O desafio pedia ${esc(vcLabel(ch.type))} e veio ${esc(vcLabel(t))}.`);
-  if(ch&&ch.type==='AccessCredential'&&t==='AccessCredential'){
+  if(ch&&ch.type==='BadgeCredential'&&t==='BadgeCredential'){
     const c=q.vc.credentialSubject||{},ok=acessoServe(c,ch.app,ch.papelMin);
     add(ok,'Papel suficiente',ok?`${esc(papelLabel(c.papel))} em ${esc(c.app)}. Pode: ${esc(PAPEIS[String(c.papel).toLowerCase()].pode.join(', '))}.`
-      :normApp(c.app)!==normApp(ch.app)?`O acesso é para ${esc(c.app||'outro app')}, e o desafio pedia ${esc(ch.app)}.`
+      :normApp(c.app)!==normApp(ch.app)?`O crachá é para ${esc(c.app||'outro app')}, e o desafio pedia ${esc(ch.app)}.`
       :`O desafio pedia ${esc(papelLabel(ch.papelMin))} ou acima, e veio ${esc(papelLabel(c.papel))}.`);
   }
   let nome=t==='IdentityCredential'?(q.vc.credentialSubject||{}).nome:'';
   if(srv){
-    // Crachá e acesso são atributos da Identidade: quem é a pessoa vem da Identidade apresentada junto.
+    // O crachá é atributo da Identidade: quem é a pessoa vem da Identidade apresentada junto.
     const r=await checkIdentity(p.vp.verifiableCredential[1],vp.did);
     add(r.ok,'Identidade do titular',esc(r.detail));nome=r.nome;
-  }
-  if(t==='AccessCredential'){
-    // O acesso exige o crachá do mesmo serviço.
-    const b=await checkBadge(p.vp.verifiableCredential[2],vp.did,vc.did);
-    add(b.ok,'Crachá do serviço',esc(b.detail));
   }
   return{checks,ch,q,holder:vp.did,chOk,nome};
 }
@@ -1653,26 +1655,8 @@ async function checkLinked(tok,type,sub,what,{status=true}={}){
   }else if(status&&unverifiableStatus()===false)return no(`${what} é de ${tn}, e a revogação não pode ser conferida aqui. Para aceitar, mude a política de status não verificável.`);
   return{ok:true,payload:q,issuerName:tn,detail:''};
 }
-// O crachá é do mesmo serviço que deu o acesso; a confiança nesse serviço vem do credenciamento.
-async function checkBadge(tok,holder,issuerDid){
-  const no=detail=>({ok:false,detail});
-  if(!tok)return no('Falta o crachá: o acesso só vale junto com o crachá do serviço.');
-  let r;try{r=await verifyJWT(tok,'vc+jwt')}catch(e){return no(`O crachá: ${e.message}`)}
-  const q=r.payload,t0=now();
-  if(vcType(q)!=='BadgeCredential')return no('A credencial que acompanha o acesso não é um crachá.');
-  if(!r.ok)return no('O crachá: a assinatura não confere.');
-  if(q.sub!==holder)return no('O crachá é de outro DID.');
-  if(r.did!==issuerDid)return no('O crachá é de outro serviço, não de quem deu o acesso.');
-  if(q.nbf&&q.nbf>t0+CLOCK_SKEW||q.exp&&q.exp<=t0)return no('O crachá está fora da validade.');
-  if(r.did===ses.did){
-    const rec=st.issued.find(i=>i.jti===q.jti);
-    if(!rec)return no('O crachá não consta no registro de emissões.');
-    if(rec.revoked)return no(`O crachá: revogação em ${fmtDate(rec.revokedAt)} (${rec.reason}).`);
-  }else if(unverifiableStatus()===false)return no(`O crachá é de ${vcIssuerName(q)}, e a revogação não pode ser conferida aqui. Para aceitar, mude a política de status não verificável.`);
-  return{ok:true,detail:`${capital(q.vc.credentialSubject.categoria)} de ${vcIssuerName(q)}.`};
-}
 async function checkIdentity(tok,holder){
-  if(!tok)return{ok:false,detail:'Falta a Identidade: o acesso só vale junto com a Identidade aprovada de quem o tem.',nome:''};
+  if(!tok)return{ok:false,detail:'Falta a Identidade: o crachá só vale junto com a Identidade aprovada de quem o tem.',nome:''};
   const r=await checkLinked(tok,'IdentityCredential',holder,'A Identidade');
   if(!r.ok)return{...r,nome:''};
   const nome=r.payload.vc.credentialSubject.nome||'';
@@ -1720,7 +1704,7 @@ $('#gSlots').onclick=async e=>{
 };
 function addSlot(){
   let derived=false;
-  openSheet(`<h3>Adicionar emissor de serviço</h3><p class="sub">Um emissor separado para dar Crachá e Acesso aos seus serviços. Depois de criado, ele pede o credenciamento à raiz.</p>
+  openSheet(`<h3>Adicionar emissor de serviço</h3><p class="sub">Um emissor separado para aprovar Crachás dos seus apps. Depois de criado, ele pede o credenciamento à raiz.</p>
     <label class="f" id="slNF"><span>Nome do serviço</span><input id="slN" autocomplete="off" placeholder="Ex.: Systekna Serviços"></label>
     <div class="sec-h">Chave do emissor</div>
     <div class="list glass flat" id="slK">
@@ -1739,7 +1723,7 @@ function addSlot(){
 }
 function renderCred(){
   const cr=activeAccreditation();
-  $('#gRole').textContent=cr?`Serviço credenciado por ${cr.issuerName}: dá Crachá e Acesso a ${cr.apps}.`:isService()?'Serviço com credenciamento vencido: não dá Crachá nem Acesso até importar um novo.':'Raiz: aprova Identidades e credencia serviços. Para dar Crachá e Acesso, use um emissor de serviço credenciado.';
+  $('#gRole').textContent=cr?`Serviço credenciado por ${cr.issuerName}: aprova Crachás para ${cr.apps}.`:isService()?'Serviço com credenciamento vencido: não aprova Crachás até importar um novo.':'Raiz: aprova Identidades e credencia serviços. Crachás são aprovados por um emissor de serviço credenciado.';
   const row=(k,icn,t,sub)=>`<button class="tx" data-cr="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${sub}</small></span>${ic('chev')}</button>`;
   $('#gCred').innerHTML=st.credenciamentos.slice().sort((a,b)=>b.iat-a.iat).map(c=>{const ok=!c.exp||c.exp>now();return `<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(c.servico)}: ${esc(c.apps)}</b><small>Por ${esc(c.issuerName)}, ${c.exp?(ok?'até ':'venceu em ')+fmtDate(c.exp*1000):'sem validade'}</small></span><span class="pill ${ok?'ok':'no'}">${ok?'Ativo':'Vencido'}</span></div>`}).join('')
     +row('ask','send','Pedir credenciamento','Gera um pedido assinado por este emissor para a STK')
@@ -1819,11 +1803,8 @@ function showIssued(n){
     ${i.revoked?'':`<label class="f mt"><span>Motivo da revogação</span><select id="rvR"><option>Pedido do titular</option><option>Dados incorretos</option><option>Fim do vínculo</option><option>Suspeita de fraude</option><option>Outro</option></select></label><button class="btn danger" id="rvGo">Revogar credencial</button>`}`);
   $('#rvGo')&&($('#rvGo').onclick=async()=>{
     const reason=$('#rvR').value;
-    if(!await confirmSheet('Revogar credencial',`A partir de agora ela será recusada em todas as verificações deste emissor.${i.type==='BadgeCredential'?' Os acessos desta pessoa também serão revogados.':''} Isso não pode ser desfeito.`,'Revogar',true))return;
-    await revokeAll([i],reason);
-    // Sem crachá ativo, os acessos da pessoa neste SRV caem junto.
-    if(i.type==='BadgeCredential'&&!activeOf(i.sub,'BadgeCredential').length)await revokeAll(activeOf(i.sub,'AccessCredential'),'Crachá revogado');
-    await save();renderGov();toast('Credencial revogada');
+    if(!await confirmSheet('Revogar credencial','A partir de agora ela será recusada em todas as verificações deste emissor. Isso não pode ser desfeito.','Revogar',true))return;
+    await revokeAll([i],reason);await save();renderGov();toast('Credencial revogada');
   });
 }
 

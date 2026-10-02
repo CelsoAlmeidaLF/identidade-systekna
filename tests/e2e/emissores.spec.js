@@ -106,7 +106,7 @@ test('03 · credenciamento guiado no mesmo aparelho: o serviço pede, a raiz emi
   await expect(toast(page)).toHaveText('Credenciamento importado');
   await expect(page.locator('#whoLabel')).toHaveText('Systekna Serviços · Serviço');
   await aba(page, 'vIssue');
-  await expect(page.locator('#iType option')).toHaveText(['Crachá', 'Acesso', 'Personalizado']);
+  await expect(page.locator('#iType option')).toHaveText(['Crachá']);
 });
 
 test('04 · emissor derivado das palavras da raiz tem DID próprio e avisa que é só demonstração', async () => {

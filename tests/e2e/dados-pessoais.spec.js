@@ -36,7 +36,7 @@ async function conferirPedido(tok, tipo) {
 async function emitir() {
   await emissor.click('#iGo');
   await expect(emissor.locator('#iOut')).toBeVisible();
-  await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
+  await expect(emissor.locator('#iOk')).toContainText('Credencial aprovada');
   return payloadDe(await emissor.inputValue('#iJwt'));
 }
 
@@ -98,10 +98,10 @@ test('a credencial de identidade traz só o nome, sem kycValidado nem o campo do
   expect(Object.keys(sujeito).sort()).toEqual(['id', 'nome']);
 });
 
-test('kycValidado é recusado em qualquer credencial e nada vai para o livro', async () => {
+test('kycValidado é recusado e nada vai para o livro', async () => {
   // Sem fluxo de KYC na versão básica, ninguém pode afirmar que conferiu documentos.
   const antes = await contagem();
-  await conferirPedido(await pedir('Maria Teste'), 'CustomCredential');
+  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
   await emissor.fill('#iClaims [data-ck]', 'kycValidado');
   await emissor.fill('#iClaims [data-cv]', 'true');
   await emissor.click('#iGo');
@@ -111,7 +111,7 @@ test('kycValidado é recusado em qualquer credencial e nada vai para o livro', a
 
 test('emissão com campo cpf é recusada e nada vai para o livro', async () => {
   const antes = await contagem();
-  await conferirPedido(await pedir('Maria Teste'), 'CustomCredential');
+  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
   await emissor.fill('#iClaims [data-ck]', 'cpf');
   await emissor.fill('#iClaims [data-cv]', CPF_VALIDO);
   await emissor.click('#iGo');
@@ -129,16 +129,17 @@ test('CPF escondido no valor de um campo comum também é recusado', async () =>
   await expect(toast(emissor)).toHaveText('O campo “observacao” parece conter um CPF, que não entra em credencial.');
   expect(await contagem()).toEqual(antes);
 
-  // Corrigido o campo, a mesma tela emite normalmente.
-  await emissor.fill('#iClaims [data-cv]', 'cliente desde 2024');
+  // Corrigido o campo, a mesma tela aprova normalmente.
+  await emissor.fill('#iClaims [data-ck]', 'nome');
+  await emissor.fill('#iClaims [data-cv]', 'Maria Teste');
   await emissor.click('#iGo');
-  await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
+  await expect(emissor.locator('#iOk')).toContainText('Credencial aprovada');
   expect((await contagem()).emitidas).toBe(antes.emitidas + 1);
 });
 
 test('nome do titular com CPF no pedido é recusado', async () => {
   const antes = await contagem();
-  await conferirPedido(await pedir(`Maria ${CPF_VALIDO}`), 'CustomCredential');
+  await conferirPedido(await pedir(`Maria ${CPF_VALIDO}`), 'IdentityCredential');
   await emissor.fill('#iClaims [data-cv]', 'x');
   await emissor.click('#iGo');
   await expect(toast(emissor)).toHaveText('O campo “titular” parece conter um CPF, que não entra em credencial.');
