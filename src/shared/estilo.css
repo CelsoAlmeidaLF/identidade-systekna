@@ -281,7 +281,6 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-IdentityCredential{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
-.g-ProfessionalCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
 /* passos (sequência real) */

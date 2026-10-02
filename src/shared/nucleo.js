@@ -249,34 +249,8 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
   IdentityCredential:{label:'Identidade',claims:[['nome','']]},
-  // Profissional é atributo da Identidade: sistema e papel, sem nome. O que o papel pode fazer fica no sistema (RN67).
-  ProfessionalCredential:{label:'Profissional',claims:[['sistema',''],['papel','leitor']]},
   CustomCredential:{label:'Personalizado',claims:[['campo','']]}
 };
-/* ================= papéis (RN67 a RN73) ================= */
-// Lista fechada e em ordem: cada papel pode tudo o que o anterior pode (RN68).
-// "pode" é a política de referência; cada sistema que verifica mantém a sua.
-const PAPEIS={
-  leitor:{label:'Leitor',nivel:1,pode:['ver']},
-  operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
-  admin:{label:'Admin',nivel:3,pode:['ver','criar','editar','apagar','gerenciar acessos']}
-};
-const PAPEL_MAX_DIAS=365;
-const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
-// Sistema é comparado sem diferenciar acento, maiúscula nem espaços nas pontas (como o nome de grupo, RN49).
-const normSistema=s=>String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
-const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
-// A credencial Profissional serve ao desafio se for do mesmo sistema e de papel igual ou acima do mínimo (RN72).
-const papelServe=(claims,sistema,papelMin)=>!!claims&&normSistema(claims.sistema)===normSistema(sistema)&&papelNivel(claims.papel)>=papelNivel(papelMin);
-function papelProblem(claims,days){
-  if(!String(claims.sistema||'').trim())return'Informe o sistema em que o papel vale.';
-  if(!PAPEIS[String(claims.papel||'').toLowerCase()])return'O papel deve ser leitor, operador ou admin.';
-  const extra=Object.keys(claims).filter(k=>!['sistema','papel'].includes(k));
-  if(extra.length)return`A credencial Profissional leva só sistema e papel; quem é a pessoa vem da Identidade. Tire o campo “${extra[0]}”.`;
-  if(!days)return'A credencial Profissional precisa de validade.';
-  if(days>PAPEL_MAX_DIAS)return'A credencial Profissional vale no máximo 1 ano.';
-  return null;
-}
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
