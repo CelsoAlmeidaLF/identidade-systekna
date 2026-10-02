@@ -43,12 +43,12 @@ test.afterAll(async () => {
   await emissor?.context().close();
 });
 
-test('01 · a carteira pede Identidade, Acesso ou Personalizado; a Identidade vem primeiro', async () => {
+test('01 · a carteira pede Identidade, Crachá, Acesso ou Personalizado; a Identidade vem primeiro', async () => {
   await aba(emissor, 'vIssue');
   await expect(emissor.locator('#iType option').first()).toHaveText('Identidade');
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
-  await expect(carteira.locator('#aqT option')).toHaveText(['Identidade', 'Acesso', 'Personalizado']);
+  await expect(carteira.locator('#aqT option')).toHaveText(['Identidade', 'Crachá', 'Acesso', 'Personalizado']);
   await fecharSheet(carteira);
 });
 

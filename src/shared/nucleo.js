@@ -252,7 +252,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
   IdentityCredential:{label:'Identidade',claims:[['nome','']]},
-  // Acesso: o emissor (STK ou serviço credenciado) libera um app para quem tem Identidade aprovada (F10).
+  // Crachá: o serviço (SRV) declara que a pessoa, com Identidade aprovada pela STK, é membro dele.
+  BadgeCredential:{label:'Crachá',claims:[['categoria','membro']]},
+  // Acesso: o SRV libera um dos seus serviços, com o papel. Só vale junto com o crachá do mesmo SRV.
   AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']]},
   // Credenciamento: a STK autoriza outro emissor a dar acesso aos apps listados. É de emissor para emissor.
   AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
@@ -273,6 +275,7 @@ const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'
 const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
 // Nome de app é comparado sem diferenciar acento, maiúscula nem espaços nas pontas.
 const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
 // O acesso serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
 const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
