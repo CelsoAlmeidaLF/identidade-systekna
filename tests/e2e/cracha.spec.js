@@ -1,7 +1,7 @@
 // @ts-check
 // F10: duas camadas na carteira, com cadeia de confiança na STK.
 //   Identidade (DID:KEY): quem é o usuário. USER pede → STK aprova.
-//   Crachá (CV:KEY): o que o usuário acessa e em qual sistema (app + papel). USER envia o DID aprovado
+//   Crachá (CV:KEY): o que o usuário acessa e em qual sistema (só o app; sem nível de acesso). USER envia o DID aprovado
 //   e os apps → SRV credenciado pela STK aprova um crachá por app. O usuário pode ter N crachás.
 // Três contextos separados (carteira, STK, Serviço 1); os tokens passam pelas caixas de texto.
 const { test, expect } = require('@playwright/test');
@@ -75,11 +75,10 @@ async function apresentacaoAMao(emissor, desafio, credenciais) {
   }, [aud, nonce, credenciais]);
 }
 
-async function desafioDeCracha(emissor, app, papelMin) {
+async function desafioDeCracha(emissor, app) {
   await aba(emissor, 'vVerify');
   await emissor.selectOption('#vType', 'BadgeCredential');
   await emissor.fill('#vApp', app);
-  await emissor.selectOption('#vPapel', papelMin);
   await emissor.click('#vGen');
   await expect(emissor.locator('#vChal')).toBeVisible();
   return emissor.inputValue('#vChalT');
@@ -159,8 +158,11 @@ test('01 · a STK (raiz) aprova Identidade e credencia serviço; a carteira pede
 
 test('02 · USER pede a Identidade e a STK aprova: o cartão mostra o DID:KEY', async () => {
   await conferirPedido(stk, await pedirNaCarteira('IdentityCredential'));
+  // Trocar o seletor escondido não muda o que sai: o tipo vem do pedido assinado.
+  await stk.evaluate(() => { document.querySelector('#iType').value = 'AccreditationCredential'; });
   await emitir(stk, ['Ana Acesso']);
   identidade = await emitido(stk);
+  expect(payloadDe(identidade).vc.type).toContain('IdentityCredential');
   await receberNaCarteira(identidade);
   const cartao = carteira.locator('#cList .cred.g-IdentityCredential');
   await expect(cartao).toContainText('Ana Acesso');
@@ -168,12 +170,15 @@ test('02 · USER pede a Identidade e a STK aprova: o cartão mostra o DID:KEY', 
   await expect(cartao).toContainText('Aprovada por Emissor de Credenciais Systekna');
 });
 
-test('03 · a STK não aprova crachá', async () => {
+test('03 · a STK não aprova crachá, nem deixa aprovar o pedido como Identidade', async () => {
   const pedido = await pedirNaCarteira('BadgeCredential', 'App Agenda');
   expect(payloadDe(pedido)).toMatchObject({ wanted: 'BadgeCredential', identidade, name: 'Ana Acesso', servicos: 'App Agenda' });
   await conferirPedido(stk, pedido);
-  await expect(stk.locator('#iWho')).toContainText('Este emissor não emite Crachá');
-  await expect(stk.locator('#iWho')).toContainText('Crachá é aprovado pelo serviço credenciado pela STK.');
+  await expect(stk.locator('#iWho')).toContainText('Este emissor não aprova Crachá');
+  await expect(stk.locator('#iWho')).toContainText('Crachá (CV:KEY) é aprovado pelo emissor de serviço credenciado pela STK');
+  // Não há como aprovar o pedido de crachá como outro tipo (o erro de virar DID:KEY).
+  await expect(stk.locator('#iForm')).toBeHidden();
+  await expect(stk.locator('#iOut')).toBeHidden();
 });
 
 test('04 · o SRV pede credenciamento e a STK credencia os apps dele', async () => {
@@ -206,15 +211,12 @@ test('05 · o SRV importa o credenciamento (depois de confiar na STK) e passa a 
   await aba(servico, 'vIssue');
   await expect(servico.locator('#iType option')).toHaveText(['Crachá']);
   const recusa = await servico.evaluate(sub => issue(sub, 'IdentityCredential', { nome: 'X' }, 0, '', null).then(() => '', e => e.message), payloadDe(identidade).sub);
-  expect(recusa).toBe('Este emissor é um serviço credenciado: ele aprova Crachás para os apps dele. Identidades e credenciamentos são aprovados pela STK.');
+  expect(recusa).toBe('Este emissor é um serviço credenciado: ele aprova Crachás (CV:KEY) para os apps dele. Identidades (DID:KEY) e credenciamentos são aprovados pela STK.');
 });
 
 test('06 · USER envia o DID aprovado e os apps; o SRV aprova um crachá (CV:KEY) por app', async () => {
-  // Com a política padrão, a Identidade da STK é recusada: a revogação dela não pode ser conferida aqui.
-  await conferirPedido(servico, await pedirNaCarteira('BadgeCredential', 'App Agenda, App Financeiro'));
-  await expect(servico.locator('#iWho')).toContainText('Identidade não aceita');
-  await aceitarStatusNaoVerificavel(servico);
-
+  // Sem mexer na política: a Identidade aprovada pela STK que credenciou o SRV já vale.
+  await expect(servico.locator('#gPolV')).toHaveText('Recusar');
   await conferirPedido(servico, await pedirNaCarteira('BadgeCredential', 'app agenda, App Financeiro'));
   await expect(servico.locator('#iWho')).toContainText('Ana Acesso, aprovada por STK.');
   await expect(servico.locator('#iWho')).toContainText('Apps pedidos');
@@ -222,7 +224,6 @@ test('06 · USER envia o DID aprovado e os apps; o SRV aprova um crachá (CV:KEY
   const agenda = servico.locator('#iAcc [data-acc="App Agenda"]'), fin = servico.locator('#iAcc [data-acc="App Financeiro"]');
   await expect(agenda.locator('[data-on]')).toBeChecked();
   await expect(fin.locator('[data-on]')).toBeChecked();
-  await agenda.locator('[data-papel]').selectOption('operador');
   await servico.selectOption('#iDays', '0');
   await servico.click('#iGo');
   await expect(toast(servico)).toHaveText('O Crachá precisa de validade.');
@@ -234,12 +235,12 @@ test('06 · USER envia o DID aprovado e os apps; o SRV aprova um crachá (CV:KEY
   await expect(servico.locator('#iOk')).toContainText('2 crachás para Ana Acesso');
   const c = payloadDe(crachaAgenda);
   expect(c.vc.type).toEqual(['VerifiableCredential', 'BadgeCredential']);
-  expect(c.vc.credentialSubject).toEqual({ id: c.sub, app: 'App Agenda', papel: 'operador' });
+  expect(c.vc.credentialSubject).toEqual({ id: c.sub, app: 'App Agenda' });
   expect(c.vc.evidence).toEqual([{ type: 'Credenciamento', jwt: credenciamento }]);
 
   await receberNaCarteira(linhas.join('\n'), '2 credenciais guardadas');
-  await expect(carteira.locator('#cList')).toContainText('Operador em App Agenda');
-  await expect(carteira.locator('#cList')).toContainText('Leitor em App Financeiro');
+  await expect(carteira.locator('#cList')).toContainText('Acesso a App Agenda');
+  await expect(carteira.locator('#cList')).toContainText('Acesso a App Financeiro');
 });
 
 test('07 · cada crachá mostra o CV:KEY e a cor separa Identidade de Crachá', async () => {
@@ -261,19 +262,18 @@ test('07 · cada crachá mostra o CV:KEY e a cor separa Identidade de Crachá', 
 });
 
 test('08 · o SRV confere o crachá com a Identidade junto', async () => {
-  const vp = await apresentar(await desafioDeCracha(servico, 'App Agenda', 'leitor'));
+  const vp = await apresentar(await desafioDeCracha(servico, 'App Agenda'));
   expect(payloadDe(/** @type {string} */ (vp)).vp.verifiableCredential).toEqual([crachaAgenda, identidade]);
   const out = await conferir(servico, /** @type {string} */ (vp));
   await expect(out).toContainText('Apresentação aprovada');
   await expect(out.locator('.chk.no')).toHaveCount(0);
   await expect(out).toContainText('Crachá de Ana Acesso');
-  await expect(out).toContainText('Pode: ver, criar, editar.');
-  expect(await apresentar(await desafioDeCracha(servico, 'App Agenda', 'admin'))).toBeNull();
-  expect(await apresentar(await desafioDeCracha(servico, 'Outro App', 'leitor'))).toBeNull();
+  await expect(out).toContainText('Acesso a App Agenda.');
+  expect(await apresentar(await desafioDeCracha(servico, 'Outro App'))).toBeNull();
 });
 
 test('09 · crachá apresentado sem a Identidade é recusado', async () => {
-  const out = await conferir(servico, await apresentacaoAMao(servico, await desafioDeCracha(servico, 'App Agenda', 'leitor'), [crachaAgenda]));
+  const out = await conferir(servico, await apresentacaoAMao(servico, await desafioDeCracha(servico, 'App Agenda'), [crachaAgenda]));
   await expect(out).toContainText('Apresentação recusada');
   await expect(out.locator('.chk.no')).toHaveCount(1);
   await expect(out.locator('.chk.no')).toContainText('Falta a Identidade');
@@ -281,7 +281,7 @@ test('09 · crachá apresentado sem a Identidade é recusado', async () => {
 
 test('10 · a STK aceita o crachá do SRV pelo credenciamento e recusa depois de revogá-lo', async () => {
   await aceitarStatusNaoVerificavel(stk);
-  let out = await conferir(stk, /** @type {string} */ (await apresentar(await desafioDeCracha(stk, 'App Agenda', 'leitor'))));
+  let out = await conferir(stk, /** @type {string} */ (await apresentar(await desafioDeCracha(stk, 'App Agenda'))));
   await expect(out).toContainText('Apresentação aprovada');
   await expect(out).toContainText('Serviço 1 é credenciado por Emissor de Credenciais Systekna para App Agenda.');
   await aba(stk, 'vGov');
@@ -289,7 +289,7 @@ test('10 · a STK aceita o crachá do SRV pelo credenciamento e recusa depois de
   await stk.click('#rvGo');
   await stk.click('#cfOk');
   await expect(toast(stk)).toHaveText('Credencial revogada');
-  out = await conferir(stk, /** @type {string} */ (await apresentar(await desafioDeCracha(stk, 'App Agenda', 'leitor'))));
+  out = await conferir(stk, /** @type {string} */ (await apresentar(await desafioDeCracha(stk, 'App Agenda'))));
   await expect(out).toContainText('Apresentação recusada');
   await expect(out.locator('.chk.no')).toContainText('O credenciamento: revogação em');
 });
@@ -300,9 +300,9 @@ test('10b · revogar um crachá no SRV vale só para aquele app', async () => {
   await servico.click('#rvGo');
   await servico.click('#cfOk');
   await expect(toast(servico)).toHaveText('Credencial revogada');
-  let out = await conferir(servico, /** @type {string} */ (await apresentar(await desafioDeCracha(servico, 'App Agenda', 'leitor'))));
+  let out = await conferir(servico, /** @type {string} */ (await apresentar(await desafioDeCracha(servico, 'App Agenda'))));
   await expect(out).toContainText('Apresentação recusada');
-  out = await conferir(servico, /** @type {string} */ (await apresentar(await desafioDeCracha(servico, 'App Financeiro', 'leitor'))));
+  out = await conferir(servico, /** @type {string} */ (await apresentar(await desafioDeCracha(servico, 'App Financeiro'))));
   await expect(out).toContainText('Apresentação aprovada');
 });
 
