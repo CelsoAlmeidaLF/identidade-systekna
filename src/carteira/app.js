@@ -61,21 +61,27 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='BadgeCredential'){const c=p.vc.credentialSubject||{};return`${capital(c.categoria||'membro')} de ${d.issuerName}`}
-  if(d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
+  if(d.vtype==='BadgeCredential'||d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
-// O acesso só vale junto com a Identidade: usa a mais recente que ainda está válida.
+// O crachá só vale junto com a Identidade: usa a mais recente que ainda está válida.
 const latestIdentity=()=>creds().filter(c=>c.data.vtype==='IdentityCredential'&&usable(c.data)).sort((a,b)=>b.data.iat-a.data.iat)[0];
+// A cor do cartão diz a camada (azul: Identidade, verde: Crachá); a bolinha diz o sistema: crachás do mesmo serviço têm a mesma cor.
+const srvColor=d=>['BadgeCredential','AccessCredential'].includes(d.vtype)?`hsl(${[...String(d.issuerDid||'')].reduce((a,c)=>(a*31+c.charCodeAt(0))%360,7)} 85% 62%)`:'';
+const LEGEND=[['IdentityCredential','Identidade (DID:KEY): quem você é'],['BadgeCredential','Crachá (CV:KEY): o que você acessa'],['AccessCredential','Acesso (antigo)'],['CustomCredential','Personalizado (antigo)']];
+// A chave de cada cartão: DID:KEY na Identidade (o seu DID), CV:KEY no crachá (o número da credencial).
+const cardKey=d=>{const k=(VC_TYPES[d.vtype]||{}).chave;if(!k)return'';const v=k==='DID:KEY'?shortDid(ses.did):String(d.jti||'').replace('urn:uuid:','').slice(0,8)+'…';return`<div class="key"><b>${k}</b> ${esc(v)}</div>`};
 function credCard(it,asDiv){
-  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
-  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button',sc=srvColor(d);
+  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div>${cardKey(d)}<div class="r3"><span>${sc?`<i class="srvdot" style="--sc:${sc}"></i>`:''}Aprovada por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
 function renderCreds(){
   if(!ses)return;
   const list=creds();
   $('#cNote').hidden=!list.length;
-  $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
+  const has=new Set(list.map(i=>i.data.vtype));
+  const legend=`<div class="legend">${LEGEND.filter(([k])=>has.has(k)).map(([k,l])=>`<span><i class="g-${k}"></i>${l}</span>`).join('')}</div>`;
+  $('#cList').innerHTML=list.length?`${legend}<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Pedir credencial</b>. O pedido é assinado e prova que você controla este DID.</span></li>
       <li><span>Leve o pedido ao <b>Emissor de Credenciais</b>, que confere a assinatura e emite a credencial.</span></li>
@@ -86,48 +92,43 @@ $('#cList').onclick=e=>{const b=e.target.closest('[data-cid]');if(b)showCred(b.d
 function actionMenu(){
   const row=(k,icn,t,s)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`;
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
-    ${row('ask','send','Pedir credencial','Gera um pedido assinado para o emissor')}
-    ${row('get','inbox','Receber credencial','Cola a credencial que o emissor emitiu')}
+    ${row('ask','send','Pedir aprovação','Identidade à STK ou crachá a um serviço')}
+    ${row('get','inbox','Receber aprovação','Cola o que a STK ou o serviço aprovou')}
     ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}</div>`);
   $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present()})[b.dataset.act]()};
 }
 
 function askCred(){
-  openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
+  openSheet(`<h3>Pedir aprovação</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
-    <label class="f"><span>Credencial desejada</span><select id="aqT">${holderTypes().map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
-    <label class="f" id="aqSF" hidden><span>Serviços que você quer</span><input id="aqS" autocomplete="off" placeholder="Ex.: App Agenda, App Financeiro"></label>
+    <label class="f"><span>O que você quer aprovar</span><select id="aqT">${holderTypes().map(([k,v])=>`<option value="${k}">${k==='IdentityCredential'?'Identidade (DID:KEY), aprovada pela STK':'Crachá (CV:KEY), aprovado pelo serviço'}</option>`).join('')}</select></label>
+    <label class="f" id="aqSF" hidden><span>Apps que você quer acessar</span><input id="aqS" autocomplete="off" placeholder="Ex.: App Agenda, App Financeiro"></label>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <p class="hint" id="aqH"></p><button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
-  // Crachá e acesso ao serviço: o pedido leva o DID aprovado (a Identidade vai junto, e o nome vem dela)
-  // e os serviços que a pessoa quer. O acesso avulso só depois de ter o crachá.
-  const problem=wanted=>{
-    if(!['BadgeCredential','AccessCredential'].includes(wanted))return '';
-    if(!latestIdentity())return 'Para pedir crachá ou acesso, você precisa de uma Identidade aprovada. Peça a Identidade primeiro.';
-    if(wanted==='AccessCredential'&&!creds().some(c=>c.data.vtype==='BadgeCredential'&&usable(c.data)))return 'Para pedir acesso, você precisa do crachá do serviço. Peça o crachá primeiro.';
-    return '';
-  };
+  // Crachá: o pedido leva o DID aprovado (a Identidade vai junto, e o nome vem dela) e os apps que a pessoa quer.
+  const badgeProblem=()=>latestIdentity()?'':'Para pedir crachá, você precisa da Identidade aprovada pela STK. Peça a Identidade primeiro.';
   $('#aqT').onchange=()=>{
-    const w=$('#aqT').value,srv=['BadgeCredential','AccessCredential'].includes(w),id=latestIdentity(),H=$('#aqH'),pb=problem(w);
-    $('#aqNF').hidden=srv;$('#aqSF').hidden=!srv;H.classList.toggle('bad',!!pb);
-    H.textContent=pb||(srv?`Vai junto a sua Identidade aprovada por ${id.data.issuerName}.`:'');
+    const badge=$('#aqT').value==='BadgeCredential',id=latestIdentity(),H=$('#aqH'),pb=badge&&badgeProblem();
+    $('#aqNF').hidden=badge;$('#aqSF').hidden=!badge;H.classList.toggle('bad',!!pb);
+    H.textContent=pb||(badge?`Vai junto a sua Identidade (DID:KEY) aprovada por ${id.data.issuerName}.`:'A STK confere o pedido e aprova a sua Identidade.');
   };
+  $('#aqT').onchange();
   $('#aqGo').onclick=async()=>{
-    const wanted=$('#aqT').value,srv=['BadgeCredential','AccessCredential'].includes(wanted),id=srv&&latestIdentity();
-    if(problem(wanted)){$('#aqT').onchange();shake($('#aqH'));return}
-    const name=srv?(decodeJWT(id.data.jwt).payload.vc.credentialSubject.nome||''):$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
-    const servicos=srv?appsList($('#aqS').value).join(', '):'';
-    if(wanted==='AccessCredential'&&!servicos){shake($('#aqSF'));$('#aqS').focus();return}
+    const wanted=$('#aqT').value,badge=wanted==='BadgeCredential',id=badge&&latestIdentity();
+    if(badge&&badgeProblem()){$('#aqT').onchange();shake($('#aqH'));return}
+    const name=badge?(decodeJWT(id.data.jwt).payload.vc.credentialSubject.nome||''):$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
+    const servicos=badge?appsList($('#aqS').value).join(', '):'';
+    if(badge&&!servicos){shake($('#aqSF'));$('#aqS').focus();return}
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted,...(srv?{identidade:id.data.jwt,servicos}:{}),note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted,...(badge?{identidade:id.data.jwt,servicos}:{}),note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
 }
 
 function receiveCred(){
-  openSheet(`<h3>Receber credencial</h3><p class="sub">Cole o que o emissor emitiu (o crachá pode vir com acessos, uma credencial por linha). A carteira confere a assinatura e se cada uma foi emitida para o seu DID.</p>
+  openSheet(`<h3>Receber aprovação</h3><p class="sub">Cole o que a STK ou o serviço aprovou (vários crachás vêm um por linha). A carteira confere a assinatura e se cada uma foi emitida para o seu DID.</p>
     <label class="f" id="rcF"><span>Credencial</span><textarea class="mono" id="rcT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="rcH"></p>
     <button class="btn" id="rcGo">Conferir e guardar</button>`);
   // Confere uma credencial e devolve o item a guardar, ou o motivo da recusa.
@@ -163,9 +164,11 @@ function showCred(id){
   const rows=vcClaims(p).map(([k,v])=>`<div class="kr"><div class="h"><small>${esc(k)}</small></div><div class="v">${esc(fmtVal(v))}</div></div>`).join('');
   openSheet(`${credCard(it,true)}
     <div class="sec-h">Afirmações</div><div class="list glass flat">${rows||'<div class="empty">Sem afirmações.</div>'}</div>
+    <div class="sec-h">Chave</div><div class="list glass flat">
+      <div class="kr"><div class="h"><small>${d.vtype==='BadgeCredential'?'CV:KEY (número desta credencial)':'DID:KEY (quem você é)'}</small></div><div class="v mono">${esc(d.vtype==='BadgeCredential'?d.jti:ses.did)}</div></div></div>
     <div class="sec-h">Origem</div><div class="list glass flat">
-      <div class="kr"><div class="h"><small>Emissor</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
-      <div class="kr"><div class="h"><small>Emitida em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
+      <div class="kr"><div class="h"><small>Aprovada por</small></div><div class="v">${esc(d.issuerName)}</div><div class="v mono" style="margin-top:4px">${esc(d.issuerDid)}</div></div>
+      <div class="kr"><div class="h"><small>Aprovada em</small><span class="pill ${st}">${stl}</span></div><div class="v">${p.iat?fmtDate(p.iat*1000):'Não informado'}</div></div></div>
     <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o emissor assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
     <button class="btn" id="scP">Apresentar</button>
     <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
@@ -191,25 +194,24 @@ function present(preId){
     const all=creds().filter(c=>usable(c.data));
     let fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
     // Desafio de acesso: só o mesmo app, com papel igual ou acima. O acesso precisa da Identidade junto.
-    const acc=q.accept==='AccessCredential',id=latestIdentity();
+    const acc=q.accept==='BadgeCredential',id=latestIdentity();
     if(acc)fit=fit.filter(c=>acessoServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.app,q.papelMin));
-    // Crachá e acesso saem com a Identidade; o acesso também com o crachá do mesmo serviço.
-    const badgeOf=c=>creds().filter(x=>x.data.vtype==='BadgeCredential'&&usable(x.data)&&x.data.issuerDid===c.data.issuerDid).sort((a,b)=>b.data.iat-a.data.iat)[0];
-    if(!id)fit=fit.filter(c=>!['AccessCredential','BadgeCredential'].includes(c.data.vtype));
-    fit=fit.filter(c=>c.data.vtype!=='AccessCredential'||badgeOf(c));
+    // O crachá sai junto com a Identidade.
+    if(!id)fit=fit.filter(c=>c.data.vtype!=='BadgeCredential');
+    fit=fit.filter(c=>!VC_TYPES[c.data.vtype]||!VC_TYPES[c.data.vtype].legado);
     let pick=(fit.find(c=>c.rec.id===preId)||fit[0]||{}).rec;pick=pick&&pick.id;
     $('#apStep').innerHTML=`<div class="list glass flat mt">
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
         <div class="kr"><div class="h"><small>Para quê</small></div><div class="v">${esc(q.purpose||'Não informado')}</div></div>
-        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Acesso ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
+        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Crachá ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem acesso válido a este serviço com o papel exigido, junto com o crachá do serviço e uma Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
+        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem crachá válido para este app com o papel exigido, junto com a Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
       const c=ses.items.find(i=>i.rec.id===pick),iat=now();
-      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:c.data.vtype==='AccessCredential'?[c.data.jwt,id.data.jwt,badgeOf(c).data.jwt]:c.data.vtype==='BadgeCredential'?[c.data.jwt,id.data.jwt]:[c.data.jwt]}});
+      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:c.data.vtype==='BadgeCredential'?[c.data.jwt,id.data.jwt]:[c.data.jwt]}});
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });

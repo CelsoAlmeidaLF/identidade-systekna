@@ -250,18 +250,18 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
-  IdentityCredential:{label:'Identidade',claims:[['nome','']]},
-  // Crachá: o serviço (SRV) declara que a pessoa, com Identidade aprovada pela STK, é membro dele.
-  BadgeCredential:{label:'Crachá',claims:[['categoria','membro']]},
-  // Acesso: o SRV libera um dos seus serviços, com o papel. Só vale junto com o crachá do mesmo SRV.
-  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']]},
-  // Credenciamento: a STK autoriza outro emissor a dar acesso aos apps listados. É de emissor para emissor.
+  // Identidade (DID:KEY): quem é o usuário. Aprovada pela STK; leva só o nome.
+  IdentityCredential:{label:'Identidade',chave:'DID:KEY',claims:[['nome','']]},
+  // Crachá (CV:KEY): o que o usuário acessa e em qual sistema. Aprovado pelo serviço (SRV), um por app.
+  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app',''],['papel','leitor']]},
+  // Credenciamento: a STK autoriza um serviço a aprovar crachás para os apps listados. É de emissor para emissor.
   AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
-  CustomCredential:{label:'Personalizado',claims:[['campo','']]}
+  // Tipos antigos: só para mostrar credenciais já guardadas; não se pedem nem se emitem mais.
+  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']],legado:true},
+  CustomCredential:{label:'Personalizado',claims:[['campo','']],legado:true}
 };
 // Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
-const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor);
+const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor&&!v.legado);
 /* ================= acesso e papéis (F10) ================= */
 // Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
 // "pode" é a política de referência; cada sistema que verifica mantém a sua.
@@ -277,7 +277,7 @@ const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
 const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
 const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-// O acesso serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
+// O crachá serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
 const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
