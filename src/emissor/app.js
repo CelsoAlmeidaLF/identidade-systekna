@@ -104,11 +104,24 @@ $('#iqGo').onclick=async()=>{
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
   drawClaims();$('#iForm').hidden=false;
 };
+const activeOf=(sub,type)=>st.issued.filter(i=>i.type===type&&i.sub===sub&&!i.revoked&&(!i.exp||i.exp>now()));
+async function revokeAll(list,reason){
+  for(const i of list){
+    i.revoked=true;i.revokedAt=Date.now();i.reason=reason;
+    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${reason}`,i.jti);
+  }
+}
 async function issue(sub,type,claims,days,holderName,nonce){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
+  // RN58: não há KYC na versão básica, então ninguém afirma que conferiu documentos.
+  if('kycValidado'in claims)throw new Error('O KYC ainda não existe nesta versão. Tire o campo “kycValidado”.');
+  let antigos=[],motivo='';
   if(type==='IdentityCredential'){
-    if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
-    if(typeof claims.kycValidado!=='boolean')throw new Error('O campo “kycValidado” só aceita true ou false.');
+    // RN74: a Identidade define o usuário e leva só o nome. Uma ativa por DID: a nova substitui a anterior.
+    if(!String(claims.nome||'').trim())throw new Error('A Identidade precisa do nome.');
+    const extra=Object.keys(claims).find(k=>k!=='nome');
+    if(extra)throw new Error(`A Identidade leva só o nome. Tire o campo “${extra}”.`);
+    antigos=activeOf(sub,'IdentityCredential');motivo='Substituída por nova Identidade';
   }
   const n=++st.seq,iat=now(),jti='urn:uuid:'+crypto.randomUUID();
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
@@ -116,6 +129,7 @@ async function issue(sub,type,claims,days,holderName,nonce){
   const jwt=await signJWT('vc+jwt',payload);
   st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false});
   await ato('emissao',`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
+  await revokeAll(antigos,motivo);
   await save();return jwt;
 }
 $('#iGo').onclick=async()=>{
@@ -242,8 +256,7 @@ function showIssued(n){
   $('#rvGo')&&($('#rvGo').onclick=async()=>{
     const reason=$('#rvR').value;
     if(!await confirmSheet('Revogar credencial','A partir de agora ela será recusada em todas as verificações deste emissor. Isso não pode ser desfeito.','Revogar',true))return;
-    i.revoked=true;i.revokedAt=Date.now();i.reason=reason;
-    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${reason}`,i.jti);await save();renderGov();toast('Credencial revogada');
+    await revokeAll([i],reason);await save();renderGov();toast('Credencial revogada');
   });
 }
 

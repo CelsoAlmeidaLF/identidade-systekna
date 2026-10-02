@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Z2AHpBFOnUiC4y/3SglCWq0/L7BJITNgZukkbLB/JeU='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-mviqNqoMeSu8BsSkoUNOlk1+eiINqsmflgAyBFmWgOk='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -285,7 +285,7 @@ body[data-screen="sApp"] .dock{display:grid}
 
 /* crachás */
 .creds{display:grid;gap:14px}
-.cred{position:relative;width:100%;border:0;cursor:pointer;text-align:left;font:inherit;border-radius:20px;padding:18px;color:#fff;overflow:hidden;display:grid;gap:16px;
+.cred{position:relative;width:100%;border:0;cursor:pointer;text-align:left;font:inherit;border-radius:20px;padding:18px;color:#fff;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;
   background:var(--cg,linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%));box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 20px 40px -20px rgba(13,63,120,.85);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
 .cred:active{transform:scale(.98)}
 .cred::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.07) 48%,rgba(255,255,255,0) 50%);pointer-events:none}
@@ -732,9 +732,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
-  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
-  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
+  // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
+  IdentityCredential:{label:'Identidade',claims:[['nome','']]},
+  CustomCredential:{label:'Personalizado',claims:[['campo','']]}
 };
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).

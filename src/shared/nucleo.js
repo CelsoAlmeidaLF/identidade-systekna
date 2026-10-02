@@ -247,9 +247,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
-  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
-  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
+  // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
+  IdentityCredential:{label:'Identidade',claims:[['nome','']]},
+  CustomCredential:{label:'Personalizado',claims:[['campo','']]}
 };
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
