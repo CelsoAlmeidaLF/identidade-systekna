@@ -249,9 +249,6 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
   IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
-  AgeOver18Credential:{label:'Maioridade',claims:[['maiorDeIdade','true']]},
-  EmploymentCredential:{label:'Vínculo profissional',claims:[['empresa',''],['cargo','']]},
-  ResidenceCredential:{label:'Residência',claims:[['cidade',''],['uf','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
 /* ================= dados pessoais (RN59) ================= */

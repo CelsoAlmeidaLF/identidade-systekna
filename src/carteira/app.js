@@ -61,7 +61,6 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='AgeOver18Credential')return 'Maior de 18 anos';
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 function credCard(it,asDiv){

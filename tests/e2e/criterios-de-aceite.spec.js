@@ -129,7 +129,7 @@ test('06 · credencial colada sem apresentação é recusada com explicação', 
 });
 
 test('07 · desafio que exige um tipo que a carteira não tem mostra "nenhuma credencial serve"', async () => {
-  const resultado = await apresentar(await gerarDesafio('ResidenceCredential'));
+  const resultado = await apresentar(await gerarDesafio('CustomCredential'));
   expect(resultado).toBeNull();
   await fecharSheet(carteira);
 });
