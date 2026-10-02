@@ -87,12 +87,13 @@
         <label class="f"><span>Tipo de credencial</span><select id="iType"></select></label>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
+        <div id="iAcc" hidden></div>
         <label class="f" id="iDaysF"><span>Validade</span><select id="iDays"><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="1825">5 anos</option><option value="0">Sem validade</option></select></label>
         <button class="btn" id="iGo">Emitir credencial</button>
       </div>
       <div id="iOut" hidden>
         <div id="iOk"></div>
-        <label class="f"><span>Credencial emitida, entregue ao titular</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
+        <label class="f"><span>Credenciais emitidas, entregue ao titular (uma por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
         <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova emissão</button></div>
       </div>
     </section>
