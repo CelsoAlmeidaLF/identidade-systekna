@@ -169,6 +169,13 @@ $('#iqGo').onclick=async()=>{
   if(!issuableTypes().includes(wanted)){
     pedido=null;
     $('#iWho').insertAdjacentHTML('beforeend',verdictHtml(false,`Este emissor não aprova ${vcLabel(wanted)}`,esc(typeRoleMsg(wanted))));
+    // Pedido de crachá num emissor ainda sem credenciamento: se este é o serviço, o credenciamento resolve ali mesmo,
+    // e o pedido é conferido de novo assim que ele for importado.
+    if(wanted==='BadgeCredential'&&!isService()){
+      $('#iWho').insertAdjacentHTML('beforeend',`<p class="hint">Se este é o emissor do serviço, ele ainda não tem o credenciamento da STK. Importe o credenciamento (ou peça um) e o pedido é conferido de novo.</p><div class="pair mt"><button class="btn" id="iqImp">Importar credenciamento</button><button class="btn ghost" id="iqAsk">Pedir credenciamento</button></div>`);
+      $('#iqImp').onclick=()=>importAccreditation();
+      $('#iqAsk').onclick=()=>askAccreditation();
+    }
     return;
   }
   if(wanted==='BadgeCredential'){
@@ -267,10 +274,10 @@ $('#iGo').onclick=async()=>{
   $('#iJwt').value=toks.join('\n');
   const what=type==='BadgeCredential'?(toks.length>1?`${toks.length} crachás`:'Crachá'):vcLabel(type);
   $('#iOk').innerHTML=verdictHtml(true,'Credencial aprovada',`${esc(what)} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrado no livro.`);
-  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial aprovada');
+  $('#iForm').hidden=true;$('#iWho').innerHTML='';$('#iOut').hidden=false;pedido=null;toast('Credencial aprovada');
 };
 $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
-$('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iqT').focus()};
+$('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iWho').innerHTML='';$('#iqT').focus()};
 
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{
@@ -471,6 +478,8 @@ function importAccreditation(){
     st.credenciamentos.push({jwt:$('#ciT').value.trim(),jti:q.jti,issuerDid:q.iss,issuerName:r.issuerName,servico:c.servico,apps:c.apps,iat:q.iat,exp:q.exp||0});
     await ato('confianca',`Credenciamento de ${r.issuerName} importado: ${c.apps}`,q.jti);await save();
     closeSheet();fillTypeSelects();paintWho();renderGov();toast('Credenciamento importado');
+    // Havia um pedido de crachá esperando o credenciamento: confere de novo.
+    if($('#iqImp')&&$('#iqT').value.trim())$('#iqGo').onclick();
   };
 }
 $('#gNameS').onclick=async()=>{
