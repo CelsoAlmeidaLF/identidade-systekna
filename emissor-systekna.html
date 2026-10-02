@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-j98ei3Huuiy0in6iZv+MN/n6qp5274x7DZ6I0zVPvpM='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-HpMcJJPJI8baL2ePNiTp0Uf59DomElI7QRfq7hLpHI4='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="emissor.webmanifest">
@@ -300,6 +300,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-IdentityCredential{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
+.g-RoleCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
 /* passos (sequência real) */
@@ -472,6 +473,8 @@ body[data-screen="sApp"] .dock{display:grid}
       <p class="sub">Funciona como uma portaria: o emissor gera um desafio novo, o titular responde pela carteira e o emissor confere tudo.</p>
       <div class="sec-h">Gerar desafio</div>
       <label class="f" style="margin-top:0"><span>Credencial exigida</span><select id="vType"></select></label>
+      <div id="vRole" hidden><label class="f" id="vSisF"><span>Sistema</span><input id="vSis" autocomplete="off" placeholder="Ex.: Portal de clientes"></label>
+        <label class="f"><span>Papel mínimo</span><select id="vPapel"></select></label></div>
       <label class="f"><span>Finalidade</span><input id="vPurpose" value="Acesso ao serviço" autocomplete="off"></label>
       <button class="btn" id="vGen">Gerar desafio</button>
       <div id="vChal" hidden><label class="f"><span>Desafio, válido por 10 minutos e uma única vez</span><textarea class="mono" id="vChalT" rows="4" readonly></textarea></label><button class="btn ghost" id="vChalC">Copiar desafio</button></div>
@@ -758,8 +761,34 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
   IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
+  // Papel: o emissor diz qual papel a pessoa tem num sistema. O que o papel pode fazer fica no sistema (RN67).
+  RoleCredential:{label:'Papel',claims:[['nome',''],['sistema',''],['papel','leitor']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
+/* ================= papéis (RN67 a RN73) ================= */
+// Lista fechada e em ordem: cada papel pode tudo o que o anterior pode (RN68).
+// "pode" é a política de referência; cada sistema que verifica mantém a sua.
+const PAPEIS={
+  leitor:{label:'Leitor',nivel:1,pode:['ver']},
+  operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
+  admin:{label:'Admin',nivel:3,pode:['ver','criar','editar','apagar','gerenciar acessos']}
+};
+const PAPEL_MAX_DIAS=365;
+const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
+// Sistema é comparado sem diferenciar acento, maiúscula nem espaços nas pontas (como o nome de grupo, RN49).
+const normSistema=s=>String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
+// A credencial de papel serve ao desafio se for do mesmo sistema e de papel igual ou acima do mínimo (RN72).
+const papelServe=(claims,sistema,papelMin)=>!!claims&&normSistema(claims.sistema)===normSistema(sistema)&&papelNivel(claims.papel)>=papelNivel(papelMin);
+function papelProblem(claims,days){
+  if(!String(claims.sistema||'').trim())return'Informe o sistema em que o papel vale.';
+  if(!PAPEIS[String(claims.papel||'').toLowerCase()])return'O papel deve ser leitor, operador ou admin.';
+  const extra=Object.keys(claims).filter(k=>!['nome','sistema','papel'].includes(k));
+  if(extra.length)return`A credencial de papel leva só nome, sistema e papel. Tire o campo “${extra[0]}”.`;
+  if(!days)return'A credencial de papel precisa de validade.';
+  if(days>PAPEL_MAX_DIAS)return'A credencial de papel vale no máximo 1 ano.';
+  return null;
+}
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
@@ -1328,13 +1357,19 @@ function fillTypeSelects(){
   const opts=Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   $('#iType').innerHTML=opts;
   $('#vType').innerHTML=`<option value="any">Qualquer credencial</option>`+Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  $('#vPapel').innerHTML=Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 }
+$('#vType').onchange=()=>{$('#vRole').hidden=$('#vType').value!=='RoleCredential'};
 let pedido=null;
 const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><input data-ck value="${esc(k)}" autocomplete="off" autocapitalize="none"></label><label class="f"><span>Valor</span><input data-cv value="${esc(v)}" autocomplete="off"></label><button class="mini" data-rm aria-label="Remover campo">${ic('minus')}</button></div>`;
 function drawClaims(){
   $('#iClaims').innerHTML=VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,k==='nome'&&pedido?pedido.payload.name||'':v)).join('');
 }
-$('#iType').onchange=drawClaims;
+$('#iType').onchange=()=>{
+  // RN69: papel sempre com validade de até 1 ano.
+  if($('#iType').value==='RoleCredential'&&(!+$('#iDays').value||+$('#iDays').value>PAPEL_MAX_DIAS))$('#iDays').value='365';
+  drawClaims();
+};
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
 $('#iAdd').onclick=()=>{$('#iClaims').insertAdjacentHTML('beforeend',claimRow('',''));$('#iClaims').lastElementChild.querySelector('input').focus()};
 $('#iqGo').onclick=async()=>{
@@ -1349,7 +1384,7 @@ $('#iqGo').onclick=async()=>{
   pedido=r;
   $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
-  drawClaims();$('#iForm').hidden=false;
+  $('#iType').onchange();$('#iForm').hidden=false;
 };
 async function issue(sub,type,claims,days,holderName,nonce){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
@@ -1357,12 +1392,23 @@ async function issue(sub,type,claims,days,holderName,nonce){
     if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
     if(typeof claims.kycValidado!=='boolean')throw new Error('O campo “kycValidado” só aceita true ou false.');
   }
+  let antigos=[];
+  if(type==='RoleCredential'){
+    const prob=papelProblem(claims,days);if(prob)throw new Error(prob);
+    claims={...claims,sistema:String(claims.sistema).trim(),papel:String(claims.papel).toLowerCase()};
+    // RN70: um papel ativo por pessoa e sistema. O novo substitui o anterior.
+    antigos=st.issued.filter(i=>i.type==='RoleCredential'&&i.sub===sub&&!i.revoked&&(!i.exp||i.exp>now())&&normSistema(i.claims.sistema)===normSistema(claims.sistema));
+  }
   const n=++st.seq,iat=now(),jti='urn:uuid:'+crypto.randomUUID();
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
   if(days)payload.exp=iat+days*86400;
   const jwt=await signJWT('vc+jwt',payload);
   st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false});
   await ato('emissao',`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
+  for(const i of antigos){
+    i.revoked=true;i.revokedAt=Date.now();i.reason='Substituída por novo papel';
+    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${i.reason}`,i.jti);
+  }
   await save();return jwt;
 }
 $('#iGo').onclick=async()=>{
@@ -1381,9 +1427,12 @@ $('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').text
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{
   const nonce=b64u.enc(rnd(18)),iat=now(),type=$('#vType').value,purpose=$('#vPurpose').value.trim()||'Verificação';
-  $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,iat,exp:iat+600});
+  // RN72: desafio de papel diz o sistema e o papel mínimo.
+  const role=type==='RoleCredential'?{sistema:$('#vSis').value.trim(),papelMin:$('#vPapel').value}:{};
+  if(type==='RoleCredential'&&!role.sistema){shake($('#vSisF'));$('#vSis').focus();return}
+  $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,...role,iat,exp:iat+600});
   st.challenges=st.challenges.filter(c=>c.exp>iat-86400);
-  st.challenges.push({nonce,type,purpose,iat,exp:iat+600,used:false});await save();
+  st.challenges.push({nonce,type,purpose,...role,iat,exp:iat+600,used:false});await save();
   $('#vChal').hidden=false;toast('Desafio gerado');
 };
 $('#vChalC').onclick=()=>copy($('#vChalT').value,'Desafio copiado');
@@ -1416,6 +1465,12 @@ async function checkVP(tok){
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
   add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Expirou em ${fmtDate(q.exp*1000)}.`:`Válida até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
   if(ch&&ch.type!=='any')add(t===ch.type,'Tipo exigido',t===ch.type?`${esc(vcLabel(t))}, como pedido.`:`O desafio pedia ${esc(vcLabel(ch.type))} e veio ${esc(vcLabel(t))}.`);
+  if(ch&&ch.type==='RoleCredential'&&t==='RoleCredential'){
+    const c=q.vc.credentialSubject||{},ok=papelServe(c,ch.sistema,ch.papelMin);
+    add(ok,'Papel suficiente',ok?`${esc(papelLabel(c.papel))} em ${esc(c.sistema)}. Pode: ${esc(PAPEIS[String(c.papel).toLowerCase()].pode.join(', '))}.`
+      :normSistema(c.sistema)!==normSistema(ch.sistema)?`O papel é de ${esc(c.sistema||'outro sistema')}, e o desafio pedia ${esc(ch.sistema)}.`
+      :`O desafio pedia ${esc(papelLabel(ch.papelMin))} ou acima, e veio ${esc(papelLabel(c.papel))}.`);
+  }
   return{checks,ch,q,holder:vp.did,chOk};
 }
 const chkRow=c=>`<div class="chk ${c.ok===true?'ok':c.ok===false?'no':'na'}"><span class="ci">${ic(c.ok===true?'check':c.ok===false?'x':'minus')}</span><div><b>${c.label}</b><small>${c.detail}</small></div></div>`;

@@ -81,13 +81,19 @@ function fillTypeSelects(){
   const opts=Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   $('#iType').innerHTML=opts;
   $('#vType').innerHTML=`<option value="any">Qualquer credencial</option>`+Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
+  $('#vPapel').innerHTML=Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 }
+$('#vType').onchange=()=>{$('#vRole').hidden=$('#vType').value!=='RoleCredential'};
 let pedido=null;
 const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><input data-ck value="${esc(k)}" autocomplete="off" autocapitalize="none"></label><label class="f"><span>Valor</span><input data-cv value="${esc(v)}" autocomplete="off"></label><button class="mini" data-rm aria-label="Remover campo">${ic('minus')}</button></div>`;
 function drawClaims(){
   $('#iClaims').innerHTML=VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,k==='nome'&&pedido?pedido.payload.name||'':v)).join('');
 }
-$('#iType').onchange=drawClaims;
+$('#iType').onchange=()=>{
+  // RN69: papel sempre com validade de até 1 ano.
+  if($('#iType').value==='RoleCredential'&&(!+$('#iDays').value||+$('#iDays').value>PAPEL_MAX_DIAS))$('#iDays').value='365';
+  drawClaims();
+};
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
 $('#iAdd').onclick=()=>{$('#iClaims').insertAdjacentHTML('beforeend',claimRow('',''));$('#iClaims').lastElementChild.querySelector('input').focus()};
 $('#iqGo').onclick=async()=>{
@@ -102,7 +108,7 @@ $('#iqGo').onclick=async()=>{
   pedido=r;
   $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
-  drawClaims();$('#iForm').hidden=false;
+  $('#iType').onchange();$('#iForm').hidden=false;
 };
 async function issue(sub,type,claims,days,holderName,nonce){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
@@ -110,12 +116,23 @@ async function issue(sub,type,claims,days,holderName,nonce){
     if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
     if(typeof claims.kycValidado!=='boolean')throw new Error('O campo “kycValidado” só aceita true ou false.');
   }
+  let antigos=[];
+  if(type==='RoleCredential'){
+    const prob=papelProblem(claims,days);if(prob)throw new Error(prob);
+    claims={...claims,sistema:String(claims.sistema).trim(),papel:String(claims.papel).toLowerCase()};
+    // RN70: um papel ativo por pessoa e sistema. O novo substitui o anterior.
+    antigos=st.issued.filter(i=>i.type==='RoleCredential'&&i.sub===sub&&!i.revoked&&(!i.exp||i.exp>now())&&normSistema(i.claims.sistema)===normSistema(claims.sistema));
+  }
   const n=++st.seq,iat=now(),jti='urn:uuid:'+crypto.randomUUID();
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
   if(days)payload.exp=iat+days*86400;
   const jwt=await signJWT('vc+jwt',payload);
   st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false});
   await ato('emissao',`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
+  for(const i of antigos){
+    i.revoked=true;i.revokedAt=Date.now();i.reason='Substituída por novo papel';
+    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${i.reason}`,i.jti);
+  }
   await save();return jwt;
 }
 $('#iGo').onclick=async()=>{
@@ -134,9 +151,12 @@ $('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').text
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{
   const nonce=b64u.enc(rnd(18)),iat=now(),type=$('#vType').value,purpose=$('#vPurpose').value.trim()||'Verificação';
-  $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,iat,exp:iat+600});
+  // RN72: desafio de papel diz o sistema e o papel mínimo.
+  const role=type==='RoleCredential'?{sistema:$('#vSis').value.trim(),papelMin:$('#vPapel').value}:{};
+  if(type==='RoleCredential'&&!role.sistema){shake($('#vSisF'));$('#vSis').focus();return}
+  $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,...role,iat,exp:iat+600});
   st.challenges=st.challenges.filter(c=>c.exp>iat-86400);
-  st.challenges.push({nonce,type,purpose,iat,exp:iat+600,used:false});await save();
+  st.challenges.push({nonce,type,purpose,...role,iat,exp:iat+600,used:false});await save();
   $('#vChal').hidden=false;toast('Desafio gerado');
 };
 $('#vChalC').onclick=()=>copy($('#vChalT').value,'Desafio copiado');
@@ -169,6 +189,12 @@ async function checkVP(tok){
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
   add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Expirou em ${fmtDate(q.exp*1000)}.`:`Válida até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
   if(ch&&ch.type!=='any')add(t===ch.type,'Tipo exigido',t===ch.type?`${esc(vcLabel(t))}, como pedido.`:`O desafio pedia ${esc(vcLabel(ch.type))} e veio ${esc(vcLabel(t))}.`);
+  if(ch&&ch.type==='RoleCredential'&&t==='RoleCredential'){
+    const c=q.vc.credentialSubject||{},ok=papelServe(c,ch.sistema,ch.papelMin);
+    add(ok,'Papel suficiente',ok?`${esc(papelLabel(c.papel))} em ${esc(c.sistema)}. Pode: ${esc(PAPEIS[String(c.papel).toLowerCase()].pode.join(', '))}.`
+      :normSistema(c.sistema)!==normSistema(ch.sistema)?`O papel é de ${esc(c.sistema||'outro sistema')}, e o desafio pedia ${esc(ch.sistema)}.`
+      :`O desafio pedia ${esc(papelLabel(ch.papelMin))} ou acima, e veio ${esc(papelLabel(c.papel))}.`);
+  }
   return{checks,ch,q,holder:vp.did,chOk};
 }
 const chkRow=c=>`<div class="chk ${c.ok===true?'ok':c.ok===false?'no':'na'}"><span class="ci">${ic(c.ok===true?'check':c.ok===false?'x':'minus')}</span><div><b>${c.label}</b><small>${c.detail}</small></div></div>`;
