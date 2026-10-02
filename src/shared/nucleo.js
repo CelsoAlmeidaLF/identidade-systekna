@@ -253,7 +253,7 @@ const VC_TYPES={
   // Identidade (DID:KEY): quem é o usuário. Aprovada pela STK; leva só o nome.
   IdentityCredential:{label:'Identidade',chave:'DID:KEY',claims:[['nome','']]},
   // Crachá (CV:KEY): o que o usuário acessa e em qual sistema. Aprovado pelo serviço (SRV), um por app.
-  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app',''],['papel','leitor']]},
+  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app','']]},
   // Credenciamento: a STK autoriza um serviço a aprovar crachás para os apps listados. É de emissor para emissor.
   AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
   // Tipos antigos: só para mostrar credenciais já guardadas; não se pedem nem se emitem mais.
@@ -262,9 +262,9 @@ const VC_TYPES={
 };
 // Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
 const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor&&!v.legado);
-/* ================= acesso e papéis (F10) ================= */
+/* ================= acesso (F10) ================= */
+// Papéis só do Acesso antigo (legado), para exibir o que já foi emitido. O Crachá não tem nível de acesso.
 // Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
-// "pode" é a política de referência; cada sistema que verifica mantém a sua.
 const PAPEIS={
   leitor:{label:'Leitor',nivel:1,pode:['ver']},
   operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
@@ -272,13 +272,12 @@ const PAPEIS={
 };
 const PRAZO_MAX_DIAS=365;
 const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
-const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
 // Nome de app é comparado sem diferenciar acento, maiúscula nem espaços nas pontas.
 const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
 const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-// O crachá serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
-const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
+// O crachá serve ao desafio se for do mesmo app.
+const acessoServe=(c,app)=>!!c&&normApp(c.app)===normApp(app);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];

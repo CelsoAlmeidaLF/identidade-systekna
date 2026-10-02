@@ -61,7 +61,7 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='BadgeCredential'||d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
+  if(d.vtype==='BadgeCredential'||d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return d.vtype==='BadgeCredential'?`Acesso a ${c.app||'app não informado'}`:`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 // O crachá só vale junto com a Identidade: usa a mais recente que ainda está válida.
@@ -193,9 +193,9 @@ function present(preId){
     if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
     const all=creds().filter(c=>usable(c.data));
     let fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
-    // Desafio de acesso: só o mesmo app, com papel igual ou acima. O acesso precisa da Identidade junto.
+    // Desafio de acesso: só o crachá do mesmo app. O crachá precisa da Identidade junto.
     const acc=q.accept==='BadgeCredential',id=latestIdentity();
-    if(acc)fit=fit.filter(c=>acessoServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.app,q.papelMin));
+    if(acc)fit=fit.filter(c=>acessoServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.app));
     // O crachá sai junto com a Identidade.
     if(!id)fit=fit.filter(c=>c.data.vtype!=='BadgeCredential');
     fit=fit.filter(c=>!VC_TYPES[c.data.vtype]||!VC_TYPES[c.data.vtype].legado);
@@ -203,10 +203,10 @@ function present(preId){
     $('#apStep').innerHTML=`<div class="list glass flat mt">
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
         <div class="kr"><div class="h"><small>Para quê</small></div><div class="v">${esc(q.purpose||'Não informado')}</div></div>
-        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Crachá ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
+        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Crachá de ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem crachá válido para este app com o papel exigido, junto com a Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
+        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem crachá válido para este app, junto com a Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{

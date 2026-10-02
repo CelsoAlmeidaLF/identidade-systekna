@@ -29,7 +29,8 @@ async function conferirPedido(tok, tipo) {
   await emissor.fill('#iqT', tok);
   await emissor.click('#iqGo');
   await expect(emissor.locator('#iForm')).toBeVisible();
-  if (tipo) await emissor.selectOption('#iType', tipo);
+  // O tipo vem do pedido (Identidade); o seletor não aparece.
+  if (tipo) await expect(emissor.locator('#iType')).toHaveValue(tipo);
 }
 
 /** Emite e devolve o payload. O resultado anterior fica no elemento escondido: espera o novo aparecer antes de ler. */

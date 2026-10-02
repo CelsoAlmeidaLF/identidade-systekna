@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-N75J/6oo4SSk8I8pSYR4W325J555SrU0NScdnFEZKUo='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0oMVo3enZEGY9/zo/mZDiqiIuVSbNmBpCprLRk4Zn/o='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -377,7 +377,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.12.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.12.1</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -389,7 +389,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.12.0</p>
+    <p class="ver">Versão 0.12.1</p>
   </div>
 </section>
 
@@ -438,7 +438,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.12.0</p>
+    <p class="ver">Versão 0.12.1</p>
   </div>
 </section>
 
@@ -560,7 +560,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.12.0';
+const APP_VERSION='0.12.1';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -756,7 +756,7 @@ const VC_TYPES={
   // Identidade (DID:KEY): quem é o usuário. Aprovada pela STK; leva só o nome.
   IdentityCredential:{label:'Identidade',chave:'DID:KEY',claims:[['nome','']]},
   // Crachá (CV:KEY): o que o usuário acessa e em qual sistema. Aprovado pelo serviço (SRV), um por app.
-  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app',''],['papel','leitor']]},
+  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app','']]},
   // Credenciamento: a STK autoriza um serviço a aprovar crachás para os apps listados. É de emissor para emissor.
   AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
   // Tipos antigos: só para mostrar credenciais já guardadas; não se pedem nem se emitem mais.
@@ -765,9 +765,9 @@ const VC_TYPES={
 };
 // Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
 const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor&&!v.legado);
-/* ================= acesso e papéis (F10) ================= */
+/* ================= acesso (F10) ================= */
+// Papéis só do Acesso antigo (legado), para exibir o que já foi emitido. O Crachá não tem nível de acesso.
 // Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
-// "pode" é a política de referência; cada sistema que verifica mantém a sua.
 const PAPEIS={
   leitor:{label:'Leitor',nivel:1,pode:['ver']},
   operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
@@ -775,13 +775,12 @@ const PAPEIS={
 };
 const PRAZO_MAX_DIAS=365;
 const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
-const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
 // Nome de app é comparado sem diferenciar acento, maiúscula nem espaços nas pontas.
 const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
 const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
 const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-// O crachá serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
-const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
+// O crachá serve ao desafio se for do mesmo app.
+const acessoServe=(c,app)=>!!c&&normApp(c.app)===normApp(app);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
@@ -1330,7 +1329,7 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='BadgeCredential'||d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
+  if(d.vtype==='BadgeCredential'||d.vtype==='AccessCredential'){const c=p.vc.credentialSubject||{};return d.vtype==='BadgeCredential'?`Acesso a ${c.app||'app não informado'}`:`${papelLabel(c.papel)} em ${c.app||'app não informado'}`}
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 // O crachá só vale junto com a Identidade: usa a mais recente que ainda está válida.
@@ -1462,9 +1461,9 @@ function present(preId){
     if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
     const all=creds().filter(c=>usable(c.data));
     let fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
-    // Desafio de acesso: só o mesmo app, com papel igual ou acima. O acesso precisa da Identidade junto.
+    // Desafio de acesso: só o crachá do mesmo app. O crachá precisa da Identidade junto.
     const acc=q.accept==='BadgeCredential',id=latestIdentity();
-    if(acc)fit=fit.filter(c=>acessoServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.app,q.papelMin));
+    if(acc)fit=fit.filter(c=>acessoServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.app));
     // O crachá sai junto com a Identidade.
     if(!id)fit=fit.filter(c=>c.data.vtype!=='BadgeCredential');
     fit=fit.filter(c=>!VC_TYPES[c.data.vtype]||!VC_TYPES[c.data.vtype].legado);
@@ -1472,10 +1471,10 @@ function present(preId){
     $('#apStep').innerHTML=`<div class="list glass flat mt">
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
         <div class="kr"><div class="h"><small>Para quê</small></div><div class="v">${esc(q.purpose||'Não informado')}</div></div>
-        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Crachá ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
+        <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${acc?`Crachá de ${esc(q.app||'app não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem crachá válido para este app com o papel exigido, junto com a Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
+        :verdictHtml(false,'Nenhuma credencial serve',acc?'Você não tem crachá válido para este app, junto com a Identidade aprovada. Peça ao serviço.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
