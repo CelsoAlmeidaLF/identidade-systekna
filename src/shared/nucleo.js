@@ -111,8 +111,11 @@ async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
   return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:typeof info==='string'?te.encode(info):info},k,len));
 }
 const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
-async function deriveIdentity(seed){
-  const edSeed=await hkdf(seed,'ssi/ed25519'),xSeed=await hkdf(seed,'ssi/x25519'),vBits=await hkdf(seed,'vault/aes-256-gcm');
+// path vazio mantém os rótulos originais (as identidades que já existem não mudam). Um emissor de serviço
+// derivado das mesmas 12 palavras usa outro caminho e ganha DID e cofre próprios.
+async function deriveIdentity(seed,path=''){
+  const p=path?path+'/':'';
+  const edSeed=await hkdf(seed,p+'ssi/ed25519'),xSeed=await hkdf(seed,p+'ssi/x25519'),vBits=await hkdf(seed,p+'vault/aes-256-gcm');
   const pubOf=async(der,alg,use)=>b64u.dec((await S.exportKey('jwk',await S.importKey('pkcs8',der,{name:alg},true,use))).x);
   const edDer=cat(PK8.ed,edSeed),xDer=cat(PK8.x,xSeed);
   const edPub=await pubOf(edDer,'Ed25519',['sign']),xPub=await pubOf(xDer,'X25519',['deriveBits']);
@@ -359,7 +362,7 @@ async function openMsg(pkg){
 let ses=null, draft=null, activePad=null;
 async function startSession(ent,lang){
   const words=await entropyToWords(ent,lang),seed=await wordsToSeed(words);
-  const id=await deriveIdentity(seed);seed.fill(0);
+  const id=await deriveIdentity(seed,APP.path||'');seed.fill(0);
   ses={...id,ent:new Uint8Array(ent),lang};
   const meta=await DB.get('meta');
   await DB.set('meta',{did:ses.did,lang,created:meta&&meta.did===ses.did?meta.created:Date.now()});
