@@ -134,7 +134,7 @@ const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><in
 function drawClaims(){
   const badge=$('#iType').value==='BadgeCredential';
   // Crachá: em vez de campos livres, o SRV marca os apps que aprova.
-  $('#iClaims').innerHTML=badge?'':VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':v)).join('');
+  $('#iClaims').innerHTML=badge?'':VC_TYPES[$('#iType').value].claims.map(([k,v])=>claimRow(k,(k==='nome'||k==='servico')&&pedido?pedido.payload.name||'':k==='apps'&&pedido?appsList(pedido.payload.note).join(', '):v)).join('');
   $('#iAdd').hidden=badge;
   drawBadgePicks();
 }
@@ -446,11 +446,24 @@ function askAccreditation(){
   $('#caC').onclick=()=>copy($('#caJ').value,'Pedido copiado');
 }
 function importAccreditation(){
-  openSheet(`<h3>Importar credenciamento</h3><p class="sub">Cole o credenciamento que a STK emitiu para este emissor. A STK precisa estar nos emissores confiáveis.</p>
-    <label class="f" id="ciF"><span>Credenciamento</span><textarea class="mono" id="ciT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="ciH"></p>
+  openSheet(`<h3>Importar credenciamento</h3><p class="sub">Cole o credenciamento que a STK emitiu para este emissor. Se a STK ainda não estiver nos emissores confiáveis, dá para confiar nela aqui.</p>
+    <label class="f" id="ciF"><span>Credenciamento</span><textarea class="mono" id="ciT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="ciH"></p><div id="ciTrust" hidden></div>
     <button class="btn" id="ciGo">Conferir e importar</button>`);
   $('#ciGo').onclick=async()=>{
     const H=$('#ciH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#ciF'))};
+    H.textContent='';H.classList.remove('bad');$('#ciTrust').hidden=true;
+    // Credenciamento válido para este emissor, mas de quem ainda não está na lista: oferece confiar ali mesmo, mostrando o DID.
+    let v=null;try{v=await verifyJWT($('#ciT').value.trim(),'vc+jwt')}catch{}
+    if(v&&v.ok&&vcType(v.payload)==='AccreditationCredential'&&v.payload.sub===ses.did&&!trustedName(v.did)){
+      const nome=vcIssuerName(v.payload);
+      $('#ciTrust').innerHTML=`<p class="hint">O credenciamento vem de <b>${esc(nome)}</b> (<span class="mono">${esc(shortDid(v.did))}</span>), que ainda não está na lista de confiança. Confira se é a STK.</p><button class="btn" id="ciTrustGo">Confiar em ${esc(nome)} e importar</button>`;
+      $('#ciTrust').hidden=false;
+      $('#ciTrustGo').onclick=async()=>{
+        if(!trustedName(v.did)){st.trust.push({name:nome,did:v.did,at:Date.now()});await ato('confianca',`${nome} adicionado aos emissores confiáveis`,v.did);await save()}
+        $('#ciGo').onclick();
+      };
+      return;
+    }
     const r=await checkLinked($('#ciT').value.trim(),'AccreditationCredential',ses.did,'O credenciamento',{status:false});
     if(!r.ok)return fail(r.detail);
     const q=r.payload,c=q.vc.credentialSubject;
