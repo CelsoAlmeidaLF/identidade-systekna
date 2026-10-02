@@ -52,4 +52,16 @@ for (const app of APPS) {
     console.log(`= ${path.basename(saida)} sem mudanças`);
   }
 }
+// O nome do cache do service worker acompanha a versão: o celular troca o cache a cada versão publicada.
+const sw = path.join(RAIZ, 'sw.js');
+const swAtual = fs.readFileSync(sw, 'utf8');
+const swNovo = swAtual.replace(/^const VERSAO = '[^']*';$/m, `const VERSAO = 'systekna-${VERSAO}';`);
+if (!/^const VERSAO = '/m.test(swAtual)) throw new Error('sw.js precisa da linha const VERSAO = \'...\';');
+if (conferir) {
+  if (swNovo !== swAtual) { desatualizados++; console.error('✗ sw.js com versão de cache diferente do package.json. Rode: npm run build'); }
+  else console.log('✓ sw.js em dia com a versão');
+} else if (swNovo !== swAtual) {
+  fs.writeFileSync(sw, swNovo);
+  console.log(`✓ sw.js com cache systekna-${VERSAO}`);
+}
 process.exit(desatualizados ? 1 : 0);

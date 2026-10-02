@@ -1,7 +1,9 @@
 // Service worker da Carteira e do Emissor: permite instalar e abrir os apps sem internet.
 // Páginas e arquivos do site: rede primeiro, para que cada publicação chegue logo; sem rede,
 // usa a última cópia guardada. Nada é buscado fora do site.
-const VERSAO = 'systekna-v3';
+// O nome do cache acompanha a versão do package.json (o build atualiza esta linha):
+// cada versão publicada troca o cache e apaga o anterior.
+const VERSAO = 'systekna-0.8.0';
 const ESSENCIAIS = [
   './',
   'index.html',
@@ -33,7 +35,9 @@ self.addEventListener('activate', e => {
 async function redePrimeiro(req) {
   const cache = await caches.open(VERSAO);
   try {
-    const res = await fetch(req);
+    // no-cache: sempre pergunta ao servidor (ETag). Sem isso, o cache HTTP do Pages (10 min)
+    // devolvia a versão anterior mesmo com a nova já publicada.
+    const res = await fetch(req.url, { cache: 'no-cache', credentials: 'same-origin' });
     if (res.ok) cache.put(req, res.clone());
     return res;
   } catch (err) {
