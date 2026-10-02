@@ -249,8 +249,30 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
   IdentityCredential:{label:'Identidade',claims:[['nome','']]},
+  // Acesso: o emissor (STK ou serviço credenciado) libera um app para quem tem Identidade aprovada (F10).
+  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']]},
+  // Credenciamento: a STK autoriza outro emissor a dar acesso aos apps listados. É de emissor para emissor.
+  AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
   CustomCredential:{label:'Personalizado',claims:[['campo','']]}
 };
+// Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
+const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor);
+/* ================= acesso e papéis (F10) ================= */
+// Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
+// "pode" é a política de referência; cada sistema que verifica mantém a sua.
+const PAPEIS={
+  leitor:{label:'Leitor',nivel:1,pode:['ver']},
+  operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
+  admin:{label:'Admin',nivel:3,pode:['ver','criar','editar','apagar','gerenciar acessos']}
+};
+const PRAZO_MAX_DIAS=365;
+const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
+const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
+// Nome de app é comparado sem diferenciar acento, maiúscula nem espaços nas pontas.
+const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
+const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
+// O acesso serve ao desafio se for do mesmo app e de papel igual ou acima do mínimo.
+const acessoServe=(c,app,papelMin)=>!!c&&normApp(c.app)===normApp(app)&&papelNivel(c.papel)>=papelNivel(papelMin);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
