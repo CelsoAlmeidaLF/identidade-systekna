@@ -61,7 +61,7 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='RoleCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.sistema||'sistema não informado'}`}
+  if(d.vtype==='ProfessionalCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.sistema||'sistema não informado'}`}
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 function credCard(it,asDiv){
@@ -159,9 +159,12 @@ function present(preId){
     if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
     const all=creds().filter(c=>usable(c.data));
     let fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
-    // RN72: num desafio de papel, só servem as do mesmo sistema e com papel igual ou acima do mínimo.
-    const role=q.accept==='RoleCredential';
+    // RN72: num desafio Profissional, só servem as do mesmo sistema e com papel igual ou acima do mínimo.
+    const role=q.accept==='ProfessionalCredential';
     if(role)fit=fit.filter(c=>papelServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.sistema,q.papelMin));
+    // RN75: papel é atributo da Identidade e só sai junto com a Identidade mais recente do mesmo emissor.
+    const idOf=c=>all.filter(x=>x.data.vtype==='IdentityCredential'&&x.data.issuerDid===c.data.issuerDid).sort((a,b)=>b.data.iat-a.data.iat)[0];
+    fit=fit.filter(c=>c.data.vtype!=='ProfessionalCredential'||idOf(c));
     let pick=(fit.find(c=>c.rec.id===preId)||fit[0]||{}).rec;pick=pick&&pick.id;
     $('#apStep').innerHTML=`<div class="list glass flat mt">
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
@@ -169,12 +172,12 @@ function present(preId){
         <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${role?`Papel ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.sistema||'sistema não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve',role?'Você não tem um papel válido neste sistema com o nível exigido. Peça um ao emissor.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
+        :verdictHtml(false,'Nenhuma credencial serve',role?'Você não tem uma credencial Profissional válida neste sistema com o papel exigido, junto com a Identidade do mesmo emissor. Peça ao emissor.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
       const c=ses.items.find(i=>i.rec.id===pick),iat=now();
-      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}});
+      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:c.data.vtype==='ProfessionalCredential'?[c.data.jwt,idOf(c).data.jwt]:[c.data.jwt]}});
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });

@@ -83,7 +83,7 @@ function fillTypeSelects(){
   $('#vType').innerHTML=`<option value="any">Qualquer credencial</option>`+Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
   $('#vPapel').innerHTML=Object.entries(PAPEIS).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('');
 }
-$('#vType').onchange=()=>{$('#vRole').hidden=$('#vType').value!=='RoleCredential'};
+$('#vType').onchange=()=>{$('#vRole').hidden=$('#vType').value!=='ProfessionalCredential'};
 let pedido=null;
 const claimRow=(k,v)=>`<div class="claim"><label class="f"><span>Campo</span><input data-ck value="${esc(k)}" autocomplete="off" autocapitalize="none"></label><label class="f"><span>Valor</span><input data-cv value="${esc(v)}" autocomplete="off"></label><button class="mini" data-rm aria-label="Remover campo">${ic('minus')}</button></div>`;
 function drawClaims(){
@@ -91,7 +91,7 @@ function drawClaims(){
 }
 $('#iType').onchange=()=>{
   // RN69: papel sempre com validade de até 1 ano.
-  if($('#iType').value==='RoleCredential'&&(!+$('#iDays').value||+$('#iDays').value>PAPEL_MAX_DIAS))$('#iDays').value='365';
+  if($('#iType').value==='ProfessionalCredential'&&(!+$('#iDays').value||+$('#iDays').value>PAPEL_MAX_DIAS))$('#iDays').value='365';
   drawClaims();
 };
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
@@ -110,18 +110,32 @@ $('#iqGo').onclick=async()=>{
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
   $('#iType').onchange();$('#iForm').hidden=false;
 };
+const activeOf=(sub,type)=>st.issued.filter(i=>i.type===type&&i.sub===sub&&!i.revoked&&(!i.exp||i.exp>now()));
+async function revokeAll(list,reason){
+  for(const i of list){
+    i.revoked=true;i.revokedAt=Date.now();i.reason=reason;
+    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${reason}`,i.jti);
+  }
+}
 async function issue(sub,type,claims,days,holderName,nonce){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
+  // RN58: não há KYC na versão básica, então ninguém afirma que conferiu documentos.
+  if('kycValidado'in claims)throw new Error('O KYC ainda não existe nesta versão. Tire o campo “kycValidado”.');
+  let antigos=[],motivo='';
   if(type==='IdentityCredential'){
-    if(!('kycValidado'in claims))claims={...claims,kycValidado:false};
-    if(typeof claims.kycValidado!=='boolean')throw new Error('O campo “kycValidado” só aceita true ou false.');
+    // RN74: a Identidade define o usuário e leva só o nome. Uma ativa por DID: a nova substitui a anterior.
+    if(!String(claims.nome||'').trim())throw new Error('A Identidade precisa do nome.');
+    const extra=Object.keys(claims).find(k=>k!=='nome');
+    if(extra)throw new Error(`A Identidade leva só o nome. Atributos vão na credencial Profissional. Tire o campo “${extra}”.`);
+    antigos=activeOf(sub,'IdentityCredential');motivo='Substituída por nova Identidade';
   }
-  let antigos=[];
-  if(type==='RoleCredential'){
+  if(type==='ProfessionalCredential'){
     const prob=papelProblem(claims,days);if(prob)throw new Error(prob);
-    claims={...claims,sistema:String(claims.sistema).trim(),papel:String(claims.papel).toLowerCase()};
+    // RN75: papel é atributo de uma Identidade ativa deste emissor.
+    if(!activeOf(sub,'IdentityCredential').length)throw new Error('Esta pessoa ainda não tem Identidade ativa neste emissor. Emita a Identidade primeiro.');
+    claims={sistema:String(claims.sistema).trim(),papel:String(claims.papel).toLowerCase()};
     // RN70: um papel ativo por pessoa e sistema. O novo substitui o anterior.
-    antigos=st.issued.filter(i=>i.type==='RoleCredential'&&i.sub===sub&&!i.revoked&&(!i.exp||i.exp>now())&&normSistema(i.claims.sistema)===normSistema(claims.sistema));
+    antigos=activeOf(sub,'ProfessionalCredential').filter(i=>normSistema(i.claims.sistema)===normSistema(claims.sistema));motivo='Substituída por novo papel';
   }
   const n=++st.seq,iat=now(),jti='urn:uuid:'+crypto.randomUUID();
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential',type],issuer:{id:ses.did,name:st.name},issuanceDate:new Date(iat*1000).toISOString(),credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n}}};
@@ -129,10 +143,7 @@ async function issue(sub,type,claims,days,holderName,nonce){
   const jwt=await signJWT('vc+jwt',payload);
   st.issued.push({n,jti,sub,type,claims,iat,exp:payload.exp||0,holderName:holderName||'',nonce:nonce||null,revoked:false});
   await ato('emissao',`${vcLabel(type)} emitida para ${holderName||shortDid(sub)}`,jti);
-  for(const i of antigos){
-    i.revoked=true;i.revokedAt=Date.now();i.reason='Substituída por novo papel';
-    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${i.reason}`,i.jti);
-  }
+  await revokeAll(antigos,motivo);
   await save();return jwt;
 }
 $('#iGo').onclick=async()=>{
@@ -152,8 +163,8 @@ $('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').text
 $('#vGen').onclick=async()=>{
   const nonce=b64u.enc(rnd(18)),iat=now(),type=$('#vType').value,purpose=$('#vPurpose').value.trim()||'Verificação';
   // RN72: desafio de papel diz o sistema e o papel mínimo.
-  const role=type==='RoleCredential'?{sistema:$('#vSis').value.trim(),papelMin:$('#vPapel').value}:{};
-  if(type==='RoleCredential'&&!role.sistema){shake($('#vSisF'));$('#vSis').focus();return}
+  const role=type==='ProfessionalCredential'?{sistema:$('#vSis').value.trim(),papelMin:$('#vPapel').value}:{};
+  if(type==='ProfessionalCredential'&&!role.sistema){shake($('#vSisF'));$('#vSis').focus();return}
   $('#vChalT').value=await signJWT('desafio+jwt',{iss:ses.did,name:st.name,nonce,purpose,accept:type,...role,iat,exp:iat+600});
   st.challenges=st.challenges.filter(c=>c.exp>iat-86400);
   st.challenges.push({nonce,type,purpose,...role,iat,exp:iat+600,used:false});await save();
@@ -189,20 +200,43 @@ async function checkVP(tok){
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
   add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Expirou em ${fmtDate(q.exp*1000)}.`:`Válida até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
   if(ch&&ch.type!=='any')add(t===ch.type,'Tipo exigido',t===ch.type?`${esc(vcLabel(t))}, como pedido.`:`O desafio pedia ${esc(vcLabel(ch.type))} e veio ${esc(vcLabel(t))}.`);
-  if(ch&&ch.type==='RoleCredential'&&t==='RoleCredential'){
+  if(ch&&ch.type==='ProfessionalCredential'&&t==='ProfessionalCredential'){
     const c=q.vc.credentialSubject||{},ok=papelServe(c,ch.sistema,ch.papelMin);
     add(ok,'Papel suficiente',ok?`${esc(papelLabel(c.papel))} em ${esc(c.sistema)}. Pode: ${esc(PAPEIS[String(c.papel).toLowerCase()].pode.join(', '))}.`
       :normSistema(c.sistema)!==normSistema(ch.sistema)?`O papel é de ${esc(c.sistema||'outro sistema')}, e o desafio pedia ${esc(ch.sistema)}.`
       :`O desafio pedia ${esc(papelLabel(ch.papelMin))} ou acima, e veio ${esc(papelLabel(c.papel))}.`);
   }
-  return{checks,ch,q,holder:vp.did,chOk};
+  let nome=t==='IdentityCredential'?(q.vc.credentialSubject||{}).nome:'';
+  if(t==='ProfessionalCredential'){
+    // RN75: papel é atributo; quem é a pessoa vem da Identidade apresentada junto.
+    const r=await checkIdentity(p.vp.verifiableCredential[1],vp.did,vc.did);
+    add(r.ok,'Identidade do titular',r.detail);nome=r.nome;
+  }
+  return{checks,ch,q,holder:vp.did,chOk,nome};
+}
+async function checkIdentity(tok,holder,issuerDid){
+  const no=detail=>({ok:false,detail,nome:''});
+  if(!tok)return no('A credencial Profissional veio sem a Identidade. Ela é atributo e só vale junto com a Identidade de quem a tem.');
+  let r;try{r=await verifyJWT(tok,'vc+jwt')}catch(e){return no(esc(e.message))}
+  const q=r.payload,c=q.vc.credentialSubject||{},t0=now();
+  if(vcType(q)!=='IdentityCredential')return no('A credencial que acompanha a Profissional não é uma Identidade.');
+  if(!r.ok)return no('A Identidade foi alterada depois de emitida.');
+  if(q.sub!==holder)return no('A Identidade é de outra pessoa.');
+  if(r.did!==issuerDid)return no('A Identidade e a Profissional vêm de emissores diferentes.');
+  if(q.nbf&&q.nbf>t0+CLOCK_SKEW||q.exp&&q.exp<=t0)return no('A Identidade está fora da validade.');
+  if(r.did===ses.did){
+    const rec=st.issued.find(i=>i.jti===q.jti);
+    if(!rec)return no('A Identidade não consta no registro de emissões.');
+    if(rec.revoked)return no(`A Identidade foi revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`);
+  }else if(unverifiableStatus()===false)return no(unverifiableMsg);
+  return{ok:true,detail:`${esc(c.nome||'Sem nome')}, Identidade ativa do mesmo emissor.`,nome:c.nome||''};
 }
 const chkRow=c=>`<div class="chk ${c.ok===true?'ok':c.ok===false?'no':'na'}"><span class="ci">${ic(c.ok===true?'check':c.ok===false?'x':'minus')}</span><div><b>${c.label}</b><small>${c.detail}</small></div></div>`;
 $('#vpGo').onclick=async()=>{
   if(!$('#vpT').value.trim()){shake($('#vpF'));return}
   const r=await checkVP($('#vpT').value),ok=r.checks.every(c=>c.ok!==false);
   if(r.chOk)r.ch.used=true;
-  const who=r.q?(vcClaims(r.q).find(c=>c[0]==='nome')||[])[1]||shortDid(r.holder):'';
+  const who=r.q?r.nome||shortDid(r.holder):'';
   $('#vpOut').innerHTML=verdictHtml(ok,ok?'Apresentação aprovada':'Apresentação recusada',ok?`${esc(vcLabel(vcType(r.q)))} de ${esc(who)} conferida em ${r.checks.length} pontos.`:'Veja abaixo o que não passou.')
     +`<div class="list glass flat mt">${r.checks.map(chkRow).join('')}</div>`
     +(r.q?`<div class="sec-h">Afirmações apresentadas</div><div class="list glass flat">${vcClaims(r.q).map(([k,v])=>`<div class="kr"><div class="h"><small>${esc(k)}</small></div><div class="v">${esc(fmtVal(v))}</div></div>`).join('')}</div>`:'');
@@ -267,9 +301,11 @@ function showIssued(n){
     ${i.revoked?'':`<label class="f mt"><span>Motivo da revogação</span><select id="rvR"><option>Pedido do titular</option><option>Dados incorretos</option><option>Fim do vínculo</option><option>Suspeita de fraude</option><option>Outro</option></select></label><button class="btn danger" id="rvGo">Revogar credencial</button>`}`);
   $('#rvGo')&&($('#rvGo').onclick=async()=>{
     const reason=$('#rvR').value;
-    if(!await confirmSheet('Revogar credencial','A partir de agora ela será recusada em todas as verificações deste emissor. Isso não pode ser desfeito.','Revogar',true))return;
-    i.revoked=true;i.revokedAt=Date.now();i.reason=reason;
-    await ato('revogacao',`${vcLabel(i.type)} de ${i.holderName||shortDid(i.sub)} revogada: ${reason}`,i.jti);await save();renderGov();toast('Credencial revogada');
+    if(!await confirmSheet('Revogar credencial',`A partir de agora ela será recusada em todas as verificações deste emissor.${i.type==='IdentityCredential'?' Os papéis desta pessoa também serão revogados.':''} Isso não pode ser desfeito.`,'Revogar',true))return;
+    await revokeAll([i],reason);
+    // RN76: sem Identidade ativa, os papéis da pessoa caem junto.
+    if(i.type==='IdentityCredential'&&!activeOf(i.sub,'IdentityCredential').length)await revokeAll(activeOf(i.sub,'ProfessionalCredential'),'Identidade revogada');
+    await save();renderGov();toast('Credencial revogada');
   });
 }
 

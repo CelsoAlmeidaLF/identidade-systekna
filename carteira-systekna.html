@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-byMi3r0DCE7F8X4EjImKO5vZ3yx/+atMQuYfxC05Z/Y='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-fUfPNPfNQIQaUHcx4TiPH80CyOE60HlT+fZqRUf6COU='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -300,7 +300,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-IdentityCredential{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
-.g-RoleCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
+.g-ProfessionalCredential{--cg:linear-gradient(150deg,#8AA8F5 0%,#3F63D6 45%,#1C2F7A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 
 /* passos (sequência real) */
@@ -733,11 +733,11 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
-  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
-  // Papel: o emissor diz qual papel a pessoa tem num sistema. O que o papel pode fazer fica no sistema (RN67).
-  RoleCredential:{label:'Papel',claims:[['nome',''],['sistema',''],['papel','leitor']]},
-  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
+  // Identidade define o usuário: só o nome. Sem KYC na versão básica (RN58).
+  IdentityCredential:{label:'Identidade',claims:[['nome','']]},
+  // Profissional é atributo da Identidade: sistema e papel, sem nome. O que o papel pode fazer fica no sistema (RN67).
+  ProfessionalCredential:{label:'Profissional',claims:[['sistema',''],['papel','leitor']]},
+  CustomCredential:{label:'Personalizado',claims:[['campo','']]}
 };
 /* ================= papéis (RN67 a RN73) ================= */
 // Lista fechada e em ordem: cada papel pode tudo o que o anterior pode (RN68).
@@ -752,15 +752,15 @@ const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'
 // Sistema é comparado sem diferenciar acento, maiúscula nem espaços nas pontas (como o nome de grupo, RN49).
 const normSistema=s=>String(s||'').normalize('NFKD').replace(/[̀-ͯ]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
 const papelNivel=p=>(PAPEIS[String(p||'').toLowerCase()]||{nivel:0}).nivel;
-// A credencial de papel serve ao desafio se for do mesmo sistema e de papel igual ou acima do mínimo (RN72).
+// A credencial Profissional serve ao desafio se for do mesmo sistema e de papel igual ou acima do mínimo (RN72).
 const papelServe=(claims,sistema,papelMin)=>!!claims&&normSistema(claims.sistema)===normSistema(sistema)&&papelNivel(claims.papel)>=papelNivel(papelMin);
 function papelProblem(claims,days){
   if(!String(claims.sistema||'').trim())return'Informe o sistema em que o papel vale.';
   if(!PAPEIS[String(claims.papel||'').toLowerCase()])return'O papel deve ser leitor, operador ou admin.';
-  const extra=Object.keys(claims).filter(k=>!['nome','sistema','papel'].includes(k));
-  if(extra.length)return`A credencial de papel leva só nome, sistema e papel. Tire o campo “${extra[0]}”.`;
-  if(!days)return'A credencial de papel precisa de validade.';
-  if(days>PAPEL_MAX_DIAS)return'A credencial de papel vale no máximo 1 ano.';
+  const extra=Object.keys(claims).filter(k=>!['sistema','papel'].includes(k));
+  if(extra.length)return`A credencial Profissional leva só sistema e papel; quem é a pessoa vem da Identidade. Tire o campo “${extra[0]}”.`;
+  if(!days)return'A credencial Profissional precisa de validade.';
+  if(days>PAPEL_MAX_DIAS)return'A credencial Profissional vale no máximo 1 ano.';
   return null;
 }
 /* ================= dados pessoais (RN59) ================= */
@@ -1311,7 +1311,7 @@ function credState(d){
 const usable=d=>credState(d)[0]!=='no';
 function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
-  if(d.vtype==='RoleCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.sistema||'sistema não informado'}`}
+  if(d.vtype==='ProfessionalCredential'){const c=p.vc.credentialSubject||{};return`${papelLabel(c.papel)} em ${c.sistema||'sistema não informado'}`}
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
 function credCard(it,asDiv){
@@ -1409,9 +1409,12 @@ function present(preId){
     if(q.exp<now())return fail('Este desafio expirou. Peça um novo.');
     const all=creds().filter(c=>usable(c.data));
     let fit=q.accept&&q.accept!=='any'?all.filter(c=>c.data.vtype===q.accept):all;
-    // RN72: num desafio de papel, só servem as do mesmo sistema e com papel igual ou acima do mínimo.
-    const role=q.accept==='RoleCredential';
+    // RN72: num desafio Profissional, só servem as do mesmo sistema e com papel igual ou acima do mínimo.
+    const role=q.accept==='ProfessionalCredential';
     if(role)fit=fit.filter(c=>papelServe(decodeJWT(c.data.jwt).payload.vc.credentialSubject,q.sistema,q.papelMin));
+    // RN75: papel é atributo da Identidade e só sai junto com a Identidade mais recente do mesmo emissor.
+    const idOf=c=>all.filter(x=>x.data.vtype==='IdentityCredential'&&x.data.issuerDid===c.data.issuerDid).sort((a,b)=>b.data.iat-a.data.iat)[0];
+    fit=fit.filter(c=>c.data.vtype!=='ProfessionalCredential'||idOf(c));
     let pick=(fit.find(c=>c.rec.id===preId)||fit[0]||{}).rec;pick=pick&&pick.id;
     $('#apStep').innerHTML=`<div class="list glass flat mt">
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
@@ -1419,12 +1422,12 @@ function present(preId){
         <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${role?`Papel ${esc(papelLabel(q.papelMin))} ou acima em ${esc(q.sistema||'sistema não informado')}`:q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
       ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
-        :verdictHtml(false,'Nenhuma credencial serve',role?'Você não tem um papel válido neste sistema com o nível exigido. Peça um ao emissor.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
+        :verdictHtml(false,'Nenhuma credencial serve',role?'Você não tem uma credencial Profissional válida neste sistema com o papel exigido, junto com a Identidade do mesmo emissor. Peça ao emissor.':'Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
       const c=ses.items.find(i=>i.rec.id===pick),iat=now();
-      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}});
+      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:c.data.vtype==='ProfessionalCredential'?[c.data.jwt,idOf(c).data.jwt]:[c.data.jwt]}});
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });
