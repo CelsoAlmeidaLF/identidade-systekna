@@ -266,7 +266,7 @@ body[data-screen="sApp"] .dock{display:grid}
 
 /* crachás */
 .creds{display:grid;gap:14px}
-.cred{position:relative;width:100%;border:0;cursor:pointer;text-align:left;font:inherit;border-radius:20px;padding:18px;color:#fff;overflow:hidden;display:grid;gap:16px;
+.cred{position:relative;width:100%;border:0;cursor:pointer;text-align:left;font:inherit;border-radius:20px;padding:18px;color:#fff;overflow:hidden;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;
   background:var(--cg,linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%));box-shadow:inset 0 0 0 1px rgba(255,255,255,.3),0 20px 40px -20px rgba(13,63,120,.85);transition:transform .35s cubic-bezier(.34,1.56,.64,1)}
 .cred:active{transform:scale(.98)}
 .cred::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(255,255,255,.3) 0%,rgba(255,255,255,.07) 48%,rgba(255,255,255,0) 50%);pointer-events:none}
