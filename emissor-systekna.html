@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-XmNSwYgWLIgOySaHV2PCQVBA7LMGNL1Fp2net3GUoLA='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-dBOdETJ3gejgEs5/5wZ09CGd3kg2IKwVNcd39uLmaFY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="emissor.webmanifest">
@@ -377,7 +377,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.12.2</p>
+<p class="ver boot" aria-hidden="true">Versão 0.12.3</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -390,7 +390,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.12.2</p>
+    <p class="ver">Versão 0.12.3</p>
   </div>
 </section>
 
@@ -439,7 +439,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.12.2</p>
+    <p class="ver">Versão 0.12.3</p>
   </div>
 </section>
 
@@ -471,8 +471,8 @@ body[data-screen="sApp"] .dock{display:grid}
       <label class="f" id="iqF"><span>Pedido do titular</span><textarea class="mono" id="iqT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label>
       <p class="hint" id="iqH"></p>
       <button class="btn" id="iqGo">Conferir pedido</button>
+      <div id="iWho"></div>
       <div id="iForm" hidden>
-        <div id="iWho"></div>
         <label class="f" id="iTypeF"><span>O que aprovar</span><select id="iType"></select></label>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
@@ -592,7 +592,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.12.2';
+const APP_VERSION='0.12.3';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1469,6 +1469,13 @@ $('#iqGo').onclick=async()=>{
   if(!issuableTypes().includes(wanted)){
     pedido=null;
     $('#iWho').insertAdjacentHTML('beforeend',verdictHtml(false,`Este emissor não aprova ${vcLabel(wanted)}`,esc(typeRoleMsg(wanted))));
+    // Pedido de crachá num emissor ainda sem credenciamento: se este é o serviço, o credenciamento resolve ali mesmo,
+    // e o pedido é conferido de novo assim que ele for importado.
+    if(wanted==='BadgeCredential'&&!isService()){
+      $('#iWho').insertAdjacentHTML('beforeend',`<p class="hint">Se este é o emissor do serviço, ele ainda não tem o credenciamento da STK. Importe o credenciamento (ou peça um) e o pedido é conferido de novo.</p><div class="pair mt"><button class="btn" id="iqImp">Importar credenciamento</button><button class="btn ghost" id="iqAsk">Pedir credenciamento</button></div>`);
+      $('#iqImp').onclick=()=>importAccreditation();
+      $('#iqAsk').onclick=()=>askAccreditation();
+    }
     return;
   }
   if(wanted==='BadgeCredential'){
@@ -1567,10 +1574,10 @@ $('#iGo').onclick=async()=>{
   $('#iJwt').value=toks.join('\n');
   const what=type==='BadgeCredential'?(toks.length>1?`${toks.length} crachás`:'Crachá'):vcLabel(type);
   $('#iOk').innerHTML=verdictHtml(true,'Credencial aprovada',`${esc(what)} para ${esc(pedido.payload.name||shortDid(pedido.did))}, registrado no livro.`);
-  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial aprovada');
+  $('#iForm').hidden=true;$('#iWho').innerHTML='';$('#iOut').hidden=false;pedido=null;toast('Credencial aprovada');
 };
 $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
-$('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iqT').focus()};
+$('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iWho').innerHTML='';$('#iqT').focus()};
 
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{
@@ -1771,6 +1778,8 @@ function importAccreditation(){
     st.credenciamentos.push({jwt:$('#ciT').value.trim(),jti:q.jti,issuerDid:q.iss,issuerName:r.issuerName,servico:c.servico,apps:c.apps,iat:q.iat,exp:q.exp||0});
     await ato('confianca',`Credenciamento de ${r.issuerName} importado: ${c.apps}`,q.jti);await save();
     closeSheet();fillTypeSelects();paintWho();renderGov();toast('Credenciamento importado');
+    // Havia um pedido de crachá esperando o credenciamento: confere de novo.
+    if($('#iqImp')&&$('#iqT').value.trim())$('#iqGo').onclick();
   };
 }
 $('#gNameS').onclick=async()=>{

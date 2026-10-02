@@ -174,6 +174,8 @@ test('03 · a STK não aprova crachá, nem deixa aprovar o pedido como Identidad
   const pedido = await pedirNaCarteira('BadgeCredential', 'App Agenda');
   expect(payloadDe(pedido)).toMatchObject({ wanted: 'BadgeCredential', identidade, name: 'Ana Acesso', servicos: 'App Agenda' });
   await conferirPedido(stk, pedido);
+  // A recusa aparece na tela (antes ficava escrita dentro do formulário escondido).
+  await expect(stk.locator('#iWho')).toBeVisible();
   await expect(stk.locator('#iWho')).toContainText('Este emissor não aprova Crachá');
   await expect(stk.locator('#iWho')).toContainText('Crachá (CV:KEY) é aprovado pelo emissor de serviço credenciado pela STK');
   // Não há como aprovar o pedido de crachá como outro tipo (o erro de virar DID:KEY).
@@ -242,6 +244,38 @@ test('06 · USER envia o DID aprovado e os apps; o SRV aprova um crachá (CV:KEY
   await receberNaCarteira(linhas.join('\n'), '2 credenciais guardadas');
   await expect(carteira.locator('#cList')).toContainText('Acesso a App Agenda');
   await expect(carteira.locator('#cList')).toContainText('Acesso a App Financeiro');
+});
+
+test('06b · serviço novo recebe o pedido de crachá antes do credenciamento e resolve ali mesmo', async () => {
+  const srv2 = await (await stk.context().browser().newContext()).newPage();
+  vigiarCsp(srv2, violacoesCsp);
+  await preparar(srv2, 'emissor-systekna.html', 'letter advice cage absurd amount doctor acoustic avoid letter advice cage above');
+  await aba(srv2, 'vGov');
+  await srv2.fill('#gName', 'Serviço 2');
+  await srv2.click('#gNameS');
+  // O pedido do usuário chega primeiro: em vez de travar, o emissor oferece o credenciamento.
+  await conferirPedido(srv2, await pedirNaCarteira('BadgeCredential', 'App Loja'));
+  await expect(srv2.locator('#iWho')).toContainText('ainda não tem o credenciamento da STK');
+  await srv2.click('#iqAsk');
+  await srv2.fill('#caO', 'App Loja');
+  await srv2.click('#caGo');
+  const pedidoCred = await srv2.inputValue('#caJ');
+  await fecharSheet(srv2);
+  await conferirPedido(stk, pedidoCred);
+  await emitir(stk, ['Serviço 2', 'App Loja']);
+  const cred2 = await emitido(stk);
+  // Importa pela própria tela do pedido, confia na STK ali e o pedido de crachá é conferido de novo.
+  await srv2.click('#iqImp');
+  await srv2.fill('#ciT', cred2);
+  await srv2.click('#ciGo');
+  await srv2.click('#ciTrustGo');
+  await expect(toast(srv2)).toHaveText('Credenciamento importado');
+  await expect(srv2.locator('#iWho')).toContainText('Ana Acesso, aprovada por Emissor de Credenciais Systekna.');
+  await expect(srv2.locator('#iAcc [data-acc="App Loja"] [data-on]')).toBeChecked();
+  await srv2.click('#iGo');
+  const cracha = await emitido(srv2);
+  expect(payloadDe(cracha).vc.credentialSubject.app).toBe('App Loja');
+  await srv2.context().close();
 });
 
 test('07 · cada crachá mostra o CV:KEY e a cor separa Identidade de Crachá', async () => {
