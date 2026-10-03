@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-+owvvSH3KLt3COwzUN7VQKpP25DQsRaDnmODnAiDuS4='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-QdRW/SDPUNi9MZKKBCgYswzwUjtelgEfZT00lsUcmcE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="servicos.webmanifest">
@@ -372,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.19.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.19.1</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -384,7 +384,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.19.0</p>
+    <p class="ver">Versão 0.19.1</p>
   </div>
 </section>
 
@@ -432,7 +432,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.19.0</p>
+    <p class="ver">Versão 0.19.1</p>
   </div>
 </section>
 
@@ -448,6 +448,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <section class="view on" id="vPanel">
       <h2 id="pName">Serviço</h2>
       <div id="pCred"></div>
+      <div id="pOrg" hidden><div class="sec-h" style="margin-top:0"><span><b id="pOrgN"></b><br><small id="pOrgG"></small></span></div></div>
       <div class="creds" id="pAprov"></div>
       <div id="pBook"></div>
       <div class="stats mt">
@@ -577,7 +578,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.19.0';
+const APP_VERSION='0.19.1';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1383,7 +1384,7 @@ const APP={
   onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
   onLock(){
     st=null;pedido=null;
-    ['#pCred','#pAprov','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
     ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
@@ -1417,10 +1418,20 @@ function credResumo(){
   if(!credOk())return verdictHtml(false,st.aprovacoes.length?'Aprovações de emissão vencidas':'Sem aprovação de emissão','Toque em + › Solicitar aprovação de emissão. Sem ela, o serviço não emite crachás.');
   return '';
 }
-// Cartão de uma aprovação (mesmo formato do cartão da carteira): tipo, serviço, DID, apps, emissora + validade.
-function cartaoAprov(a){
-  const venc=a.exp&&a.exp<=now(),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
-  return `<div class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-aprov="${esc(a.jti)}"><div class="r1"><b class="tipo">Aprovação de emissão</b>${ic('badge')}</div><div class="main">${esc(a.servico||nomeServico())}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="apps">${esc(a.apps.join(' · '))}</div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></div>`;
+// Um cartão por app aprovado: o app, o DID do serviço com copiar e quem aprovou + a validade. Todos ficam
+// agrupados sob a organização (o serviço), no ecossistema aprovado pela Governança.
+function appsAprovados(){
+  const porApp=new Map();
+  for(const a of st.aprovacoes)for(const app of a.apps){
+    const atual=porApp.get(app);
+    // Fica a aprovação que vale por mais tempo (sem validade vale mais); vencida só se não houver outra.
+    if(!atual||(valida(a)&&!valida(atual))||(valida(a)===valida(atual)&&(a.exp||Infinity)>(atual.exp||Infinity)))porApp.set(app,a);
+  }
+  return[...porApp].map(([app,a])=>({app,a}));
+}
+function cartaoApp({app,a}){
+  const venc=!valida(a),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
+  return `<div class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(app)}"><div class="r1"><b class="tipo">App: ${esc(app)}</b>${ic('badge')}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></div>`;
 }
 const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(p.apps.join(' · '))}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
 $('#pAprov').onclick=e=>{const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado')}};
@@ -1430,7 +1441,10 @@ async function renderPanel(){
   if(!st)return;
   $('#pName').textContent=nomeServico();
   $('#pCred').innerHTML=credResumo();if($('#pCred').firstElementChild)$('#pCred').firstElementChild.style.marginTop='0';
-  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+st.aprovacoes.slice().reverse().map(cartaoAprov).join('');
+  const apps=appsAprovados();
+  $('#pOrg').hidden=!apps.length;
+  $('#pOrgN').textContent=nomeServico();$('#pOrgG').textContent=`Ecossistema aprovado pela ${st.gov?st.gov.name:'Governança'}`;
+  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+apps.map(cartaoApp).join('');
   const crachas=st.issued.filter(i=>i.type==='BadgeCredential');
   $('#sA').textContent=crachas.filter(i=>issStatus(i)[0]==='ok').length;
   $('#sR').textContent=crachas.filter(i=>i.revoked).length;

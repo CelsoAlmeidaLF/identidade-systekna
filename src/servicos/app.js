@@ -26,7 +26,7 @@ const APP={
   onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
   onLock(){
     st=null;pedido=null;
-    ['#pCred','#pAprov','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
     ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
@@ -60,10 +60,20 @@ function credResumo(){
   if(!credOk())return verdictHtml(false,st.aprovacoes.length?'Aprovações de emissão vencidas':'Sem aprovação de emissão','Toque em + › Solicitar aprovação de emissão. Sem ela, o serviço não emite crachás.');
   return '';
 }
-// Cartão de uma aprovação (mesmo formato do cartão da carteira): tipo, serviço, DID, apps, emissora + validade.
-function cartaoAprov(a){
-  const venc=a.exp&&a.exp<=now(),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
-  return `<div class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-aprov="${esc(a.jti)}"><div class="r1"><b class="tipo">Aprovação de emissão</b>${ic('badge')}</div><div class="main">${esc(a.servico||nomeServico())}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="apps">${esc(a.apps.join(' · '))}</div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></div>`;
+// Um cartão por app aprovado: o app, o DID do serviço com copiar e quem aprovou + a validade. Todos ficam
+// agrupados sob a organização (o serviço), no ecossistema aprovado pela Governança.
+function appsAprovados(){
+  const porApp=new Map();
+  for(const a of st.aprovacoes)for(const app of a.apps){
+    const atual=porApp.get(app);
+    // Fica a aprovação que vale por mais tempo (sem validade vale mais); vencida só se não houver outra.
+    if(!atual||(valida(a)&&!valida(atual))||(valida(a)===valida(atual)&&(a.exp||Infinity)>(atual.exp||Infinity)))porApp.set(app,a);
+  }
+  return[...porApp].map(([app,a])=>({app,a}));
+}
+function cartaoApp({app,a}){
+  const venc=!valida(a),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
+  return `<div class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(app)}"><div class="r1"><b class="tipo">App: ${esc(app)}</b>${ic('badge')}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></div>`;
 }
 const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(p.apps.join(' · '))}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
 $('#pAprov').onclick=e=>{const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado')}};
@@ -73,7 +83,10 @@ async function renderPanel(){
   if(!st)return;
   $('#pName').textContent=nomeServico();
   $('#pCred').innerHTML=credResumo();if($('#pCred').firstElementChild)$('#pCred').firstElementChild.style.marginTop='0';
-  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+st.aprovacoes.slice().reverse().map(cartaoAprov).join('');
+  const apps=appsAprovados();
+  $('#pOrg').hidden=!apps.length;
+  $('#pOrgN').textContent=nomeServico();$('#pOrgG').textContent=`Ecossistema aprovado pela ${st.gov?st.gov.name:'Governança'}`;
+  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+apps.map(cartaoApp).join('');
   const crachas=st.issued.filter(i=>i.type==='BadgeCredential');
   $('#sA').textContent=crachas.filter(i=>issStatus(i)[0]==='ok').length;
   $('#sR').textContent=crachas.filter(i=>i.revoked).length;

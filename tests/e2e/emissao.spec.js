@@ -143,12 +143,14 @@ test('sem nenhum app marcado, a STK não aprova', async () => {
 
 test('o Serviços guarda a aprovação e mostra o cartão no Painel', async () => {
   await receber(await gov.inputValue('#iJwt'));
+  // Um cartão por app, agrupados sob a organização aprovada pela Governança.
+  await expect(srv.locator('#pOrgN')).toHaveText('Academia Boa Forma');
+  await expect(srv.locator('#pOrgG')).toHaveText('Ecossistema aprovado pela Governança Systekna');
   const card = srv.locator('#pAprov .cred');
   await expect(card).toHaveCount(1);
-  await expect(card.locator('.tipo')).toHaveText('Aprovação de emissão');
-  await expect(card.locator('.main')).toHaveText('Academia Boa Forma');
+  await expect(card.locator('.tipo')).toHaveText('App: Portaria');
+  await expect(card.locator('.main')).toHaveCount(0);
   await expect(card.locator('.did .mono')).toHaveAttribute('title', didSrv);
-  await expect(card.locator('.apps')).toHaveText('Portaria');
   await expect(card.locator('.emissor')).toHaveText('Governança Systekna');
   await expect(card.locator('.pill')).toContainText('Até ');
   await card.locator('.did .cp').click();
@@ -177,6 +179,8 @@ test('app novo: pede só ele, e as duas aprovações ficam ativas', async () => 
   await receber(tok);
 
   await expect(srv.locator('#pAprov .cred')).toHaveCount(2);
+  await expect(srv.locator('#pAprov .cred .tipo')).toHaveText(['App: Portaria', 'App: Piscina']);
+  await expect(srv.locator('#pAprov .cred[data-app="Piscina"] .pill')).toContainText('Até ');
   expect(await srv.evaluate(() => credApps().sort())).toEqual(['Piscina', 'Portaria']);
   await expect(srv.locator('#sP')).toHaveText('2');
   // Na STK, as duas aprovações do serviço continuam ativas.
