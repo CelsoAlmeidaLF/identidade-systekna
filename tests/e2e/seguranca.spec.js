@@ -3,7 +3,7 @@
 const { test, expect } = require('@playwright/test');
 const { vigiarCsp } = require('./helpers');
 
-for (const arquivo of ['carteira-systekna.html', 'emissor-systekna.html']) {
+for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html']) {
   test.describe(arquivo, () => {
     test('nenhuma requisição sai do site e a fonte vem de fonts/', async ({ page, baseURL }) => {
       const origem = new URL(/** @type {string} */ (baseURL)).origin;

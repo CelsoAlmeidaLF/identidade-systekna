@@ -91,7 +91,7 @@ function actionMenu(){
 function askCred(){
   openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
-    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
+    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([,v])=>v.carteira).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
     <label class="f" id="aqEF"><span>DID do emissor (opcional)</span><input id="aqE" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint" id="aqEH">Com o DID, só esse emissor consegue atender o pedido.</p>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
@@ -102,7 +102,7 @@ function askCred(){
     if(aud){try{await didToEdKey(aud)}catch(e){EH.textContent=e.message;EH.classList.add('bad');shake($('#aqEF'));return}}
     EH.textContent='Com o DID, só esse emissor consegue atender o pedido.';EH.classList.remove('bad');
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:aud||'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=embrulhar(await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:aud||'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400}));
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
@@ -174,7 +174,7 @@ function present(preId){
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
       const c=ses.items.find(i=>i.rec.id===pick),iat=now();
-      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}});
+      const vp=embrulhar(await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}}));
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });

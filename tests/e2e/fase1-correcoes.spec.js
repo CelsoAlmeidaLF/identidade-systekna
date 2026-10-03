@@ -75,8 +75,8 @@ async function ajusteCarteira(chave) {
 test.beforeAll(async ({ browser }) => {
   [carteira, emissor, outroEmissor] = await Promise.all([1, 2, 3].map(async () => (await browser.newContext()).newPage()));
   for (const p of [carteira, emissor, outroEmissor]) vigiarCsp(p, violacoesCsp);
-  await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
-  await preparar(outroEmissor, 'emissor-systekna.html', WORDS.outroEmissor);
+  await preparar(emissor, 'governanca-systekna.html', WORDS.emissor);
+  await preparar(outroEmissor, 'governanca-systekna.html', WORDS.outroEmissor);
   await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
   didCarteira = await carteira.evaluate(() => ses.did);
   didEmissor = await emissor.evaluate(() => ses.did);

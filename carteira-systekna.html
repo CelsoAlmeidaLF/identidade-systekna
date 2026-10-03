@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-3Sto9kl6wQ38BI234teWzAqous3EcNgz0awE24/07ss='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-0j5/43pSgqgskE6ykYzIkh5abYJCIwTMj3IhUfiFFh0='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -731,10 +731,13 @@ const weakPin=p=>/^(\d)\1{5}$/.test(p)||'0123456789012'.includes(p)||'9876543210
 const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
+// carteira: o titular pode pedir este tipo pela carteira. O Credenciamento é pedido pelo app Serviços.
 const VC_TYPES={
-  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
-  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
-  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
+  // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
+  IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
+  // A Governança autoriza um serviço a emitir crachás para os apps listados.
+  ServiceAccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']]},
+  CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true}
 };
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
@@ -762,17 +765,37 @@ const vcIssuerName=p=>(p.vc&&p.vc.issuer&&p.vc.issuer.name)||shortDid(p.iss);
 const fmtVal=v=>v===true?'sim':v===false?'não':String(v);
 const VC_CONTEXT=['https://www.w3.org/2018/credentials/v1'];
 
+/* ================= envelope de transporte (DP-05) ================= */
+// Todo pacote copiado sai como SYSTEKNA:<TIPO>:<JWT>. O tipo diz que tela abre o pacote; o typ do JWT
+// continua sendo conferido. Um JWT sem envelope ainda é aceito na entrada, para pacotes de versões anteriores.
+function tipoPacote(header,payload){
+  const qual=(t,a,b,c)=>t==='IdentityCredential'?a:t==='ServiceAccreditationCredential'?b:c;
+  switch(header.typ){
+    case 'pedido+jwt':return qual(payload.wanted,'PEDIDO-APROVACAO','PEDIDO-CREDENCIAMENTO','PEDIDO-CREDENCIAL');
+    case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CREDENCIAL');
+    case 'desafio+jwt':return 'DESAFIO';
+    case 'vp+jwt':return 'PROVA';
+  }
+  return null;
+}
+const embrulhar=tok=>{const{header,payload}=decodeJWT(tok);return `SYSTEKNA:${tipoPacote(header,payload)}:${tok}`};
+
 /* ================= JWT EdDSA ================= */
 async function signJWT(typ,payload){
   const header={alg:'EdDSA',typ,kid:`${ses.did}#${ses.edMb}`};
   const si=b64u.enc(te.encode(JSON.stringify(header)))+'.'+b64u.enc(te.encode(JSON.stringify(payload)));
   return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(si)));
 }
-function decodeJWT(tok){
-  const p=String(tok).trim().split('.');
+function decodeJWT(texto){
+  const t=String(texto).trim(),env=t.match(/^SYSTEKNA:([A-Z-]*):([\s\S]*)$/);
+  const tok=env?env[2].trim():t,p=tok.split('.');
+  if(t.startsWith('SYSTEKNA')&&!env)throw new Error('Pacote Systekna incompleto. Ele começa com SYSTEKNA:<TIPO>:.');
   if(p.length!==3)throw new Error('Um token JWT tem três partes separadas por ponto.');
-  try{return{header:JSON.parse(td.decode(b64u.dec(p[0]))),payload:JSON.parse(td.decode(b64u.dec(p[1]))),parts:p}}
+  let r;
+  try{r={header:JSON.parse(td.decode(b64u.dec(p[0]))),payload:JSON.parse(td.decode(b64u.dec(p[1]))),parts:p,tok}}
   catch{throw new Error('O conteúdo colado não é um JWT legível.')}
+  if(env){const real=tipoPacote(r.header,r.payload);if(env[1]!==real)throw new Error(`O pacote diz ${env[1]||'sem tipo'}, mas o conteúdo é ${real||'desconhecido'}. Ele foi alterado.`)}
+  return r;
 }
 function didToEdKey(did){
   if(!/^did:key:z/.test(did))throw new Error('O assinante não usa did:key, então a chave não pode ser lida do próprio DID.');
@@ -781,13 +804,13 @@ function didToEdKey(did){
   return S.importKey('raw',b.slice(2),{name:'Ed25519'},false,['verify']);
 }
 async function verifyJWT(tok,typ){
-  const{header,payload,parts}=decodeJWT(tok);
+  const{header,payload,parts,tok:jwt}=decodeJWT(tok);
   if(header.alg!=='EdDSA')throw new Error(`Algoritmo ${header.alg} não suportado. Use EdDSA.`);
   if(typ&&header.typ!==typ)throw new Error(`O token é do tipo ${header.typ||'sem tipo'}, mas aqui se espera ${typ}.`);
   const did=String(header.kid||payload.iss||'').split('#')[0];
   if(payload.iss&&payload.iss!==did)throw new Error('O emissor declarado não confere com a chave que assinou.');
   const ok=await S.verify({name:'Ed25519'},await didToEdKey(did),b64u.dec(parts[2]),te.encode(parts[0]+'.'+parts[1]));
-  return{ok,header,payload,did,tok:String(tok).trim()};
+  return{ok,header,payload,did,tok:jwt};
 }
 
 /* ================= mensagens (X25519 + AES-256-GCM) ================= */
@@ -1314,7 +1337,7 @@ function actionMenu(){
 function askCred(){
   openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
-    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
+    <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).filter(([,v])=>v.carteira).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
     <label class="f" id="aqEF"><span>DID do emissor (opcional)</span><input id="aqE" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint" id="aqEH">Com o DID, só esse emissor consegue atender o pedido.</p>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
@@ -1325,7 +1348,7 @@ function askCred(){
     if(aud){try{await didToEdKey(aud)}catch(e){EH.textContent=e.message;EH.classList.add('bad');shake($('#aqEF'));return}}
     EH.textContent='Com o DID, só esse emissor consegue atender o pedido.';EH.classList.remove('bad');
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:aud||'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=embrulhar(await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:aud||'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400}));
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
@@ -1397,7 +1420,7 @@ function present(preId){
     $('#apC')&&($('#apC').onclick=e=>{const b=e.target.closest('[data-pk]');if(!b)return;pick=b.dataset.pk;$('#apC').querySelectorAll('[data-pk]').forEach(x=>x.setAttribute('aria-pressed',x===b))});
     $('#apSign')&&($('#apSign').onclick=async()=>{
       const c=ses.items.find(i=>i.rec.id===pick),iat=now();
-      const vp=await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}});
+      const vp=embrulhar(await signJWT('vp+jwt',{iss:ses.did,sub:ses.did,aud:r.did,nonce:q.nonce,iat,exp:iat+300,vp:{'@context':VC_CONTEXT,type:['VerifiablePresentation'],holder:ses.did,verifiableCredential:[c.data.jwt]}}));
       $('#apOut').innerHTML=`<label class="f"><span>Apresentação assinada, válida por 5 minutos</span><textarea class="mono" rows="5" readonly id="apJ">${vp}</textarea></label><button class="btn ghost" id="apCp">Copiar apresentação</button>`;
       $('#apCp').onclick=()=>copy(vp,'Apresentação copiada');toast('Apresentação assinada');
     });

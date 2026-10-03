@@ -1,6 +1,6 @@
 // @ts-check
 // RN59: credencial, livro e log nunca levam CPF, RG, foto e afins. A trava fica em issue(), no emissor.
-// RN58: a credencial de identidade diz só se o KYC foi validado (kycValidado), nunca os dados.
+// DP-03 (03/10/2026): a credencial de identidade leva só o nome; kycValidado e outros campos são recusados.
 const { test, expect } = require('@playwright/test');
 const { WORDS, preparar, aba, toast, fecharSheet, vigiarCsp, payloadDe } = require('./helpers');
 
@@ -48,7 +48,7 @@ test.beforeAll(async ({ browser }) => {
   emissor = await (await browser.newContext()).newPage();
   vigiarCsp(carteira, violacoesCsp);
   vigiarCsp(emissor, violacoesCsp);
-  await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
+  await preparar(emissor, 'governanca-systekna.html', WORDS.emissor);
   await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
 });
 
@@ -89,35 +89,30 @@ test('piiProblem acha CPF válido no valor, mas não em hash, chave ou número q
   expect([r.invalido, r.hash, r.chave, r.telefone, r.numero]).toEqual([null, null, null, null, null]);
 });
 
-test('a credencial de identidade traz nome e kycValidado, sem o campo documento', async () => {
+test('a credencial de identidade traz só o nome', async () => {
   await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
   const chaves = emissor.locator('#iClaims [data-ck]');
-  await expect(chaves).toHaveCount(2);
+  await expect(chaves).toHaveCount(1);
   await expect(chaves.nth(0)).toHaveValue('nome');
-  await expect(chaves.nth(1)).toHaveValue('kycValidado');
-  await expect(emissor.locator('#iClaims [data-cv]').nth(1)).toHaveValue('false');
+  await expect(emissor.locator('#iClaims [data-cv]').nth(0)).toHaveValue('Maria Teste');
+  const p = await emitir();
+  expect(p.vc.credentialSubject).toEqual({ id: p.sub, nome: 'Maria Teste' });
 });
 
-test('kycValidado sai como booleano, vira false se for removido e recusa outro valor', async () => {
-  // Padrão: false.
-  expect((await emitir()).vc.credentialSubject.kycValidado).toBe(false);
-
-  // Marcado como conferido.
-  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
-  await emissor.locator('#iClaims [data-cv]').nth(1).fill('true');
-  expect((await emitir()).vc.credentialSubject.kycValidado).toBe(true);
-
-  // Campo removido: a credencial sai com false, nunca sem a informação.
-  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
-  await emissor.locator('#iClaims [data-rm]').nth(1).click();
-  expect((await emitir()).vc.credentialSubject.kycValidado).toBe(false);
-
-  // Valor que não é sim ou não.
+test('a Identidade recusa qualquer outro campo, inclusive kycValidado, e nome vazio', async () => {
   const antes = await contagem();
   await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
-  await emissor.locator('#iClaims [data-cv]').nth(1).fill('talvez');
+  await emissor.click('#iAdd');
+  await emissor.locator('#iClaims [data-ck]').nth(1).fill('kycValidado');
+  await emissor.locator('#iClaims [data-cv]').nth(1).fill('true');
   await emissor.click('#iGo');
-  await expect(toast(emissor)).toHaveText('O campo “kycValidado” só aceita true ou false.');
+  await expect(toast(emissor)).toHaveText('A Identidade leva só nome. Tire o campo “kycValidado”.');
+  expect(await contagem()).toEqual(antes);
+
+  await emissor.locator('#iClaims [data-rm]').nth(1).click();
+  await emissor.locator('#iClaims [data-cv]').nth(0).fill('');
+  await emissor.click('#iGo');
+  await expect(toast(emissor)).toHaveText('Preencha ao menos um campo com valor');
   expect(await contagem()).toEqual(antes);
 });
 
