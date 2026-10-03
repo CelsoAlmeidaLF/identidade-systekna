@@ -285,6 +285,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
 .g-ServiceAccreditationCredential{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .cred .apps{font-size:13px;opacity:.95;margin-top:-6px}
+.cred.cracha .did .mono{font-weight:600}
 .creds .pend{border:1px dashed var(--line)}
 /* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
 .cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
