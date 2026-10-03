@@ -122,7 +122,12 @@ test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa',
   await carteira.fill('#rcT', aprovacao);
   await carteira.click('#rcGo');
   await expect(toast(carteira)).toHaveText('Credencial guardada');
-  await expect(carteira.locator('#cList')).toContainText('Profissional · Emitida por');
+  // Cartão: perfil, nome, emissora + validade.
+  const card = carteira.locator('#cList .cred').filter({ hasText: 'Maria S. Consultora' });
+  await expect(card.locator('.r1 .tipo')).toHaveText('Profissional');
+  await expect(card.locator('.main')).toHaveText('Maria S. Consultora');
+  await expect(card.locator('.r3 .emissor')).toHaveText('Governança Systekna');
+  await expect(card.locator('.r3 .pill')).toContainText('Até ');
 
   await abrirSolicitar();
   await expect(carteira.locator('#aqL [data-n="2"]')).toContainText('aprovada');

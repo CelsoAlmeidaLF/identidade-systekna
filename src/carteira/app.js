@@ -109,9 +109,12 @@ function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
+// Cartão: 1ª linha, o tipo (na identidade, o perfil: Identidade, Profissional, Personalizada: Clube);
+// 2ª, o nome; 3ª, quem emitiu e a validade.
 function credCard(it,asDiv){
   const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
-  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>${(x=>x&&identidades().length>1?esc(perfilTxt(x))+' · ':'')(idDoDid(subDe(d)))}Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+  const dono=d.vtype==='IdentityCredential'?idDoDid(subDe(d)):null,tipo=dono?perfilTxt(dono):vcLabel(d.vtype);
+  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b class="tipo">${esc(tipo)}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span class="emissor">${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
 function renderCreds(){
   if(!ses)return;
