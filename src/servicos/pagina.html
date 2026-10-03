@@ -65,11 +65,12 @@
     <section class="view on" id="vPanel">
       <h2 id="pName">Serviço</h2>
       <div id="pCred"></div>
+      <div class="creds" id="pAprov"></div>
       <div id="pBook"></div>
       <div class="stats mt">
         <div class="stat glass flat"><small>Crachás ativos</small><b id="sA">0</b></div>
         <div class="stat glass flat"><small>Revogados</small><b id="sR">0</b></div>
-        <div class="stat glass flat"><small>Apps protegidos</small><b id="sP">0</b></div>
+        <div class="stat glass flat"><small>Apps aprovados</small><b id="sP">0</b></div>
         <div class="stat glass flat"><small>Conferências</small><b id="sV">0</b></div>
       </div>
       <div class="sec-h">Últimos atos <button class="link" id="pAll" style="margin:0;padding:0;font-size:13px">Ver livro completo</button></div>
@@ -114,18 +115,12 @@
       <h2>Serviço</h2>
       <div class="sec-h">Identidade do serviço</div>
       <div class="glass flat card">
-        <label class="f" style="margin-top:0"><span>Nome do serviço</span><input id="sName" autocomplete="off"></label>
-        <label class="f"><span>Apps que o serviço quer proteger, separados por vírgula</span><input id="sApps" autocomplete="off" placeholder="Ex.: Portaria, Aulas"></label>
-        <button class="btn ghost" id="sSave">Salvar</button>
+        <div class="kr" style="padding:0"><div class="h"><small>Nome do serviço</small></div><div class="v" id="sNome">Ainda sem nome: informe ao solicitar a aprovação de emissão</div></div>
         <p class="note" id="sLeg" hidden>Este serviço foi criado antes da separação por app: as mesmas 12 palavras geram o mesmo DID na Carteira. Para ter uma identidade só do serviço, faça backup do que precisar, apague o serviço e recupere com as mesmas 12 palavras.</p>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID do serviço</small><span><button class="mini sm" id="sDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="sDid"></div></div>
       </div>
       <div class="sec-h">Governança <button class="link" id="sGovRot" style="margin:0;padding:0;font-size:13px">Importar troca de chave</button></div>
       <div class="list glass flat"><button class="tx" id="sGov"><span class="dot" data-ic="gov"></span><span class="t"><b id="sGovN">Governança não informada</b><small class="mono" id="sGovD">Toque para informar o DID</small></span><span class="rv">Alterar</span></button></div>
-      <div class="sec-h">Credenciamento</div>
-      <div id="sCred"></div>
-      <div class="pair"><button class="btn ghost" id="sAsk">Pedir credenciamento</button><button class="btn ghost" id="sRecv">Receber credenciamento</button></div>
-      <button class="btn" id="sCard">Cartão do serviço</button>
       <div class="sec-h">Crachás emitidos <small id="sIssN"></small></div>
       <div class="list glass flat" id="sIssued"></div>
       <div id="commonSet"></div>
@@ -133,7 +128,7 @@
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vBadge" aria-current="false"><span data-ic="badge"></span>Crachás</button><button data-v="vGate" aria-current="false"><span data-ic="scan"></span>Portaria</button><button data-v="vSrv" aria-current="false"><span data-ic="sliders"></span>Serviço</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:5"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vBadge" aria-current="false"><span data-ic="badge"></span>Crachás</button><button class="add" id="dockAdd" aria-label="Ações do serviço" data-ic="plus"></button><button data-v="vGate" aria-current="false"><span data-ic="scan"></span>Portaria</button><button data-v="vSrv" aria-current="false"><span data-ic="sliders"></span>Serviço</button></nav>
 
 <!-- @inclui ../shared/folha.html -->
 <script>

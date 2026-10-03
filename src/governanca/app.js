@@ -81,7 +81,7 @@ $('#iqGo').onclick=async()=>{
   // Limpa a conferência anterior: o formulário só reaparece com o pedido novo.
   H.textContent='';H.classList.remove('bad');$('#iOut').hidden=true;$('#iForm').hidden=true;$('#iWho').innerHTML='';
   let r;try{r=await verifyJWT($('#iqT').value)}catch(e){return fail(e.message)}
-  if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira, a pessoa toca em Identidades e Solicitar aprovação.');
+  if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira: + › Solicitar aprovação de identidade. No Serviços: + › Solicitar aprovação de emissão.');
   if(!r.ok)return fail('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
   if(r.payload.exp&&r.payload.exp<now())return fail('Este pedido expirou. Peça um novo ao titular.');
   // Pedido endereçado a um DID: só o emissor com esse DID atende. "emissor" (sem DID) vale para qualquer um.
@@ -94,14 +94,30 @@ $('#iqGo').onclick=async()=>{
   // Pedido de crachá é para o app Serviços, não para a Governança.
   if(VC_TYPES[r.payload.wanted]&&VC_TYPES[r.payload.wanted].servicos)return fail('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
-  modoIdentidade($('#iType').value==='IdentityCredential');
+  modoCartao($('#iType').value);
   drawClaims();$('#iForm').hidden=false;
 };
 // Pedido de identidade: um cartão de aprovação, sem tipo nem campos para editar. A identidade leva só o nome.
-function modoIdentidade(sim){
-  $('#iTypeF').hidden=sim;$('#iClaims').hidden=sim;$('#iAdd').hidden=sim;$('#iIdent').hidden=!sim;$('#iRec').hidden=!sim;
-  $('#iGo').textContent=sim?'Aprovar identidade':'Emitir credencial';
-  if(!sim)return;
+// Pedido de serviço: cartão de aprovação de emissão, com os apps marcados (a STK pode desmarcar alguns).
+function modoCartao(type){
+  const ident=type==='IdentityCredential',srv=type==='ServiceAccreditationCredential',cartao=ident||srv;
+  $('#iTypeF').hidden=cartao;$('#iClaims').hidden=cartao;$('#iAdd').hidden=cartao;$('#iRec').hidden=!cartao;
+  $('#iIdent').hidden=!ident;$('#iSrv').hidden=!srv;
+  $('#iGo').textContent=ident?'Aprovar identidade':srv?'Aprovar emissão':'Emitir credencial';
+  if(ident)modoIdentidade();
+  if(srv)modoServico();
+}
+function modoServico(){
+  const p=pedido.payload,apps=[...new Set((Array.isArray(p.apps)?p.apps:[]).map(a=>String(a).trim()).filter(Boolean))];
+  const ativo=app=>st.issued.find(i=>i.sub===pedido.did&&i.type==='ServiceAccreditationCredential'&&issStatus(i)[0]==='ok'&&(i.claims.apps||[]).includes(app));
+  $('#iSrv').innerHTML=`<div class="list glass flat mt">
+    <div class="kr"><div class="h"><small>Serviço</small></div><div class="v" id="iSrvNome">${esc(p.name||'')}</div></div>
+    <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(pedido.did)}</div></div></div>
+    <div class="sec-h">Apps para aprovar</div>
+    <div class="list glass flat" id="iSrvApps">${apps.length?apps.map(a=>{const at=ativo(a);return `<button class="choice" data-app="${esc(a)}" aria-pressed="true"><span class="rd"></span><span class="t"><b>${esc(a)}</b>${at?`<small>Já aprovado${at.exp?' até '+fmtDate(at.exp*1000):', sem validade'}</small>`:''}</span></button>`}).join(''):'<div class="empty">O pedido não traz nenhum app.</div>'}</div>`;
+  $('#iSrvApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
+}
+function modoIdentidade(){
   const p=pedido.payload,ativa=st.issued.find(i=>i.sub===pedido.did&&i.type==='IdentityCredential'&&issStatus(i)[0]==='ok');
   $('#iIdent').innerHTML=`<div class="list glass flat mt">
     <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="iIdNome">${esc(p.name||'')}</div></div>
@@ -110,7 +126,8 @@ function modoIdentidade(sim){
     ${ativa?`<p class="note">Este DID já tem uma identidade aprovada${ativa.exp?' até '+fmtDate(ativa.exp*1000):''}. Aprovar de novo substitui a anterior.</p>`:''}`;
 }
 // Um ativo por DID: a nova Identidade ou o novo credenciamento revoga o anterior do mesmo titular.
-const UNICO={IdentityCredential:'Substituída por nova Identidade',ServiceAccreditationCredential:'Substituído por novo credenciamento'};
+// A aprovação de emissão não é única: um serviço pode ter várias ativas, cada uma com os apps dela.
+const UNICO={IdentityCredential:'Substituída por nova Identidade'};
 const soCampos=(claims,ok,quem)=>{const x=Object.keys(claims).find(k=>!ok.includes(k));if(x)throw new Error(`${quem} leva só ${ok.join(' e ')}. Tire o campo “${x}”.`)};
 async function issue(sub,type,claims,days,holderName,nonce,apelido){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
@@ -143,14 +160,20 @@ async function issue(sub,type,claims,days,holderName,nonce,apelido){
 }
 $('#iGo').onclick=async()=>{
   if(!pedido)return;
-  const type=$('#iType').value,ident=type==='IdentityCredential';
+  const type=$('#iType').value,ident=type==='IdentityCredential',srv=type==='ServiceAccreditationCredential';
   let claims={};
   if(ident)claims={nome:String(pedido.payload.name||'').trim()};
+  else if(srv){
+    const apps=[...$('#iSrvApps').querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.app);
+    if(!apps.length){toast('Escolha ao menos um app',true);return}
+    claims={servico:String(pedido.payload.name||'').trim(),apps};
+  }
   else $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
   if(!Object.values(claims).some(Boolean)){toast(ident?'O pedido não traz o nome da pessoa':'Preencha ao menos um campo com valor',true);return}
   try{$('#iJwt').value=embrulhar(await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce,ident?pedido.payload.apelido:''))}catch(e){toast(e.message,true);return}
   const quem=`${esc(pedido.payload.name||shortDid(pedido.did))}${ident&&pedido.payload.apelido?' ('+esc(pedido.payload.apelido)+')':''}`;
   $('#iOk').innerHTML=ident?verdictHtml(true,'Identidade aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação à pessoa.`)
+    :srv?verdictHtml(true,'Emissão aprovada',`Credencial emitida para ${quem}: ${esc(claims.apps.join(', '))}, registrada no livro. Entregue a aprovação ao serviço.`)
     :verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${quem}, registrada no livro.`);
   $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
 };
@@ -158,14 +181,14 @@ $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
 // Recusa: fica só no livro, com o motivo (a carteira continua aguardando). O pedido recusado não volta.
 $('#iRec').onclick=async()=>{
   if(!pedido)return;
-  const p=pedido.payload,did=pedido.did;
-  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise a pessoa por fora; ela pode enviar um pedido novo.</p>
-    <label class="f"><span>Motivo</span><select id="rcM"><option>Pessoa não identificada</option><option>Dados não conferem</option><option>Pedido duplicado</option><option>Outro</option></select></label>
+  const p=pedido.payload,did=pedido.did,srv=$('#iType').value==='ServiceAccreditationCredential';
+  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise ${srv?'o serviço':'a pessoa'} por fora; ${srv?'ele':'ela'} pode enviar um pedido novo.</p>
+    <label class="f"><span>Motivo</span><select id="rcM">${(srv?['Serviço não identificado','Apps não autorizados','Pedido duplicado','Outro']:['Pessoa não identificada','Dados não conferem','Pedido duplicado','Outro']).map(m=>`<option>${m}</option>`).join('')}</select></label>
     <button class="btn danger" id="rcGo">Recusar</button>`);
   $('#rcGo').onclick=async()=>{
     const motivo=$('#rcM').value;
     st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:did,nome:p.name||'',apelido:p.apelido||'',motivo,at:Date.now()}];
-    await ato('recusa',`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
+    await ato('recusa',srv?`Aprovação de emissão de ${p.name||shortDid(did)} recusada: ${motivo}`:`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
     closeSheet();pedido=null;$('#iForm').hidden=true;$('#iWho').innerHTML='';$('#iqT').value='';
     $('#iqH').textContent=`Pedido recusado: ${motivo}. Registrado no livro.`;$('#iqH').classList.remove('bad');toast('Pedido recusado');
   };

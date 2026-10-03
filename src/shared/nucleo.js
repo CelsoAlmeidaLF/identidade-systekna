@@ -254,8 +254,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
-  // A Governança autoriza um serviço a emitir crachás para os apps listados.
-  ServiceAccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']]},
+  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás para os apps listados.
+  // Um serviço pode ter várias ativas ao mesmo tempo, cada uma com os apps dela.
+  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico',''],['apps','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
   // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
   BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}

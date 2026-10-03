@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-pZnGF18oAr9jdiwPtH+mDAkwYdvegjqfs8VIwfajYdE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-ajBmYFznFuyIkGP7L/Izlm3shZdsjDPLr7NYVvLwRxE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -302,6 +302,9 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 .g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
+.g-ServiceAccreditationCredential{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
+.cred .apps{font-size:13px;opacity:.95;margin-top:-6px}
+.creds .pend{border:1px dashed var(--line)}
 /* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
 .cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .cred.p-profissional{--cg:linear-gradient(150deg,#A98BF0 0%,#6A45D1 45%,#33206F 100%)}
@@ -369,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.18.3</p>
+<p class="ver boot" aria-hidden="true">Versão 0.19.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -381,7 +384,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.18.3</p>
+    <p class="ver">Versão 0.19.0</p>
   </div>
 </section>
 
@@ -429,7 +432,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.18.3</p>
+    <p class="ver">Versão 0.19.0</p>
   </div>
 </section>
 
@@ -551,7 +554,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.18.3';
+const APP_VERSION='0.19.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -748,8 +751,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
-  // A Governança autoriza um serviço a emitir crachás para os apps listados.
-  ServiceAccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']]},
+  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás para os apps listados.
+  // Um serviço pode ter várias ativas ao mesmo tempo, cada uma com os apps dela.
+  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico',''],['apps','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
   // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
   BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}
