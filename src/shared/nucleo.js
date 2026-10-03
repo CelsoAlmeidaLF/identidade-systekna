@@ -307,10 +307,11 @@ function tipoPacote(header,payload){
 const embrulhar=tok=>{const{header,payload}=decodeJWT(tok);return `SYSTEKNA:${tipoPacote(header,payload)}:${tok}`};
 
 /* ================= JWT EdDSA ================= */
-async function signJWT(typ,payload){
-  const header={alg:'EdDSA',typ,kid:`${ses.did}#${ses.edMb}`};
+// quem: a identidade que assina. Padrão: a da sessão. A Carteira passa a identidade escolhida (Pessoal, Profissional…).
+async function signJWT(typ,payload,quem=ses){
+  const header={alg:'EdDSA',typ,kid:`${quem.did}#${quem.edMb}`};
   const si=b64u.enc(te.encode(JSON.stringify(header)))+'.'+b64u.enc(te.encode(JSON.stringify(payload)));
-  return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(si)));
+  return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},quem.edPriv,te.encode(si)));
 }
 function decodeJWT(texto){
   const t=String(texto).trim(),env=t.match(/^SYSTEKNA:([A-Z-]*):([\s\S]*)$/);

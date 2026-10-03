@@ -193,11 +193,11 @@ test.describe('credenciamento de serviços', () => {
     await expect(toast(gov)).toHaveText('A Governança não credencia a si mesma.');
   });
 
-  test('a carteira não oferece Credenciamento no pedido', async () => {
+  test('a carteira só pede aprovação de identidade', async () => {
     await carteira.click('#dockAdd');
     await carteira.click('#sheetBody [data-act="ask"]');
-    const tipos = await carteira.locator('#aqT option').evaluateAll(os => os.map(o => o.getAttribute('value')));
-    expect(tipos).toEqual(['IdentityCredential', 'CustomCredential']);
+    await expect(carteira.locator('#aqT')).toHaveCount(0);
+    await expect(carteira.locator('#aqI option')).toHaveText(['Pessoal']);
     await fecharSheet(carteira);
   });
 });
