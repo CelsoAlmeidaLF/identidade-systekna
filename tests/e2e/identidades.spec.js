@@ -128,6 +128,19 @@ test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa',
   await expect(card.locator('.main')).toHaveText('Maria S. Consultora');
   await expect(card.locator('.r3 .emissor')).toHaveText('Governança Systekna');
   await expect(card.locator('.r3 .pill')).toContainText('Até ');
+  // DID no cartão, com o botão de copiar (que não abre a credencial).
+  await expect(card.locator('.did .mono')).toHaveText(await carteira.evaluate(d => shortDid(d), p.sub));
+  await expect(card.locator('.did .mono')).toHaveAttribute('title', p.sub);
+  await card.locator('.did .cp').click();
+  await expect(toast(carteira)).toHaveText('DID copiado');
+  await expect(carteira.locator('#sheet')).not.toHaveClass(/open/);
+  // Uma cor por perfil.
+  await expect(card).toHaveClass(/p-profissional/);
+  const cores = await carteira.evaluate(() => ['identidade', 'profissional', 'personalizada'].map(p => {
+    const el = document.createElement('div'); el.className = `cred p-${p}`; document.body.appendChild(el);
+    const bg = getComputedStyle(el).backgroundImage; el.remove(); return bg;
+  }));
+  expect(new Set(cores).size).toBe(3);
 
   await abrirSolicitar();
   await expect(carteira.locator('#aqL [data-n="2"]')).toContainText('aprovada');

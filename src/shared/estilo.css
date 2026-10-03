@@ -282,6 +282,15 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
+.g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
+/* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
+.cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
+.cred.p-profissional{--cg:linear-gradient(150deg,#A98BF0 0%,#6A45D1 45%,#33206F 100%)}
+.cred.p-personalizada{--cg:linear-gradient(150deg,#F6C46B 0%,#D9831C 45%,#7A3E06 100%)}
+.cred .did{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:-6px}
+.cred .did .mono{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.95}
+.cred .did .cp{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);cursor:pointer}
+.cred .did .cp svg.i{width:15px;height:15px}
 
 /* passos (sequência real) */
 .steps{list-style:none;counter-reset:s;margin:0;padding:6px 0}
