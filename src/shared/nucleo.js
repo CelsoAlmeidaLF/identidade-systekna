@@ -111,11 +111,8 @@ async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
   return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:typeof info==='string'?te.encode(info):info},k,len));
 }
 const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
-// path vazio mantém os rótulos originais (as identidades que já existem não mudam). Um emissor de serviço
-// derivado das mesmas 12 palavras usa outro caminho e ganha DID e cofre próprios.
-async function deriveIdentity(seed,path=''){
-  const p=path?path+'/':'';
-  const edSeed=await hkdf(seed,p+'ssi/ed25519'),xSeed=await hkdf(seed,p+'ssi/x25519'),vBits=await hkdf(seed,p+'vault/aes-256-gcm');
+async function deriveIdentity(seed){
+  const edSeed=await hkdf(seed,'ssi/ed25519'),xSeed=await hkdf(seed,'ssi/x25519'),vBits=await hkdf(seed,'vault/aes-256-gcm');
   const pubOf=async(der,alg,use)=>b64u.dec((await S.exportKey('jwk',await S.importKey('pkcs8',der,{name:alg},true,use))).x);
   const edDer=cat(PK8.ed,edSeed),xDer=cat(PK8.x,xSeed);
   const edPub=await pubOf(edDer,'Ed25519',['sign']),xPub=await pubOf(xDer,'X25519',['deriveBits']);
@@ -250,34 +247,10 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 
 /* ================= credenciais: vocabulário comum ================= */
 const VC_TYPES={
-  // Identidade (DID:KEY): quem é o usuário. Aprovada pela STK; leva só o nome.
-  IdentityCredential:{label:'Identidade',chave:'DID:KEY',claims:[['nome','']]},
-  // Crachá (CV:KEY): o que o usuário acessa e em qual sistema. Aprovado pelo serviço (SRV), um por app.
-  BadgeCredential:{label:'Crachá',chave:'CV:KEY',claims:[['app','']]},
-  // Credenciamento: a STK autoriza um serviço a aprovar crachás para os apps listados. É de emissor para emissor.
-  AccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']],paraEmissor:true},
-  // Tipos antigos: só para mostrar credenciais já guardadas; não se pedem nem se emitem mais.
-  AccessCredential:{label:'Acesso',claims:[['app',''],['papel','leitor']],legado:true},
-  CustomCredential:{label:'Personalizado',claims:[['campo','']],legado:true}
+  // kycValidado: o emissor diz se conferiu os documentos (KYC). Só o sim ou não; os dados nunca entram (RN58, RN59).
+  IdentityCredential:{label:'Identidade',claims:[['nome',''],['kycValidado','false']]},
+  CustomCredential:{label:'Personalizada',claims:[['campo','']]}
 };
-// Tipos que uma carteira pede e apresenta (o credenciamento fica entre emissores).
-const holderTypes=()=>Object.entries(VC_TYPES).filter(([,v])=>!v.paraEmissor&&!v.legado);
-/* ================= acesso (F10) ================= */
-// Papéis só do Acesso antigo (legado), para exibir o que já foi emitido. O Crachá não tem nível de acesso.
-// Lista fechada e em ordem: cada papel pode tudo o que o anterior pode.
-const PAPEIS={
-  leitor:{label:'Leitor',nivel:1,pode:['ver']},
-  operador:{label:'Operador',nivel:2,pode:['ver','criar','editar']},
-  admin:{label:'Admin',nivel:3,pode:['ver','criar','editar','apagar','gerenciar acessos']}
-};
-const PRAZO_MAX_DIAS=365;
-const papelLabel=p=>(PAPEIS[String(p||'').toLowerCase()]||{}).label||String(p||'sem papel');
-// Nome de app é comparado sem diferenciar acento, maiúscula nem espaços nas pontas.
-const normApp=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').trim().replace(/\s+/g,' ').toLowerCase();
-const capital=s=>{s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1)};
-const appsList=s=>String(s||'').split(',').map(x=>x.trim()).filter(Boolean);
-// O crachá serve ao desafio se for do mesmo app.
-const acessoServe=(c,app)=>!!c&&normApp(c.app)===normApp(app);
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
@@ -364,7 +337,7 @@ async function openMsg(pkg){
 let ses=null, draft=null, activePad=null;
 async function startSession(ent,lang){
   const words=await entropyToWords(ent,lang),seed=await wordsToSeed(words);
-  const id=await deriveIdentity(seed,APP.path||'');seed.fill(0);
+  const id=await deriveIdentity(seed);seed.fill(0);
   ses={...id,ent:new Uint8Array(ent),lang};
   const meta=await DB.get('meta');
   await DB.set('meta',{did:ses.did,lang,created:meta&&meta.did===ses.did?meta.created:Date.now()});

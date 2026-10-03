@@ -29,7 +29,6 @@
   <div class="wrap center">
     <div class="orb" data-ic="gov"></div>
     <h1>Emissor de Credenciais</h1>
-    <div class="slotbar" id="slotBarW" hidden></div>
     <p class="lead">Governança da identidade soberana: emite credenciais, verifica apresentações, revoga e mantém um livro encadeado e assinado.</p>
     <button class="btn" id="goCreate">Criar o emissor</button>
     <button class="btn ghost" id="goRecover">Recuperar com 12 palavras</button>
@@ -77,24 +76,23 @@
     </section>
 
     <section class="view" id="vIssue">
-      <h2>Aprovar</h2>
-      <p class="sub">Cole o pedido que veio da carteira. A raiz (STK) aprova Identidades (DID:KEY) e credencia serviços; o serviço aprova Crachás (CV:KEY) para os apps dele.</p>
+      <h2>Emitir</h2>
+      <p class="sub">O titular gera um pedido assinado na carteira dele. Conferido o pedido, o emissor assina a credencial para aquele DID.</p>
       <label class="f" id="iqF"><span>Pedido do titular</span><textarea class="mono" id="iqT" rows="5" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label>
       <p class="hint" id="iqH"></p>
       <button class="btn" id="iqGo">Conferir pedido</button>
       <div id="iForm" hidden>
         <div id="iWho"></div>
-        <label class="f" id="iTypeF"><span>O que aprovar</span><select id="iType"></select></label>
+        <label class="f"><span>Tipo de credencial</span><select id="iType"></select></label>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
-        <div id="iAcc" hidden></div>
         <label class="f" id="iDaysF"><span>Validade</span><select id="iDays"><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="1825">5 anos</option><option value="0">Sem validade</option></select></label>
-        <button class="btn" id="iGo">Aprovar</button>
+        <button class="btn" id="iGo">Emitir credencial</button>
       </div>
       <div id="iOut" hidden>
         <div id="iOk"></div>
-        <label class="f"><span>Aprovado: entregue ao titular (uma credencial por linha)</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
-        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova aprovação</button></div>
+        <label class="f"><span>Credencial emitida, entregue ao titular</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
+        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Nova emissão</button></div>
       </div>
     </section>
 
@@ -103,7 +101,6 @@
       <p class="sub">Funciona como uma portaria: o emissor gera um desafio novo, o titular responde pela carteira e o emissor confere tudo.</p>
       <div class="sec-h">Gerar desafio</div>
       <label class="f" style="margin-top:0"><span>Credencial exigida</span><select id="vType"></select></label>
-      <div id="vAcc" hidden><label class="f" id="vAppF"><span>App</span><input id="vApp" autocomplete="off" placeholder="Ex.: Portal de Clientes"></label></div>
       <label class="f"><span>Finalidade</span><input id="vPurpose" value="Acesso ao serviço" autocomplete="off"></label>
       <button class="btn" id="vGen">Gerar desafio</button>
       <div id="vChal" hidden><label class="f"><span>Desafio, válido por 10 minutos e uma única vez</span><textarea class="mono" id="vChalT" rows="4" readonly></textarea></label><button class="btn ghost" id="vChalC">Copiar desafio</button></div>
@@ -120,16 +117,11 @@
         <label class="f" style="margin-top:0"><span>Nome público, vai nas próximas credenciais</span><div class="inrow"><input id="gName" autocomplete="off"><button class="mini" id="gNameS">Salvar</button></div></label>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID do emissor</small><span><button class="mini sm" id="gDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="gDid"></div></div>
       </div>
-      <div class="sec-h">Emissores neste aparelho</div>
-      <div class="list glass flat" id="gSlots"></div>
       <div class="sec-h">Emissores confiáveis <button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></div>
       <div class="list glass flat" id="gTrust"></div>
-      <div class="sec-h">Credenciamento</div>
-      <p class="hint" style="margin-top:0" id="gRole"></p>
-      <div class="list glass flat" id="gCred"></div>
       <div class="sec-h">Política de verificação</div>
       <div class="list glass flat"><button class="tx" id="gPol"><span class="dot" data-ic="shield"></span><span class="t"><b>Status não verificável</b><small>Credencial de outro emissor, sem como conferir a revogação</small></span><span class="rv" id="gPolV"></span></button></div>
-      <div class="sec-h">Credenciais aprovadas <small id="gIssN"></small></div>
+      <div class="sec-h">Credenciais emitidas <small id="gIssN"></small></div>
       <div class="list glass flat" id="gIssued"></div>
       <div id="commonSet"></div>
     </section>
@@ -137,7 +129,7 @@
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Aprovar</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vPanel" aria-current="true"><span data-ic="home"></span>Painel</button><button data-v="vIssue" aria-current="false"><span data-ic="stamp"></span>Emitir</button><button data-v="vVerify" aria-current="false"><span data-ic="scan"></span>Verificar</button><button data-v="vGov" aria-current="false"><span data-ic="gov"></span>Governança</button></nav>
 
 <!-- @inclui ../shared/folha.html -->
 <script>
