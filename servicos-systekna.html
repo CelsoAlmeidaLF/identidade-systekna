@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-EUiZzG3B6a2KNSi25zHw8jIG9gg1HBPNJqe8xjpzeik='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-JtZ8KrJwTzu0u42vhTRDQJ/erUE3zCYS0aej0uS6nK8='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="servicos.webmanifest">
@@ -820,10 +820,11 @@ function tipoPacote(header,payload){
 const embrulhar=tok=>{const{header,payload}=decodeJWT(tok);return `SYSTEKNA:${tipoPacote(header,payload)}:${tok}`};
 
 /* ================= JWT EdDSA ================= */
-async function signJWT(typ,payload){
-  const header={alg:'EdDSA',typ,kid:`${ses.did}#${ses.edMb}`};
+// quem: a identidade que assina. Padrão: a da sessão. A Carteira passa a identidade escolhida (Pessoal, Profissional…).
+async function signJWT(typ,payload,quem=ses){
+  const header={alg:'EdDSA',typ,kid:`${quem.did}#${quem.edMb}`};
   const si=b64u.enc(te.encode(JSON.stringify(header)))+'.'+b64u.enc(te.encode(JSON.stringify(payload)));
-  return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(si)));
+  return si+'.'+b64u.enc(await S.sign({name:'Ed25519'},quem.edPriv,te.encode(si)));
 }
 function decodeJWT(texto){
   const t=String(texto).trim(),env=t.match(/^SYSTEKNA:([A-Z-]*):([\s\S]*)$/);
@@ -1289,7 +1290,7 @@ async function boot(){
 /* ================= livro e registro de emissões (Governança e Serviços) ================= */
 // Cada app que emite guarda um único estado cifrado (st) com o livro, as emissões e as chaves usadas.
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
-const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield',rotacao:'key'};
+const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield',rotacao:'key',recusa:'x'};
 async function ato(act,text,ref){
   const prev=st.book.length?st.book[st.book.length-1].hash:'0'.repeat(64);
   const e={n:st.book.length+1,at:Date.now(),act,text,ref:ref||null,prev};

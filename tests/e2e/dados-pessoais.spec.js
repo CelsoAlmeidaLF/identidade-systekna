@@ -23,6 +23,14 @@ async function pedir(nome) {
   return tok;
 }
 
+/** Pedido de credencial Personalizada: a carteira só pede identidade, então ele é assinado direto na página. */
+async function pedirPersonalizada(nome) {
+  return carteira.evaluate(async n => {
+    const iat = now();
+    return embrulhar(await signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: 'emissor', name: n, wanted: 'CustomCredential', note: '', nonce: b64u.enc(rnd(16)), iat, exp: iat + 3600 }));
+  }, nome);
+}
+
 async function conferirPedido(tok, tipo) {
   await aba(emissor, 'vIssue');
   if (await emissor.locator('#iOut').isVisible()) await emissor.click('#iNew');
@@ -89,36 +97,29 @@ test('piiProblem acha CPF válido no valor, mas não em hash, chave ou número q
   expect([r.invalido, r.hash, r.chave, r.telefone, r.numero]).toEqual([null, null, null, null, null]);
 });
 
-test('a credencial de identidade traz só o nome', async () => {
-  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
-  const chaves = emissor.locator('#iClaims [data-ck]');
-  await expect(chaves).toHaveCount(1);
-  await expect(chaves.nth(0)).toHaveValue('nome');
-  await expect(emissor.locator('#iClaims [data-cv]').nth(0)).toHaveValue('Maria Teste');
+test('o pedido de identidade abre o cartão de aprovação e a credencial traz só o nome', async () => {
+  await conferirPedido(await pedir('Maria Teste'));
+  await expect(emissor.locator('#iIdNome')).toHaveText('Maria Teste');
+  await expect(emissor.locator('#iIdApelido')).toHaveText('Pessoal');
+  await expect(emissor.locator('#iClaims')).toBeHidden();
+  await expect(emissor.locator('#iTypeF')).toBeHidden();
+  await expect(emissor.locator('#iGo')).toHaveText('Aprovar identidade');
   const p = await emitir();
   expect(p.vc.credentialSubject).toEqual({ id: p.sub, nome: 'Maria Teste' });
 });
 
 test('a Identidade recusa qualquer outro campo, inclusive kycValidado, e nome vazio', async () => {
   const antes = await contagem();
-  await conferirPedido(await pedir('Maria Teste'), 'IdentityCredential');
-  await emissor.click('#iAdd');
-  await emissor.locator('#iClaims [data-ck]').nth(1).fill('kycValidado');
-  await emissor.locator('#iClaims [data-cv]').nth(1).fill('true');
-  await emissor.click('#iGo');
-  await expect(toast(emissor)).toHaveText('A Identidade leva só nome. Tire o campo “kycValidado”.');
-  expect(await contagem()).toEqual(antes);
-
-  await emissor.locator('#iClaims [data-rm]').nth(1).click();
-  await emissor.locator('#iClaims [data-cv]').nth(0).fill('');
-  await emissor.click('#iGo');
-  await expect(toast(emissor)).toHaveText('Preencha ao menos um campo com valor');
+  const did = await carteira.evaluate(() => ses.did);
+  const erro = claims => emissor.evaluate(([d, c]) => issue(d, 'IdentityCredential', c, 365, 'Maria', `n-${Math.random()}`).then(() => null, e => e.message), [did, claims]);
+  expect(await erro({ nome: 'Maria', kycValidado: true })).toBe('A Identidade leva só nome. Tire o campo “kycValidado”.');
+  expect(await erro({ nome: '  ' })).toBe('A Identidade precisa do nome do titular.');
   expect(await contagem()).toEqual(antes);
 });
 
 test('emissão com campo cpf é recusada e nada vai para o livro', async () => {
   const antes = await contagem();
-  await conferirPedido(await pedir('Maria Teste'), 'CustomCredential');
+  await conferirPedido(await pedirPersonalizada('Maria Teste'));
   await emissor.fill('#iClaims [data-ck]', 'cpf');
   await emissor.fill('#iClaims [data-cv]', CPF_VALIDO);
   await emissor.click('#iGo');
@@ -145,7 +146,7 @@ test('CPF escondido no valor de um campo comum também é recusado', async () =>
 
 test('nome do titular com CPF no pedido é recusado', async () => {
   const antes = await contagem();
-  await conferirPedido(await pedir(`Maria ${CPF_VALIDO}`), 'CustomCredential');
+  await conferirPedido(await pedirPersonalizada(`Maria ${CPF_VALIDO}`));
   await emissor.fill('#iClaims [data-cv]', 'x');
   await emissor.click('#iGo');
   await expect(toast(emissor)).toHaveText('O campo “titular” parece conter um CPF, que não entra em credencial.');
