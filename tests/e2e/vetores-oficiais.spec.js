@@ -18,7 +18,7 @@ const DID_ESPERADO = 'did:key:z6MkuKwMejuU5tavPVP5ZVWg9W1z28SY62DNXp3aBzyMsLXr';
 
 const PKCS8 = { ed: '302e020100300506032b657004220420', x: '302e020100300506032b656e04220420' };
 
-for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html']) {
+for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html', 'servicos-systekna.html']) {
   test.describe(arquivo, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(arquivo);

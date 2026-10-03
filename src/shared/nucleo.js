@@ -252,8 +252,13 @@ const VC_TYPES={
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
   // A Governança autoriza um serviço a emitir crachás para os apps listados.
   ServiceAccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']]},
-  CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true}
+  CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
+  // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
+  BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}
 };
+// Âncora de confiança (DP-08): o DID publicado da Governança Systekna vem pré-carregado nos apps.
+// Vazio até a Governança de produção ser criada; enquanto isso, cada app informa o DID nos ajustes.
+const GOVERNANCA_PADRAO={name:'Governança Systekna',did:''};
 /* ================= dados pessoais (RN59) ================= */
 // Credencial, livro e log nunca levam CPF, RG, foto e afins. O nome do campo é lido palavra por palavra (cpfTitular, numero_rg, nomeDaMae).
 const PII_WORDS=['cpf','rg','cnh','passaporte','pis','nis','sus','foto','selfie','biometria','nascimento','endereco','filiacao','mae','pai'];
@@ -284,10 +289,11 @@ const VC_CONTEXT=['https://www.w3.org/2018/credentials/v1'];
 // Todo pacote copiado sai como SYSTEKNA:<TIPO>:<JWT>. O tipo diz que tela abre o pacote; o typ do JWT
 // continua sendo conferido. Um JWT sem envelope ainda é aceito na entrada, para pacotes de versões anteriores.
 function tipoPacote(header,payload){
-  const qual=(t,a,b,c)=>t==='IdentityCredential'?a:t==='ServiceAccreditationCredential'?b:c;
+  const qual=(t,a,b,c,d)=>t==='IdentityCredential'?a:t==='ServiceAccreditationCredential'?b:t==='BadgeCredential'?c:d;
   switch(header.typ){
-    case 'pedido+jwt':return qual(payload.wanted,'PEDIDO-APROVACAO','PEDIDO-CREDENCIAMENTO','PEDIDO-CREDENCIAL');
-    case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CREDENCIAL');
+    case 'pedido+jwt':return qual(payload.wanted,'PEDIDO-APROVACAO','PEDIDO-CREDENCIAMENTO','PEDIDO-CRACHA','PEDIDO-CREDENCIAL');
+    case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CRACHA','CREDENCIAL');
+    case 'cartao+jwt':return 'CARTAO-SERVICO';
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
     case 'rotacao+jwt':return 'ROTACAO';

@@ -1,5 +1,5 @@
-// Gera os ícones PNG dos dois apps (PWA) a partir de SVG, usando o Chrome do sistema.
-// Uso: node scripts/gerar-icones.js
+// Gera os ícones PNG dos apps (PWA) a partir de SVG, usando o Chrome do sistema.
+// Uso: node scripts/gerar-icones.js [app ...]   (sem argumento, gera todos)
 const { chromium } = require('@playwright/test');
 const fs = require('fs');
 const path = require('path');
@@ -7,12 +7,15 @@ const path = require('path');
 // Mesmos traços dos ícones das páginas (24×24, traço branco).
 const GLIFOS = {
   carteira: '<path d="M12 3l7 3v5c0 4.5-3 8.3-7 10-4-1.7-7-5.5-7-10V6z"/><path d="M9 12l2 2 4-4"/>',
+  servicos: '<path d="M12 3l2.4 1.8 3-.2.9 2.9 2.4 1.8-1 2.8 1 2.8-2.4 1.8-.9 2.9-3-.2L12 21l-2.4-1.8-3 .2-.9-2.9-2.4-1.8 1-2.8-1-2.8 2.4-1.8.9-2.9 3 .2z"/><path d="M8.5 12l2.5 2.5 4.5-5"/>',
   emissor: '<path d="M3.85 8.62a4 4 0 0 1 4.78-4.77 4 4 0 0 1 6.74 0 4 4 0 0 1 4.78 4.78 4 4 0 0 1 0 6.74 4 4 0 0 1-4.77 4.78 4 4 0 0 1-6.75 0 4 4 0 0 1-4.78-4.77 4 4 0 0 1 0-6.76Z"/><path d="M9 12l2 2 4-4"/>',
 };
 // Gradiente "gloss" do design Aero; o emissor usa um tom mais escuro para diferenciar na tela inicial.
 const CORES = {
   carteira: ['#7CCBF8', '#3BA0EA', '#1A7AD4', '#2B8DE2'],
   emissor: ['#5E9FE0', '#1F6FC0', '#0E4F96', '#1A62AE'],
+  // Verde: a cor do crachá.
+  servicos: ['#7EDCA0', '#34A863', '#1E8048', '#2A9457'],
 };
 
 function svg(app, { arredondado, escala }) {
@@ -42,7 +45,8 @@ const SAIDAS = [
   fs.mkdirSync(dir, { recursive: true });
   const browser = await chromium.launch({ channel: 'chrome' });
   const page = await browser.newPage();
-  for (const app of Object.keys(GLIFOS)) {
+  const pedidos = process.argv.slice(2);
+  for (const app of pedidos.length ? pedidos : Object.keys(GLIFOS)) {
     fs.writeFileSync(path.join(dir, `${app}.svg`), svg(app, { arredondado: true, escala: 12 }));
     for (const s of SAIDAS) {
       await page.setViewportSize({ width: s.tam, height: s.tam });
