@@ -302,8 +302,15 @@ function tipoPacote(header,payload){
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
     case 'rotacao+jwt':return 'ROTACAO';
+    case 'recusa+jwt':return 'RECUSA';
   }
   return null;
+}
+// cv:key: o identificador do crachá, como a did:key é o da identidade. É o número único do crachá (jti, um UUID),
+// em base58btc. O Serviço usa o mesmo número para revogar e a portaria para conferir.
+function cvKey(jti){
+  const h=String(jti||'').replace(/^urn:uuid:/,'').replace(/-/g,'');
+  return /^[0-9a-f]{32}$/i.test(h)?'cv:key:z'+b58enc(hexB(h)):'cv:key:'+String(jti||'');
 }
 const embrulhar=tok=>{const{header,payload}=decodeJWT(tok);return `SYSTEKNA:${tipoPacote(header,payload)}:${tok}`};
 

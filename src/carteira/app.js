@@ -1,7 +1,7 @@
 /* ================= serviço ================= */
 // A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
 // completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
-const KEPT_TYPES=['cred','perfil'];
+const KEPT_TYPES=['cred','perfil','acesso'];
 // Cartões de pagamento não são guardados (RN10): são apagados ao abrir e ignorados ao restaurar backup.
 const REMOVED_TYPES=['cartao'];
 
@@ -113,21 +113,31 @@ function credMain(d){
 // Cartão: o tipo (na identidade, o perfil: Identidade, Profissional, Personalizada: Clube), o nome, o DID
 // com o botão de copiar e, por último, quem emitiu e a validade. Cada perfil tem a sua cor.
 function credCard(it,asDiv){
+  if(it.data.vtype==='BadgeCredential')return crachaCard(it,asDiv);
   const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button',did=subDe(d);
   const dono=d.vtype==='IdentityCredential'?idDoDid(did):null,tipo=dono?perfilTxt(dono):vcLabel(d.vtype);
   return `<${tag} class="cred g-${esc(d.vtype)}${dono?' p-'+esc(dono.perfil):''} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b class="tipo">${esc(tipo)}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="did"><span class="mono" title="${esc(did)}">${esc(shortDid(did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
-// O botão de copiar fica dentro do cartão: copia o DID sem abrir a credencial.
+// Cartão próprio do crachá: CRACHÁ: APP, a organização, a cv:key (com copiar), a identidade que o usa e a validade.
+function crachaCard(it,asDiv){
+  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button',p=decodeJWT(d.jwt).payload,cs=(p.vc&&p.vc.credentialSubject)||{};
+  const cv=cvKey(d.jti),dono=idDoDid(subDe(d));
+  return `<${tag} class="cred g-BadgeCredential cracha ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b class="tipo">CRACHÁ: APP ${esc(cs.app||'')}</b>${ic('badge')}</div><div class="main">${esc(cs.servico||d.issuerName)}</div><div class="did"><span class="mono cv" title="${esc(cv)}">${esc(cv)}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar cv:key" data-copydid="${esc(cv)}" data-copylabel="cv:key copiada">${ic('copy')}</span></div><div class="r3"><span class="quem">Identidade: ${esc(dono?perfilTxt(dono):shortDid(subDe(d)))}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+}
+// O botão de copiar fica dentro do cartão: copia a did:key (ou a cv:key) sem abrir a credencial.
 function copiarDidDoCartao(e){
   const c=e.target.closest('[data-copydid]');if(!c)return false;
   if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return false;
-  e.preventDefault();e.stopPropagation();copy(c.dataset.copydid,'DID copiado');return true;
+  e.preventDefault();e.stopPropagation();copy(c.dataset.copydid,c.dataset.copylabel||'DID copiado');return true;
 }
+// Pedidos de acesso em andamento ou recusados: um cartão pontilhado por pedido, acima das credenciais.
+const acessos=()=>ses.items.filter(i=>i.data.type==='acesso').sort((a,b)=>b.data.at-a.data.at);
+const acessoCard=it=>{const d=it.data,rec=d.status==='recusado';return `<div class="glass flat card pend acesso" data-acesso="${esc(d.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Acesso a ${esc(d.apps.join(', '))}</small><span class="pill ${rec?'no':'warn'}">${rec?'Recusado: '+esc(d.motivo||''):'Aguardando'}</span></div><div class="v">${esc(d.servico)}</div><div class="v sub" style="margin-top:4px">${esc(d.perfil)} · pedido em ${fmtDate(d.at)}</div></div></div>`};
 function renderCreds(){
   if(!ses)return;
-  const list=creds();
+  const list=creds(),peds=acessos();
   $('#cNote').hidden=!list.length;
-  $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
+  $('#cList').innerHTML=list.length||peds.length?`<div class="creds">${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
@@ -141,8 +151,10 @@ function actionMenu(){
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
     ${row('ask','send','Solicitar aprovação de identidade','Gera o pedido assinado para a Governança')}
     ${row('get','inbox','Receber aprovação de identidade','Cola a aprovação que a Governança emitiu')}
+    ${row('access','badge','Solicitar acesso a um app','Lê o Cartão do serviço e pede o crachá')}
+    ${row('badge','inbox','Receber crachá de acesso','Cola o crachá ou a recusa que o serviço emitiu')}
     ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}</div>`);
-  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present()})[b.dataset.act]()};
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,access:pedirAcesso,badge:receberCracha,show:()=>present()})[b.dataset.act]()};
 }
 
 // Solicitar aprovação de identidade à Governança (STK). Passo 1: escolher uma identidade ou criar uma nova
@@ -185,6 +197,82 @@ function askCred(){
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
+}
+
+/* ================= acesso a apps: pedir e receber crachá (CV:KEY) ================= */
+// Identidades com aprovação válida e a Governança que aprovou cada uma.
+const aprovadas=()=>identidades().map(x=>({x,c:aprovacaoDe(x.id.did)})).filter(o=>o.c&&credState(o.c.data)[0]!=='no');
+function pedirAcesso(){
+  openSheet(`<h3>Solicitar acesso a um app</h3><p class="sub">Cole o Cartão do serviço. A carteira confere que os apps foram aprovados pela mesma Governança que aprovou a sua identidade.</p>
+    <label class="f" id="paF"><span>Cartão do serviço</span><textarea class="mono" id="paC" rows="4" spellcheck="false" placeholder="SYSTEKNA:CARTAO-SERVICO:…"></textarea></label><p class="hint" id="paH"></p>
+    <button class="btn" id="paLer">Ler cartão</button><div id="paStep"></div>`);
+  $('#paLer').onclick=async()=>{
+    const H=$('#paH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#paF'));$('#paStep').innerHTML=''};
+    H.textContent='';H.classList.remove('bad');
+    const ok=aprovadas();
+    if(!ok.length)return fail('Você ainda não tem identidade aprovada. Use + › Solicitar aprovação de identidade.');
+    let r;try{r=await verifyJWT($('#paC').value,'cartao+jwt')}catch(e){return fail(e.message)}
+    if(!r.ok)return fail('A assinatura do cartão não confere: ele foi alterado.');
+    const c=r.payload,t0=now(),govs=new Set(ok.map(o=>o.c.data.issuerDid)),apps=new Set();
+    for(const tok of Array.isArray(c.aprovacoes)?c.aprovacoes:[]){
+      try{
+        const a=await verifyJWT(tok,'vc+jwt'),q=a.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
+        if(a.ok&&vcType(q)==='ServiceAccreditationCredential'&&q.sub===r.did&&govs.has(a.did)&&!(q.exp&&q.exp<=t0))(cs.apps||[]).forEach(x=>apps.add(String(x)));
+      }catch{}
+    }
+    if(!apps.size)return fail('Este serviço não tem apps aprovados pela mesma Governança da sua identidade.');
+    const lista=[...apps],ids=ok.filter(o=>govs.has(o.c.data.issuerDid));
+    $('#paStep').innerHTML=`${verdictHtml(true,esc(c.name||'Serviço'),`Apps aprovados pela Governança: ${esc(lista.join(', '))}.`)}
+      <div class="sec-h">Apps</div><div class="list glass flat" id="paApps">${lista.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="false"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('')}</div>
+      <label class="f"><span>Identidade que vai usar o crachá</span><select id="paI">${ids.map(o=>`<option value="${o.x.n}">${esc(credMain(o.c.data))} · ${esc(perfilTxt(o.x))}</option>`).join('')}</select></label>
+      <button class="btn" id="paGo">Assinar pedido</button>
+      <div id="paOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="paJ" rows="5" readonly></textarea></label><button class="btn ghost" id="paCp">Copiar pedido</button></div>`;
+    $('#paApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
+    $('#paGo').onclick=async()=>{
+      const escolhidos=[...$('#paApps').querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.app);
+      if(!escolhidos.length)return toast('Escolha ao menos um app',true);
+      const o=ids.find(i=>i.x.n===+$('#paI').value)||ids[0],quem=o.x.id,iat=now(),nonce=b64u.enc(rnd(16));
+      const tok=embrulhar(await signJWT('pedido+jwt',{iss:quem.did,sub:quem.did,aud:r.did,name:credMain(o.c.data),perfil:perfilTxt(o.x),wanted:'BadgeCredential',apps:escolhidos,identidade:o.c.data.jwt,servico:c.name||'',note:'',nonce,iat,exp:iat+7*86400},quem));
+      await saveItem({type:'acesso',nonce,servico:c.name||'Serviço',srvDid:r.did,apps:escolhidos,did:quem.did,perfil:perfilTxt(o.x),status:'aguardando',at:Date.now()});
+      $('#paJ').value=tok;$('#paOut').hidden=false;$('#paGo').hidden=true;
+      $('#paCp').onclick=()=>copy(tok,'Pedido copiado');toast('Pedido assinado');
+    };
+  };
+}
+// Receber crachá de acesso: aceita o crachá (vira um cartão verde) ou a recusa assinada pelo serviço.
+function receberCracha(){
+  openSheet(`<h3>Receber crachá de acesso</h3><p class="sub">Cole o crachá ou a recusa que o serviço enviou. A carteira confere a assinatura e o seu DID.</p>
+    <label class="f" id="rbF"><span>Crachá ou recusa</span><textarea class="mono" id="rbT" rows="6" spellcheck="false" placeholder="SYSTEKNA:CRACHA:…"></textarea></label><p class="hint" id="rbH"></p>
+    <button class="btn" id="rbGo">Conferir e guardar</button>`);
+  $('#rbGo').onclick=async()=>{
+    const H=$('#rbH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#rbF'))};
+    let r;try{r=await verifyJWT($('#rbT').value)}catch(e){return fail(e.message)}
+    const p=r.payload;
+    if(r.header.typ==='recusa+jwt'){
+      if(!r.ok)return fail('A assinatura da recusa não confere.');
+      if(!idDoDid(p.sub))return fail('Esta recusa é para outro DID.');
+      const it=acessos().find(i=>i.data.nonce===p.nonce&&i.data.srvDid===r.did);
+      if(!it)return fail('Não há pedido de acesso seu com este número.');
+      await saveItem({...it.data,status:'recusado',motivo:String(p.motivo||'Sem motivo')},it.rec.id);
+      closeSheet();setView('vCreds');toast('Recusa registrada');return;
+    }
+    if(r.header.typ!=='vc+jwt'||!p.vc||vcType(p)!=='BadgeCredential')return fail('Isto não é um crachá de acesso nem uma recusa.');
+    if(!r.ok)return fail('A assinatura não confere: o crachá foi alterado.');
+    if(!idDoDid(p.sub))return fail('Este crachá foi emitido para outro DID.');
+    const t0=now();
+    if(p.exp&&p.exp<=t0)return fail(`Este crachá venceu em ${fmtDate(p.exp*1000)}.`);
+    if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Este crachá só vale a partir de ${fmtDate(p.nbf*1000)}.`);
+    if(creds().some(c=>c.data.jti===p.jti))return fail('Este crachá já está na carteira.');
+    const ts=Date.now(),app=(p.vc.credentialSubject||{}).app;
+    await saveItem({type:'cred',title:'Crachá',vtype:'BadgeCredential',jwt:r.tok,jti:p.jti,sub:p.sub,issuerName:vcIssuerName(p),issuerDid:r.did,iat:p.iat,exp:p.exp||0,created:ts,updated:ts});
+    // O pedido atendido sai de "aguardando" quando todos os apps dele chegaram.
+    for(const it of acessos().filter(i=>i.data.srvDid===r.did&&i.data.did===p.sub&&i.data.status==='aguardando'&&i.data.apps.includes(app))){
+      const resto=it.data.apps.filter(a=>a!==app);
+      if(resto.length)await saveItem({...it.data,apps:resto},it.rec.id);
+      else{ses.items=ses.items.filter(i=>i.rec.id!==it.rec.id);await persistItems()}
+    }
+    closeSheet();setView('vCreds');toast('Crachá guardado');
+  };
 }
 
 function receiveCred(){

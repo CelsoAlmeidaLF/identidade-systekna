@@ -1,6 +1,6 @@
 {
   "name": "identidade-soberana-systekna",
-  "version": "0.19.1",
+  "version": "0.20.0",
   "private": true,
   "scripts": {
     "build": "node scripts/build.js",

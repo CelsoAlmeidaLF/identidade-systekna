@@ -26,7 +26,7 @@ const APP={
   onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
   onLock(){
     st=null;pedido=null;
-    ['#pCred','#pAprov','#pOrgN','#pOrgG','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
     ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
@@ -254,6 +254,7 @@ $('#cqGo').onclick=async()=>{
   if(p.exp&&p.exp<now())return fail('Este pedido expirou. Peça um novo à pessoa.');
   if(p.aud&&p.aud!=='emissor'&&p.aud!==ses.did)return fail('Este pedido foi feito para outro serviço.');
   if(st.issued.some(i=>i.nonce&&i.nonce===p.nonce))return fail('Este pedido já foi atendido. Peça um novo à pessoa.');
+  if((st.recusas||[]).some(x=>x.nonce===p.nonce))return fail('Este pedido já foi recusado. A pessoa pode enviar um pedido novo.');
   if(!credOk())return fail('O serviço está sem aprovação de emissão válida da Governança. Sem ela, não emite crachás.');
   if(!p.identidade)return fail('O pedido não traz a Identidade aprovada pela Governança.');
   let id;try{id=await verifyJWT(p.identidade,'vc+jwt')}catch(e){return fail(`A Identidade do pedido não é legível: ${e.message}`)}
@@ -270,7 +271,31 @@ $('#cqGo').onclick=async()=>{
   const pedidos=Array.isArray(p.apps)?p.apps.map(String):[],aprovados=credApps(),fora=pedidos.filter(a=>!aprovados.includes(a));
   $('#cWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(nome)} tem a Identidade aprovada pela ${esc(st.gov.name)} e controla ${esc(shortDid(r.did))}.${fora.length?' Sem aprovação de emissão: '+esc(fora.join(', '))+'.':''}`);
   $('#cApps').innerHTML=aprovados.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${!pedidos.length||pedidos.includes(a)}"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('');
+  // Cartão de análise: quem pede (nome e perfil da identidade aprovada) e o DID.
+  $('#cPessoa').innerHTML=`<div class="list glass flat mt">
+    <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="cNome">${esc(nome)}</div></div>
+    <div class="kr"><div class="h"><small>Identidade</small></div><div class="v" id="cPerfil">${esc(p.perfil||'Identidade')}</div></div>
+    <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(r.did)}</div></div></div>`;
   $('#cForm').hidden=false;
+};
+// Recusa: assinada pelo serviço e entregue ao cliente (a carteira mostra "Recusado: motivo"); fica também no livro.
+$('#cRec').onclick=()=>{
+  if(!pedido)return;
+  const pd=pedido,p=pd.r.payload;
+  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa vai assinada para a pessoa, com o motivo, e fica registrada no livro.</p>
+    <label class="f"><span>Motivo</span><select id="rxM"><option>Não é cliente</option><option>Dados não conferem</option><option>App não disponível</option><option>Outro</option></select></label>
+    <button class="btn danger" id="rxGo">Recusar</button>`);
+  $('#rxGo').onclick=async()=>{
+    const motivo=$('#rxM').value,iat=now();
+    const tok=embrulhar(await signJWT('recusa+jwt',{iss:ses.did,sub:pd.r.did,nonce:p.nonce,apps:Array.isArray(p.apps)?p.apps:[],motivo,servico:nomeServico(),iat}));
+    st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:pd.r.did,nome:pd.nome,motivo,at:Date.now()}];
+    await ato('recusa',`Acesso de ${pd.nome||shortDid(pd.r.did)} recusado: ${motivo}`,pd.r.did);await save();
+    closeSheet();pedido=null;$('#cForm').hidden=true;
+    $('#cOk').innerHTML=verdictHtml(false,'Pedido recusado',`${esc(motivo)}. Entregue a recusa à pessoa: ela aparece na carteira como recusada.`);
+    $('#cList').innerHTML=`<label class="f"><span>Recusa assinada</span><textarea class="mono" rows="4" readonly data-recusa>${tok}</textarea></label><button class="btn ghost" id="rxCp">Copiar recusa</button>`;
+    $('#rxCp').onclick=()=>copy(tok,'Recusa copiada');
+    $('#cOut').hidden=false;toast('Pedido recusado');
+  };
 };
 $('#cApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
 async function emitirCracha(sub,app,iat,exp,nome,nonce){

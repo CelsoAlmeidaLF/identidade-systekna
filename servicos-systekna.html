@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-QdRW/SDPUNi9MZKKBCgYswzwUjtelgEfZT00lsUcmcE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RJuyFiv3w7EQTuaImfa3DKKLlmFLQ/onAAvLsyHNBFQ='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="servicos.webmanifest">
@@ -304,6 +304,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
 .g-ServiceAccreditationCredential{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .cred .apps{font-size:13px;opacity:.95;margin-top:-6px}
+.cred.cracha .did .mono{font-weight:600}
 .creds .pend{border:1px dashed var(--line)}
 /* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
 .cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
@@ -372,7 +373,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.19.1</p>
+<p class="ver boot" aria-hidden="true">Versão 0.20.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -384,7 +385,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.19.1</p>
+    <p class="ver">Versão 0.20.0</p>
   </div>
 </section>
 
@@ -432,7 +433,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.19.1</p>
+    <p class="ver">Versão 0.20.0</p>
   </div>
 </section>
 
@@ -463,17 +464,19 @@ body[data-screen="sApp"] .dock{display:grid}
 
     <section class="view" id="vBadge">
       <h2>Crachás</h2>
-      <p class="sub">A pessoa gera o pedido de crachá na carteira, com a Identidade aprovada pela Governança junto. Conferido o pedido, o serviço emite um crachá para cada app.</p>
-      <label class="f" id="cqF"><span>Pedido de crachá</span><textarea class="mono" id="cqT" rows="5" spellcheck="false" placeholder="SYSTEKNA:PEDIDO-CRACHA:…"></textarea></label>
+      <p class="sub">A pessoa pede o acesso pela carteira, com a identidade aprovada pela Governança junto. Confira, marque os apps e aprove ou recuse.</p>
+      <label class="f" id="cqF"><span>Pedido de acesso</span><textarea class="mono" id="cqT" rows="5" spellcheck="false" placeholder="SYSTEKNA:PEDIDO-CRACHA:…"></textarea></label>
       <p class="hint" id="cqH"></p>
       <button class="btn" id="cqGo">Conferir pedido</button>
       <div id="cForm" hidden>
         <div id="cWho"></div>
+        <div id="cPessoa"></div>
         <div class="sec-h">Apps do crachá</div>
         <div class="list glass flat" id="cApps"></div>
         <label class="f"><span>Validade</span><select id="cDays"><option value="1">1 dia</option><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="0">Sem validade</option></select></label>
-        <p class="hint" id="cDaysH">Nunca passa da validade do credenciamento.</p>
-        <button class="btn" id="cGo">Emitir crachás</button>
+        <p class="hint" id="cDaysH">Nunca passa da validade da aprovação de emissão do app.</p>
+        <button class="btn" id="cGo">Aprovar acesso</button>
+        <button class="btn ghost" id="cRec" style="color:var(--out)">Recusar pedido</button>
       </div>
       <div id="cOut" hidden>
         <div id="cOk"></div>
@@ -578,7 +581,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.19.1';
+const APP_VERSION='0.20.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -823,8 +826,15 @@ function tipoPacote(header,payload){
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
     case 'rotacao+jwt':return 'ROTACAO';
+    case 'recusa+jwt':return 'RECUSA';
   }
   return null;
+}
+// cv:key: o identificador do crachá, como a did:key é o da identidade. É o número único do crachá (jti, um UUID),
+// em base58btc. O Serviço usa o mesmo número para revogar e a portaria para conferir.
+function cvKey(jti){
+  const h=String(jti||'').replace(/^urn:uuid:/,'').replace(/-/g,'');
+  return /^[0-9a-f]{32}$/i.test(h)?'cv:key:z'+b58enc(hexB(h)):'cv:key:'+String(jti||'');
 }
 const embrulhar=tok=>{const{header,payload}=decodeJWT(tok);return `SYSTEKNA:${tipoPacote(header,payload)}:${tok}`};
 
@@ -1384,7 +1394,7 @@ const APP={
   onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
   onLock(){
     st=null;pedido=null;
-    ['#pCred','#pAprov','#pOrgN','#pOrgG','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
     ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
@@ -1612,6 +1622,7 @@ $('#cqGo').onclick=async()=>{
   if(p.exp&&p.exp<now())return fail('Este pedido expirou. Peça um novo à pessoa.');
   if(p.aud&&p.aud!=='emissor'&&p.aud!==ses.did)return fail('Este pedido foi feito para outro serviço.');
   if(st.issued.some(i=>i.nonce&&i.nonce===p.nonce))return fail('Este pedido já foi atendido. Peça um novo à pessoa.');
+  if((st.recusas||[]).some(x=>x.nonce===p.nonce))return fail('Este pedido já foi recusado. A pessoa pode enviar um pedido novo.');
   if(!credOk())return fail('O serviço está sem aprovação de emissão válida da Governança. Sem ela, não emite crachás.');
   if(!p.identidade)return fail('O pedido não traz a Identidade aprovada pela Governança.');
   let id;try{id=await verifyJWT(p.identidade,'vc+jwt')}catch(e){return fail(`A Identidade do pedido não é legível: ${e.message}`)}
@@ -1628,7 +1639,31 @@ $('#cqGo').onclick=async()=>{
   const pedidos=Array.isArray(p.apps)?p.apps.map(String):[],aprovados=credApps(),fora=pedidos.filter(a=>!aprovados.includes(a));
   $('#cWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(nome)} tem a Identidade aprovada pela ${esc(st.gov.name)} e controla ${esc(shortDid(r.did))}.${fora.length?' Sem aprovação de emissão: '+esc(fora.join(', '))+'.':''}`);
   $('#cApps').innerHTML=aprovados.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${!pedidos.length||pedidos.includes(a)}"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('');
+  // Cartão de análise: quem pede (nome e perfil da identidade aprovada) e o DID.
+  $('#cPessoa').innerHTML=`<div class="list glass flat mt">
+    <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="cNome">${esc(nome)}</div></div>
+    <div class="kr"><div class="h"><small>Identidade</small></div><div class="v" id="cPerfil">${esc(p.perfil||'Identidade')}</div></div>
+    <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(r.did)}</div></div></div>`;
   $('#cForm').hidden=false;
+};
+// Recusa: assinada pelo serviço e entregue ao cliente (a carteira mostra "Recusado: motivo"); fica também no livro.
+$('#cRec').onclick=()=>{
+  if(!pedido)return;
+  const pd=pedido,p=pd.r.payload;
+  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa vai assinada para a pessoa, com o motivo, e fica registrada no livro.</p>
+    <label class="f"><span>Motivo</span><select id="rxM"><option>Não é cliente</option><option>Dados não conferem</option><option>App não disponível</option><option>Outro</option></select></label>
+    <button class="btn danger" id="rxGo">Recusar</button>`);
+  $('#rxGo').onclick=async()=>{
+    const motivo=$('#rxM').value,iat=now();
+    const tok=embrulhar(await signJWT('recusa+jwt',{iss:ses.did,sub:pd.r.did,nonce:p.nonce,apps:Array.isArray(p.apps)?p.apps:[],motivo,servico:nomeServico(),iat}));
+    st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:pd.r.did,nome:pd.nome,motivo,at:Date.now()}];
+    await ato('recusa',`Acesso de ${pd.nome||shortDid(pd.r.did)} recusado: ${motivo}`,pd.r.did);await save();
+    closeSheet();pedido=null;$('#cForm').hidden=true;
+    $('#cOk').innerHTML=verdictHtml(false,'Pedido recusado',`${esc(motivo)}. Entregue a recusa à pessoa: ela aparece na carteira como recusada.`);
+    $('#cList').innerHTML=`<label class="f"><span>Recusa assinada</span><textarea class="mono" rows="4" readonly data-recusa>${tok}</textarea></label><button class="btn ghost" id="rxCp">Copiar recusa</button>`;
+    $('#rxCp').onclick=()=>copy(tok,'Recusa copiada');
+    $('#cOut').hidden=false;toast('Pedido recusado');
+  };
 };
 $('#cApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
 async function emitirCracha(sub,app,iat,exp,nome,nonce){
