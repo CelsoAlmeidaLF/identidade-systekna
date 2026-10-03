@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Z8tch+sr8WcHyN3HvMWlKUd+mxgJwdZZX72BqUgNd4M='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-kN2w7aZoC/u9V4h/3O1ZTMMBFVdStiatTUiz+ptfsV4='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -360,7 +360,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.15.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.16.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -372,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.15.0</p>
+    <p class="ver">Versão 0.16.0</p>
   </div>
 </section>
 
@@ -420,7 +420,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.15.0</p>
+    <p class="ver">Versão 0.16.0</p>
   </div>
 </section>
 
@@ -487,6 +487,7 @@ body[data-screen="sApp"] .dock{display:grid}
       <div class="glass flat card">
         <label class="f" style="margin-top:0"><span>Nome público, vai nas próximas credenciais</span><div class="inrow"><input id="gName" autocomplete="off"><button class="mini" id="gNameS">Salvar</button></div></label>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID da Governança</small><span><button class="mini sm" id="gDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="gDid"></div></div>
+        <p class="note" id="gLeg" hidden>Esta Governança foi criada antes da separação por app: as mesmas 12 palavras geram o mesmo DID na Carteira. Use “Trocar a chave” para passar a uma identidade só da Governança.</p>
         <div class="pair" style="margin-top:12px"><button class="btn ghost" id="gRot">Trocar a chave</button><button class="btn ghost" id="gRotAv" hidden>Copiar aviso de troca</button></div>
       </div>
       <div class="sec-h">Emissores confiáveis <span><button class="link" id="gTrustRot" style="margin:0 12px 0 0;padding:0;font-size:13px">Importar troca de chave</button><button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></span></div>
@@ -567,7 +568,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.15.0';
+const APP_VERSION='0.16.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -621,8 +622,12 @@ async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
   return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:typeof info==='string'?te.encode(info):info},k,len));
 }
 const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
-async function deriveIdentity(seed){
-  const edSeed=await hkdf(seed,'ssi/ed25519'),xSeed=await hkdf(seed,'ssi/x25519'),vBits=await hkdf(seed,'vault/aes-256-gcm');
+// Separação de domínio: as mesmas 12 palavras geram uma identidade diferente em cada app. O rótulo do HKDF
+// leva o domínio do app (governanca/…, servicos/…). A Carteira usa domínio vazio, os rótulos originais, para
+// que nenhuma pessoa perca o DID que já tem.
+const rotulo=(dom,r)=>dom?`${dom}/${r}`:r;
+async function deriveIdentity(seed,dom=''){
+  const edSeed=await hkdf(seed,rotulo(dom,'ssi/ed25519')),xSeed=await hkdf(seed,rotulo(dom,'ssi/x25519')),vBits=await hkdf(seed,rotulo(dom,'vault/aes-256-gcm'));
   const pubOf=async(der,alg,use)=>b64u.dec((await S.exportKey('jwk',await S.importKey('pkcs8',der,{name:alg},true,use))).x);
   const edDer=cat(PK8.ed,edSeed),xDer=cat(PK8.x,xSeed);
   const edPub=await pubOf(edDer,'Ed25519',['sign']),xPub=await pubOf(xDer,'X25519',['deriveBits']);
@@ -875,12 +880,15 @@ async function openMsg(pkg){
 
 /* ================= sessão ================= */
 let ses=null, draft=null, activePad=null;
+// Domínio da identidade deste aparelho: o gravado no meta. Identidade criada antes da separação de domínio
+// (meta sem "dom") continua com os rótulos originais, para não perder o DID nem os dados cifrados.
+const dominioDe=meta=>meta&&meta.did?(meta.dom||''):(APP.dominio||'');
 async function startSession(ent,lang){
   const words=await entropyToWords(ent,lang),seed=await wordsToSeed(words);
-  const id=await deriveIdentity(seed);seed.fill(0);
-  ses={...id,ent:new Uint8Array(ent),lang};
-  const meta=await DB.get('meta');
-  await DB.set('meta',{did:ses.did,lang,created:meta&&meta.did===ses.did?meta.created:Date.now()});
+  const meta=await DB.get('meta'),dom=dominioDe(meta);
+  const id=await deriveIdentity(seed,dom);seed.fill(0);
+  ses={...id,ent:new Uint8Array(ent),lang,dom};
+  await DB.set('meta',{did:ses.did,lang,dom,created:meta&&meta.did===ses.did?meta.created:Date.now()});
   await APP.load();
   touch();
 }
@@ -1003,8 +1011,8 @@ $('#recGo').onclick=async()=>{
   }
   $('#recGo').disabled=true;
   try{
-    const seed=await wordsToSeed(words),id=await deriveIdentity(seed);seed.fill(0);
     const meta=await DB.get('meta');
+    const seed=await wordsToSeed(words),id=await deriveIdentity(seed,dominioDe(meta));seed.fill(0);
     if(meta&&meta.did!==id.did){
       const go=await confirmSheet('Outra identidade','Estas palavras pertencem a uma identidade diferente da que está neste aparelho. Os dados atuais não abrem com elas e serão apagados.','Substituir',true);
       if(!go)return;
@@ -1339,7 +1347,7 @@ async function avisoValido(texto){
 /* ================= serviço ================= */
 let st=null;
 const APP={
-  db:'systekna-cartorio',label:'Governança',dataKeys:['state'],createdMsg:'Governança criada',autoDefault:10,
+  db:'systekna-cartorio',dominio:'governanca',label:'Governança',dataKeys:['state'],createdMsg:'Governança criada',autoDefault:10,
   importHint:'Substitui o livro e os registros desta Governança',
   howHtml:`<p><b>Papel.</b> A Governança é a raiz de confiança: aprova identidades (DID:KEY), credencia os serviços que emitem crachás e também verifica credenciais. Ela tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
   <p><b>Identidade e credenciamento.</b> A Identidade leva só o nome do titular; cada DID tem uma Identidade ativa, e a nova substitui a anterior. O credenciamento diz qual serviço pode emitir crachás e para quais apps; cada serviço tem um credenciamento ativo.</p>
@@ -1532,7 +1540,7 @@ $('#vpGo').onclick=async()=>{
 /* ================= governança ================= */
 function renderGov(){
   if(!st)return;
-  $('#gName').value=st.name;$('#gDid').textContent=ses.did;$('#gRotAv').hidden=!(st.rotations||[]).length;
+  $('#gName').value=st.name;$('#gDid').textContent=ses.did;$('#gRotAv').hidden=!(st.rotations||[]).length;$('#gLeg').hidden=!!ses.dom;
   $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
   $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este emissor</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
@@ -1578,7 +1586,7 @@ $('#gRot').onclick=async()=>{
   };
 };
 async function trocarChave(pin){
-  const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed);seed.fill(0);
+  const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed,APP.dominio);seed.fill(0);
   const aceite=b64u.enc(await S.sign({name:'Ed25519'},novo.edPriv,te.encode(`${velho}>${novo.did}`)));
   const iat=now(),aviso=await signJWT('rotacao+jwt',{iss:velho,novo:novo.did,name:st.name,aceite,iat});
   if(!st.keys)st.keys=[{did:velho,from:1}];
@@ -1587,13 +1595,13 @@ async function trocarChave(pin){
   st.rotations=[...(st.rotations||[]),aviso];
   // Daqui em diante, tudo é assinado e cifrado com a identidade nova.
   ses.ent.fill(0);
-  ses={...novo,ent:new Uint8Array(rot.ent),lang:'pt'};
+  ses={...novo,ent:new Uint8Array(rot.ent),lang:'pt',dom:APP.dominio};
   rot.ent.fill(0);rot=null;
   await ato('rotacao','Nova chave em uso: este ato já é assinado por ela',velho);
   // O cadeado e o estado mudam juntos: a entropia nova com o PIN novo e o estado cifrado com a chave nova.
   await writeLock(ses.ent,pin);await DB.set('guard',{fails:0,until:0});
   await save();
-  await DB.set('meta',{did:ses.did,lang:'pt',created:Date.now()});
+  await DB.set('meta',{did:ses.did,lang:'pt',dom:APP.dominio,created:Date.now()});
   const bio=await DB.get('bioLock');if(bio){forgetPasskey(b64u.dec(bio.cred));await DB.del('bioLock')}
   sheetClose=null;closeSheet();
   $('#didShort').textContent=shortDid(ses.did);renderGov();refreshBio();

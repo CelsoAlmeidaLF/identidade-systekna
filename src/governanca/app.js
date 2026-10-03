@@ -1,7 +1,7 @@
 /* ================= serviço ================= */
 let st=null;
 const APP={
-  db:'systekna-cartorio',label:'Governança',dataKeys:['state'],createdMsg:'Governança criada',autoDefault:10,
+  db:'systekna-cartorio',dominio:'governanca',label:'Governança',dataKeys:['state'],createdMsg:'Governança criada',autoDefault:10,
   importHint:'Substitui o livro e os registros desta Governança',
   howHtml:`<p><b>Papel.</b> A Governança é a raiz de confiança: aprova identidades (DID:KEY), credencia os serviços que emitem crachás e também verifica credenciais. Ela tem a própria identidade soberana, criada com 12 palavras como qualquer titular, e assina com a chave Ed25519 dela.</p>
   <p><b>Identidade e credenciamento.</b> A Identidade leva só o nome do titular; cada DID tem uma Identidade ativa, e a nova substitui a anterior. O credenciamento diz qual serviço pode emitir crachás e para quais apps; cada serviço tem um credenciamento ativo.</p>
@@ -194,7 +194,7 @@ $('#vpGo').onclick=async()=>{
 /* ================= governança ================= */
 function renderGov(){
   if(!st)return;
-  $('#gName').value=st.name;$('#gDid').textContent=ses.did;$('#gRotAv').hidden=!(st.rotations||[]).length;
+  $('#gName').value=st.name;$('#gDid').textContent=ses.did;$('#gRotAv').hidden=!(st.rotations||[]).length;$('#gLeg').hidden=!!ses.dom;
   $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
   $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este emissor</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
@@ -240,7 +240,7 @@ $('#gRot').onclick=async()=>{
   };
 };
 async function trocarChave(pin){
-  const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed);seed.fill(0);
+  const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed,APP.dominio);seed.fill(0);
   const aceite=b64u.enc(await S.sign({name:'Ed25519'},novo.edPriv,te.encode(`${velho}>${novo.did}`)));
   const iat=now(),aviso=await signJWT('rotacao+jwt',{iss:velho,novo:novo.did,name:st.name,aceite,iat});
   if(!st.keys)st.keys=[{did:velho,from:1}];
@@ -249,13 +249,13 @@ async function trocarChave(pin){
   st.rotations=[...(st.rotations||[]),aviso];
   // Daqui em diante, tudo é assinado e cifrado com a identidade nova.
   ses.ent.fill(0);
-  ses={...novo,ent:new Uint8Array(rot.ent),lang:'pt'};
+  ses={...novo,ent:new Uint8Array(rot.ent),lang:'pt',dom:APP.dominio};
   rot.ent.fill(0);rot=null;
   await ato('rotacao','Nova chave em uso: este ato já é assinado por ela',velho);
   // O cadeado e o estado mudam juntos: a entropia nova com o PIN novo e o estado cifrado com a chave nova.
   await writeLock(ses.ent,pin);await DB.set('guard',{fails:0,until:0});
   await save();
-  await DB.set('meta',{did:ses.did,lang:'pt',created:Date.now()});
+  await DB.set('meta',{did:ses.did,lang:'pt',dom:APP.dominio,created:Date.now()});
   const bio=await DB.get('bioLock');if(bio){forgetPasskey(b64u.dec(bio.cred));await DB.del('bioLock')}
   sheetClose=null;closeSheet();
   $('#didShort').textContent=shortDid(ses.did);renderGov();refreshBio();

@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-y/6okgEMYabdMLCbWCvDet5JFQnilHNb48QQsUk2YHE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-6YkpvlTIsr2rp3F9fY9kQfZBOXPXLbQJ6u4Tizs2syg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -360,7 +360,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.15.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.16.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -372,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.15.0</p>
+    <p class="ver">Versão 0.16.0</p>
   </div>
 </section>
 
@@ -420,7 +420,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.15.0</p>
+    <p class="ver">Versão 0.16.0</p>
   </div>
 </section>
 
@@ -542,7 +542,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.15.0';
+const APP_VERSION='0.16.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -596,8 +596,12 @@ async function hkdf(ikm,info,salt=te.encode('systekna-cofre-v1'),len=256){
   return new Uint8Array(await S.deriveBits({name:'HKDF',hash:'SHA-256',salt,info:typeof info==='string'?te.encode(info):info},k,len));
 }
 const multibase=(prefix,raw)=>'z'+b58enc(cat(new Uint8Array(prefix),raw));
-async function deriveIdentity(seed){
-  const edSeed=await hkdf(seed,'ssi/ed25519'),xSeed=await hkdf(seed,'ssi/x25519'),vBits=await hkdf(seed,'vault/aes-256-gcm');
+// Separação de domínio: as mesmas 12 palavras geram uma identidade diferente em cada app. O rótulo do HKDF
+// leva o domínio do app (governanca/…, servicos/…). A Carteira usa domínio vazio, os rótulos originais, para
+// que nenhuma pessoa perca o DID que já tem.
+const rotulo=(dom,r)=>dom?`${dom}/${r}`:r;
+async function deriveIdentity(seed,dom=''){
+  const edSeed=await hkdf(seed,rotulo(dom,'ssi/ed25519')),xSeed=await hkdf(seed,rotulo(dom,'ssi/x25519')),vBits=await hkdf(seed,rotulo(dom,'vault/aes-256-gcm'));
   const pubOf=async(der,alg,use)=>b64u.dec((await S.exportKey('jwk',await S.importKey('pkcs8',der,{name:alg},true,use))).x);
   const edDer=cat(PK8.ed,edSeed),xDer=cat(PK8.x,xSeed);
   const edPub=await pubOf(edDer,'Ed25519',['sign']),xPub=await pubOf(xDer,'X25519',['deriveBits']);
@@ -850,12 +854,15 @@ async function openMsg(pkg){
 
 /* ================= sessão ================= */
 let ses=null, draft=null, activePad=null;
+// Domínio da identidade deste aparelho: o gravado no meta. Identidade criada antes da separação de domínio
+// (meta sem "dom") continua com os rótulos originais, para não perder o DID nem os dados cifrados.
+const dominioDe=meta=>meta&&meta.did?(meta.dom||''):(APP.dominio||'');
 async function startSession(ent,lang){
   const words=await entropyToWords(ent,lang),seed=await wordsToSeed(words);
-  const id=await deriveIdentity(seed);seed.fill(0);
-  ses={...id,ent:new Uint8Array(ent),lang};
-  const meta=await DB.get('meta');
-  await DB.set('meta',{did:ses.did,lang,created:meta&&meta.did===ses.did?meta.created:Date.now()});
+  const meta=await DB.get('meta'),dom=dominioDe(meta);
+  const id=await deriveIdentity(seed,dom);seed.fill(0);
+  ses={...id,ent:new Uint8Array(ent),lang,dom};
+  await DB.set('meta',{did:ses.did,lang,dom,created:meta&&meta.did===ses.did?meta.created:Date.now()});
   await APP.load();
   touch();
 }
@@ -978,8 +985,8 @@ $('#recGo').onclick=async()=>{
   }
   $('#recGo').disabled=true;
   try{
-    const seed=await wordsToSeed(words),id=await deriveIdentity(seed);seed.fill(0);
     const meta=await DB.get('meta');
+    const seed=await wordsToSeed(words),id=await deriveIdentity(seed,dominioDe(meta));seed.fill(0);
     if(meta&&meta.did!==id.did){
       const go=await confirmSheet('Outra identidade','Estas palavras pertencem a uma identidade diferente da que está neste aparelho. Os dados atuais não abrem com elas e serão apagados.','Substituir',true);
       if(!go)return;
@@ -1259,7 +1266,7 @@ const KEPT_TYPES=['cred'];
 const REMOVED_TYPES=['cartao'];
 
 const APP={
-  db:'systekna-carteira',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
+  db:'systekna-carteira',dominio:'',label:'Carteira',dataKeys:['items'],createdMsg:'Carteira criada',autoDefault:3,
   importHint:'Junta as credenciais do backup às que já estão aqui',
   howHtml:`<p><b>12 palavras.</b> São 128 bits de aleatoriedade no padrão BIP39. Delas saem, por HKDF, a chave Ed25519 que forma o seu DID e assina, a chave X25519 que recebe mensagens cifradas e a chave AES-256-GCM que cifra a carteira.</p>
   <p><b>Pedido.</b> Para receber uma credencial, a carteira assina um pedido com a sua chave. O emissor confere essa assinatura e só então sabe que quem pede controla o DID.</p>

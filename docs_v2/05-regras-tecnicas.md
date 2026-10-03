@@ -24,6 +24,7 @@
 | RT-09 | Usar **somente WebCrypto** (`crypto.subtle`) e `crypto.getRandomValues`. Nenhum algoritmo próprio além de codificações (base58, base64url, BIP39). |
 | RT-10 | Entropia de 16 bytes → 12 palavras BIP39. Semente: PBKDF2-SHA512, sal `"mnemonic"`, 2048 iterações, palavras normalizadas em NFKD, sem passphrase. |
 | RT-11 | Derivação: HKDF-SHA256, sal `systekna-cofre-v1`, `info` = `ssi/ed25519`, `ssi/x25519`, `vault/aes-256-gcm` (32 bytes cada). Mudar sal ou `info` **muda todas as identidades** e exige migração. |
+| RT-11a | **Separação de domínio por app** (03/10/2026): o `info` leva o domínio do app — `governanca/ssi/ed25519`, `servicos/ssi/ed25519` etc. —, então as mesmas 12 palavras geram um DID diferente em cada app. A Carteira usa domínio vazio (rótulos originais). O domínio fica gravado em `meta.dom`; identidade criada antes da separação (meta sem `dom`) continua com os rótulos originais, e a Governança e o Serviços mostram um aviso. |
 | RT-12 | Chaves privadas importadas por PKCS#8 a partir da semente derivada, como **não extraíveis**. |
 | RT-13 | DID = `did:key:z` + base58btc(`0xed 0x01` + pública Ed25519). Chave X25519 publicada como `z` + base58btc(`0xec 0x01` + pública), começando por `z6LS`. |
 | RT-14 | AES-256-GCM com IV aleatório de 12 bytes por cifragem; registro `{iv, ct}` em base64url. AAD obrigatório por contexto: `device`, `pin`, `bio`, `backup`, `state` (emissor), `id` do item (carteira). |

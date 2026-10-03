@@ -136,6 +136,8 @@ test('a troca pede o PIN, 12 palavras novas conferidas e um PIN novo', async () 
   await expect(gov.locator('#gDid')).toHaveText(didNovo);
   await expect(gov.locator('#gRotAv')).toBeVisible();
   expect(await gov.evaluate(() => st.keys.map(k => k.did))).toEqual([didAntigo, didNovo]);
+  // A chave nova nasce no domínio da Governança.
+  expect(await gov.evaluate(async () => (await DB.get('meta')).dom)).toBe('governanca');
   expect(await gov.evaluate(() => st.book.slice(-2).map(e => e.act))).toEqual(['rotacao', 'rotacao']);
 });
 
