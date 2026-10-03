@@ -1,7 +1,7 @@
 # Documentação v2 — Identidade Soberana Systekna
 
 > **Versão da documentação:** v2 · 03/10/2026 · Autor: Celso de Almeida Leite Filho (Systekna)
-> **Código de referência:** branch `main`, versão **0.18.2**, publicada no GitHub Pages: Carteira, Governança Systekna e Serviços Systekna (a 0.13.0 é o commit `c979c1c`).
+> **Código de referência:** branch `main`, versão **0.18.3**, publicada no GitHub Pages: Carteira, Governança Systekna e Serviços Systekna (a 0.13.0 é o commit `c979c1c`).
 > **Substitui:** `docs/` (v0, base 0.6) e `docs_v1/` (v1, alvo de 3 apps). As duas pastas ficam como histórico.
 
 ## Como esta versão está organizada

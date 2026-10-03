@@ -55,6 +55,20 @@ test('o menu + tem as três ações, e a aba Identidade não gerencia identidade
   await expect(carteira.locator('#vId h2')).toHaveText('Identidade');
 });
 
+test('o rodapé tem 5 botões, com o + no centro e Apresentar', async () => {
+  const botoes = carteira.locator('.dock > button');
+  await expect(botoes).toHaveCount(5);
+  await expect(botoes.nth(2)).toHaveId('dockAdd');
+  await expect(botoes).toHaveText(['Credenciais', 'Identidade', '', 'Apresentar', 'Ajustes']);
+  // O + fica no centro da barra.
+  const [barra, mais] = await Promise.all([carteira.locator('.dock').boundingBox(), carteira.locator('#dockAdd').boundingBox()]);
+  expect(Math.abs((mais.x + mais.width / 2) - (barra.x + barra.width / 2))).toBeLessThan(2);
+  await carteira.click('#dockShow');
+  await expect(carteira.locator('#sheetBody h3')).toHaveText('Apresentar credencial');
+  await expect(carteira.locator('#apT')).toBeVisible();
+  await fecharSheet(carteira);
+});
+
 test('a identidade nº 0 é a de sempre e já aparece para solicitar', async () => {
   await abrirSolicitar();
   await expect(carteira.locator('#aqL [data-n="0"]')).toHaveAttribute('aria-pressed', 'true');
