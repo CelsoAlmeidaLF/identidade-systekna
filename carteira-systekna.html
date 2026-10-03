@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-lJxYNdXGeYcRirlWDvYe7gvX8xNUKWRB1Hek+r3bKeg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-aowM9Cqq7NdBjTz1lvHo+cH1iKOpg//yQgT2iVPfhhY='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -360,7 +360,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.17.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.18.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -372,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.17.0</p>
+    <p class="ver">Versão 0.18.0</p>
   </div>
 </section>
 
@@ -420,7 +420,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.17.0</p>
+    <p class="ver">Versão 0.18.0</p>
   </div>
 </section>
 
@@ -440,12 +440,9 @@ body[data-screen="sApp"] .dock{display:grid}
     </section>
 
     <section class="view" id="vId">
-      <h2>Identidades</h2>
-      <p class="sub">As mesmas 12 palavras guardam até 3 identidades, cada uma com DID próprio e aprovação própria da Governança.</p>
-      <div id="idList"></div>
-      <div class="sec-h">Identidade Pessoal: chaves</div>
+      <h2>Identidade</h2>
       <div class="idcard">
-        <div class="r1"><span>Identidade soberana · Pessoal</span><span data-ic="shield"></span></div>
+        <div class="r1"><span>Identidade soberana</span><span data-ic="shield"></span></div>
         <div class="did" id="idDid"></div>
         <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
       </div>
@@ -479,7 +476,7 @@ body[data-screen="sApp"] .dock{display:grid}
   </div>
 </section>
 
-<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidades</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
+<nav class="dock glass" aria-label="Navegação" style="--n:4"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidade</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
 
 <div class="scrim" id="scrim"></div>
 <div class="sheet" id="sheet" role="dialog" aria-modal="true"><div class="grab"></div><div id="sheetBody"></div></div>
@@ -545,7 +542,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.17.0';
+const APP_VERSION='0.18.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1288,10 +1285,10 @@ const APP={
     ses.ids={};
     for(const it of perfilItens())if(it.data.n>0)ses.ids[it.data.n]=await derivarPerfil(it.data.n);
   },
-  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();renderIds();mountCommonSettings($('#commonSet'));setView('vCreds')},
-  onView(v){if(v==='vCreds')renderCreds();if(v==='vId')renderIds()},
+  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  onView(v){if(v==='vCreds')renderCreds()},
   onLock(){
-    ['#cList','#mOpenOut','#idList'].forEach(s=>$(s).innerHTML='');
+    ['#cList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
     ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
     $('#mSealOut').hidden=true;
   },
@@ -1300,7 +1297,7 @@ const APP={
     let n=0;
     for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(KEPT_TYPES.includes(d.type))n++}catch{}}
     for(const it of perfilItens())if(it.data.n>0&&!ses.ids[it.data.n])ses.ids[it.data.n]=await derivarPerfil(it.data.n);
-    await persistItems();renderCreds();renderIds();
+    await persistItems();renderCreds();
     return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}`;
   }
 };
@@ -1315,72 +1312,45 @@ async function saveItem(data,id){
 $('#dockAdd').onclick=()=>actionMenu();
 
 /* ================= identidades ================= */
-// Até 3 identidades das mesmas 12 palavras, cada uma com DID próprio: Pessoal (a de sempre, nº 0),
-// Profissional (nº 1) e uma personalizada (nº 2), com o apelido que a pessoa escolher.
-const MAX_IDS=3;
+// Cada identidade tem nome, perfil (Identidade, Profissional ou Personalizada, com o nome do perfil) e um DID
+// próprio, derivado da semente das 12 palavras pelo número dela: nº 0 é a identidade de sempre (o DID não muda);
+// as outras usam o domínio perfil/<n> no HKDF. Pode haver quantas a pessoa quiser, inclusive do mesmo perfil.
+const PERFIS={identidade:'Identidade',profissional:'Profissional',personalizada:'Personalizada'};
 const perfilItens=()=>ses.items.filter(i=>i.data.type==='perfil');
 const perfilDe=n=>(perfilItens().find(i=>i.data.n===n)||{}).data;
 async function derivarPerfil(n){
   const seed=await wordsToSeed(await entropyToWords(ses.ent,ses.lang));
   try{return await deriveIdentity(seed,`perfil/${n}`)}finally{seed.fill(0)}
 }
+const subDe=d=>d.sub||decodeJWT(d.jwt).payload.sub;
+const aprovacaoDe=did=>creds().find(c=>c.data.vtype==='IdentityCredential'&&subDe(c.data)===did);
+// Registros da 0.17.0 (apelido Pessoal/Profissional/outro) viram nome + perfil, com o mesmo número e o mesmo DID.
+function normalizar(d,n,did){
+  const a=did&&aprovacaoDe(did);
+  const nome=d&&d.nome||d&&d.pedido&&d.pedido.nome||(a?credMain(a.data):'');
+  if(d&&d.perfil)return{nome,perfil:d.perfil,rotulo:d.rotulo||''};
+  const ap=d&&d.apelido||'';
+  if(n===0||ap==='Pessoal')return{nome,perfil:'identidade',rotulo:''};
+  if(ap==='Profissional')return{nome,perfil:'profissional',rotulo:''};
+  return{nome,perfil:'personalizada',rotulo:ap};
+}
+const perfilTxt=x=>x.perfil==='personalizada'?`Personalizada: ${x.rotulo}`:PERFIS[x.perfil]||'Identidade';
 function identidades(){
-  const out=[{n:0,apelido:'Pessoal',id:ses}];
-  for(const it of perfilItens())if(it.data.n>0&&ses.ids&&ses.ids[it.data.n])out.push({n:it.data.n,apelido:it.data.apelido,id:ses.ids[it.data.n]});
+  const out=[{n:0,id:ses,...normalizar(perfilDe(0),0,ses.did)}];
+  for(const it of perfilItens()){const d=it.data;if(d.n>0&&ses.ids&&ses.ids[d.n])out.push({n:d.n,id:ses.ids[d.n],...normalizar(d,d.n,ses.ids[d.n].did)})}
   return out.sort((a,b)=>a.n-b.n);
 }
 const idDoDid=did=>identidades().find(x=>x.id.did===did);
-const subDe=d=>d.sub||decodeJWT(d.jwt).payload.sub;
-const aprovacaoDe=did=>creds().find(c=>c.data.vtype==='IdentityCredential'&&subDe(c.data)===did);
 function estadoId(x){
   const c=aprovacaoDe(x.id.did);
-  if(c){const[st]=credState(c.data);return st==='no'?['no','Aprovação vencida']:['ok',c.data.exp?'Aprovada até '+fmtDate(c.data.exp*1000):'Aprovada, sem validade']}
+  if(c)return credState(c.data)[0]==='no'?'aprovação vencida':'aprovada';
   const p=perfilDe(x.n);
-  return p&&p.pedido?['warn','Aguardando aprovação']:['','Sem aprovação'];
+  return p&&p.pedido?'aguardando':'sem aprovação';
 }
 async function guardarPerfil(n,mudar){
   const it=perfilItens().find(i=>i.data.n===n),ts=Date.now();
-  const base=it?it.data:{type:'perfil',n,apelido:n===0?'Pessoal':'',pedido:null,created:ts};
+  const base=it?it.data:{type:'perfil',n,pedido:null,created:ts};
   await saveItem({...base,...mudar,updated:ts},it&&it.rec.id);
-}
-function renderIds(){
-  if(!ses||!$('#idList'))return;
-  const ids=identidades();
-  $('#idList').innerHTML=ids.map(x=>{
-    const[c,l]=estadoId(x),a=aprovacaoDe(x.id.did),p=perfilDe(x.n);
-    const nome=a?credMain(a.data):p&&p.pedido?p.pedido.nome:'';
-    return `<div class="glass flat card idp" data-n="${x.n}">
-      <div class="kr" style="padding:0"><div class="h"><small><b>${esc(x.apelido)}</b></small><span class="pill ${c}">${l}</span></div>
-      <div class="v">${nome?esc(nome):'<span class="sub">Ainda sem nome aprovado</span>'}</div><div class="v mono" style="margin-top:4px">${esc(shortDid(x.id.did))}</div></div>
-      <div class="pair" style="margin-top:12px"><button class="btn ghost" data-idask="${x.n}">Solicitar aprovação</button><button class="btn ghost" data-idget="${x.n}">Receber aprovação</button></div>
-      <button class="link" data-iddid="${x.n}" style="margin:8px 0 0;padding:0">Copiar DID</button></div>`;
-  }).join('')+(ids.length<MAX_IDS?'<button class="btn ghost" id="idNew">Nova identidade</button>':'');
-}
-$('#idList').onclick=e=>{
-  const b=e.target.closest('[data-idask],[data-idget],[data-iddid],#idNew');if(!b)return;
-  if(b.id==='idNew')return novaIdentidade();
-  if(b.dataset.idask)return askCred(+b.dataset.idask);
-  if(b.dataset.idget)return receiveCred();
-  const x=identidades().find(i=>i.n===+b.dataset.iddid);if(x)copy(x.id.did,'DID copiado');
-};
-function novaIdentidade(){
-  const livres=[1,2].filter(n=>!perfilDe(n));
-  if(!livres.length)return toast('A carteira já tem as 3 identidades',true);
-  let escolha=livres[0];
-  openSheet(`<h3>Nova identidade</h3><p class="sub">Ela sai das mesmas 12 palavras, com um DID próprio. Ninguém consegue ligar um DID ao outro, e o mesmo PIN abre todas.</p>
-    <div class="list glass flat" id="niC">${livres.map(n=>`<button class="choice" data-novo="${n}" aria-pressed="${n===escolha}"><span class="rd"></span><span class="t"><b>${n===1?'Profissional':'Personalizada'}</b><small>${n===1?'Para trabalho, empresa e clientes':'Com o apelido que você escolher'}</small></span></button>`).join('')}</div>
-    <label class="f" id="niF" ${escolha===2?'':'hidden'}><span>Apelido</span><input id="niA" autocomplete="off" placeholder="Ex.: Associação, Clube"></label>
-    <button class="btn" id="niGo">Criar identidade</button>`);
-  $('#niC').onclick=e=>{const b=e.target.closest('[data-novo]');if(!b)return;escolha=+b.dataset.novo;$('#niC').querySelectorAll('[data-novo]').forEach(x=>x.setAttribute('aria-pressed',x===b));$('#niF').hidden=escolha!==2};
-  $('#niGo').onclick=async()=>{
-    const apelido=escolha===1?'Profissional':$('#niA').value.trim();
-    if(!apelido){shake($('#niF'));return $('#niA').focus()}
-    if(identidades().some(x=>fold(x.apelido)===fold(apelido)))return toast('Já existe uma identidade com esse apelido',true);
-    const pii=piiProblem({apelido});if(pii)return toast(pii,true);
-    ses.ids[escolha]=await derivarPerfil(escolha);
-    await guardarPerfil(escolha,{apelido});
-    closeSheet();renderIds();toast('Identidade criada');
-  };
 }
 
 /* ================= credenciais ================= */
@@ -1402,7 +1372,7 @@ function credMain(d){
 }
 function credCard(it,asDiv){
   const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
-  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>${(x=>x&&identidades().length>1?esc(x.apelido)+' · ':'')(idDoDid(subDe(d)))}Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b>${esc(vcLabel(d.vtype))}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span>${(x=>x&&identidades().length>1?esc(perfilTxt(x))+' · ':'')(idDoDid(subDe(d)))}Emitida por ${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
 }
 function renderCreds(){
   if(!ses)return;
@@ -1410,9 +1380,9 @@ function renderCreds(){
   $('#cNote').hidden=!list.length;
   $('#cList').innerHTML=list.length?`<div class="creds">${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
-      <li><span>Em <b>Identidades</b>, toque em <b>Solicitar aprovação</b>. O pedido é assinado e prova que você controla o DID.</span></li>
+      <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
-      <li><span>Cole a aprovação em <b>Receber aprovação</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
+      <li><span>Cole a aprovação em <b>+</b> › <b>Receber aprovação de identidade</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
 $('#cList').onclick=e=>{const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 
@@ -1420,38 +1390,55 @@ function actionMenu(){
   const row=(k,icn,t,s)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`;
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
     ${row('ask','send','Solicitar aprovação de identidade','Gera o pedido assinado para a Governança')}
-    ${row('get','inbox','Receber aprovação ou credencial','Cola o que a Governança ou o serviço emitiu')}
+    ${row('get','inbox','Receber aprovação de identidade','Cola a aprovação que a Governança emitiu')}
     ${row('show','scan','Apresentar credencial','Responde ao desafio de quem verifica')}</div>`);
-  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:()=>askCred(0),get:receiveCred,show:()=>present()})[b.dataset.act]()};
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(!b)return;({ask:askCred,get:receiveCred,show:()=>present()})[b.dataset.act]()};
 }
 
-// Pedido de aprovação de identidade para a Governança (STK): leva o nome e o apelido e é assinado pelo DID
-// da identidade escolhida. A aprovação assinada pela STK leva só o nome (DP-03).
-function askCred(n=0){
-  const ids=identidades(),p=perfilDe(n),aprovada=aprovacaoDe((ids.find(x=>x.n===n)||ids[0]).id.did);
-  const nomeAntes=p&&p.pedido?p.pedido.nome:aprovada?credMain(aprovada.data):'';
-  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">O pedido vai para a Governança Systekna, assinado com a chave da identidade escolhida. É assim que ela sabe que é você quem pede.</p>
-    <label class="f"><span>Identidade</span><select id="aqI">${ids.map(x=>`<option value="${x.n}" ${x.n===n?'selected':''}>${esc(x.apelido)}</option>`).join('')}</select></label>
-    <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na identidade" value="${esc(nomeAntes)}"></label>
+// Solicitar aprovação de identidade à Governança (STK). Passo 1: escolher uma identidade ou criar uma nova
+// (nome, perfil e, na Personalizada, o nome do perfil). Passo 2: o pedido sai assinado pelo DID dela, com o nome
+// e o perfil. A aprovação assinada pela STK leva só o nome (DP-03).
+function askCred(){
+  const ids=identidades();let sel=0;
+  const opcao=x=>`<button class="choice" data-n="${x.n}" aria-pressed="${x.n===sel}"><span class="rd"></span><span class="t"><b>${esc(x.nome||'Sem nome')} · ${esc(perfilTxt(x))}</b><small>${estadoId(x)} · ${esc(shortDid(x.id.did))}</small></span></button>`;
+  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">Escolha a identidade ou crie uma nova. Todas saem das suas 12 palavras, cada uma com um DID próprio.</p>
+    <div class="list glass flat" id="aqL">${ids.map(opcao).join('')}<button class="choice" data-n="novo" aria-pressed="false"><span class="rd"></span><span class="t"><b>+ Nova identidade</b><small>Nome e perfil novos, com um DID novo</small></span></button></div>
+    <label class="f" id="aqNF"><span>Nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na identidade"></label>
+    <label class="f"><span>Perfil</span><select id="aqP">${Object.entries(PERFIS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+    <label class="f" id="aqRF" hidden><span>Nome do perfil</span><input id="aqR" autocomplete="off" placeholder="Ex.: Clube, Associação, Igreja"></label>
     <label class="f" id="aqEF"><span>DID da Governança (opcional)</span><input id="aqE" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…" value="${esc(GOVERNANCA_PADRAO.did)}"></label><p class="hint" id="aqEH">Com o DID, só essa Governança consegue atender o pedido.</p>
     <label class="f"><span>Observação (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
+  const preencher=()=>{
+    const x=ids.find(i=>i.n===sel);
+    $('#aqN').value=x?x.nome:'';$('#aqP').value=x?x.perfil:'identidade';$('#aqR').value=x?x.rotulo:'';
+    $('#aqRF').hidden=$('#aqP').value!=='personalizada';$('#aqOut').hidden=true;
+  };
+  preencher();
+  $('#aqP').onchange=()=>{$('#aqRF').hidden=$('#aqP').value!=='personalizada'};
+  $('#aqL').onclick=e=>{const b=e.target.closest('[data-n]');if(!b)return;sel=b.dataset.n==='novo'?'novo':+b.dataset.n;$('#aqL').querySelectorAll('[data-n]').forEach(x=>x.setAttribute('aria-pressed',x===b));preencher()};
   $('#aqGo').onclick=async()=>{
-    const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
+    const name=$('#aqN').value.trim(),perfil=$('#aqP').value,rotulo=perfil==='personalizada'?$('#aqR').value.trim():'';
+    if(!name){shake($('#aqNF'));$('#aqN').focus();return}
+    if(perfil==='personalizada'&&!rotulo){shake($('#aqRF'));$('#aqR').focus();return}
+    const pii=piiProblem({nome:name,perfil:rotulo});if(pii)return toast(pii,true);
     const aud=$('#aqE').value.trim(),EH=$('#aqEH');
     if(aud){try{await didToEdKey(aud)}catch(e){EH.textContent=e.message;EH.classList.add('bad');shake($('#aqEF'));return}}
     EH.textContent='Com o DID, só essa Governança consegue atender o pedido.';EH.classList.remove('bad');
-    const x=identidades().find(i=>i.n===+$('#aqI').value)||identidades()[0],iat=now();
-    $('#aqJ').value=embrulhar(await signJWT('pedido+jwt',{iss:x.id.did,sub:x.id.did,aud:aud||'emissor',name,apelido:x.apelido,wanted:'IdentityCredential',note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400},x.id));
-    await guardarPerfil(x.n,{pedido:{at:Date.now(),nome:name}});renderIds();
+    let n=sel;
+    if(n==='novo'){n=Math.max(0,...perfilItens().map(i=>i.data.n))+1;ses.ids[n]=await derivarPerfil(n)}
+    const quem=n===0?ses:ses.ids[n],iat=now(),dados={nome:name,perfil,rotulo};
+    $('#aqJ').value=embrulhar(await signJWT('pedido+jwt',{iss:quem.did,sub:quem.did,aud:aud||'emissor',name,perfil,perfilNome:rotulo,apelido:perfilTxt(dados),wanted:'IdentityCredential',note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400},quem));
+    await guardarPerfil(n,{...dados,apelido:undefined,pedido:{at:Date.now(),nome:name}});
+    if(sel==='novo'){sel=n;ids.push({n,id:quem,...dados})}
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');
 }
 
 function receiveCred(){
-  openSheet(`<h3>Receber aprovação ou credencial</h3><p class="sub">Cole o que a Governança ou o serviço emitiu. A carteira confere a assinatura e guarda na identidade certa, pelo DID.</p>
+  openSheet(`<h3>Receber aprovação de identidade</h3><p class="sub">Cole a aprovação que a Governança emitiu. A carteira confere a assinatura e guarda na identidade certa, pelo DID.</p>
     <label class="f" id="rcF"><span>Credencial</span><textarea class="mono" id="rcT" rows="6" spellcheck="false" placeholder="eyJhbGciOiJFZERTQSIs…"></textarea></label><p class="hint" id="rcH"></p>
     <button class="btn" id="rcGo">Conferir e guardar</button>`);
   $('#rcGo').onclick=async()=>{
@@ -1510,7 +1497,7 @@ function present(preId){
         <div class="kr"><div class="h"><small>Quem pede</small></div><div class="v">${esc(q.name||'Verificador')}</div><div class="v mono" style="margin-top:4px">${esc(r.did)}</div></div>
         <div class="kr"><div class="h"><small>Para quê</small></div><div class="v">${esc(q.purpose||'Não informado')}</div></div>
         <div class="kr"><div class="h"><small>O que exige</small></div><div class="v">${q.accept&&q.accept!=='any'?esc(vcLabel(q.accept)):'Qualquer credencial'}</div></div></div>
-      ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>${(x=>x?esc(x.apelido)+' · ':'')(idDoDid(subDe(c.data)))}Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
+      ${fit.length?`<div class="sec-h">Escolha a credencial</div><div class="list glass flat" id="apC">${fit.map(c=>`<button class="choice" data-pk="${c.rec.id}" aria-pressed="${c.rec.id===pick}"><span class="rd"></span><span class="t"><b>${esc(vcLabel(c.data.vtype))}: ${esc(credMain(c.data))}</b><small>${(x=>x?esc(perfilTxt(x))+' · ':'')(idDoDid(subDe(c.data)))}Emitida por ${esc(c.data.issuerName)}</small></span></button>`).join('')}</div>
         <button class="btn" id="apSign">Assinar e apresentar</button>`
         :verdictHtml(false,'Nenhuma credencial serve','Você não tem uma credencial válida do tipo exigido. Peça uma ao emissor.')}
       <div id="apOut"></div>`;
