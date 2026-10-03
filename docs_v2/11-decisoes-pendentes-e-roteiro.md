@@ -58,6 +58,7 @@
 | 02/10/2026 | Toda publicação sobe a versão do `package.json` | RN-62, RT-07a |
 | 03/10/2026 | A main volta à versão básica (`basico`, f293543) como 0.13.0; acesso, emissores e crachá (0.9.0–0.12.3) ficam na `bkp/cracha` | ADR-12 |
 | 03/10/2026 | As 13 decisões pendentes (DP-01 a DP-13), seção 1 | Doc 11 §1 |
+| 03/10/2026 | Cada app gera o próprio DID a partir das 12 palavras (separação de domínio no HKDF); a Carteira mantém o DID de sempre | RT-11a |
 | 03/10/2026 | Encarregado de dados não é obrigatório para agente de pequeno porte (corrige `docs_v1/10`) | Doc 09 §2.3 |
 
 ## 2. Branches

@@ -196,16 +196,16 @@ test('P02 · espera a partir do 5º erro e apagamento no 10º', async () => {
   expect(await nova.evaluate(async () => [await DB.get('meta'), await DB.get('lock'), await DB.get('items')])).toEqual([undefined, undefined, undefined]);
 });
 
-test('P03 · backup é recusado em outra identidade e no outro serviço', async () => {
+test('P03 · backup é recusado em outra identidade e no outro app', async () => {
   const backup = await copiarBackup(carteira);
 
   await restaurar(outroEmissor, backup);
   await expect(outroEmissor.locator('#riH')).toHaveText('Este backup pertence a outra identidade ou foi alterado.');
   await fecharSheet(outroEmissor);
 
-  // Mesmas 12 palavras, mas o backup é da carteira e não do emissor.
+  // Mesmas 12 palavras em outro app: com a separação de domínio, já é outra identidade.
   await restaurar(emissorMesmaId, backup);
-  await expect(emissorMesmaId.locator('#riH')).toHaveText('Este backup é de outro serviço.');
+  await expect(emissorMesmaId.locator('#riH')).toHaveText('Este backup pertence a outra identidade ou foi alterado.');
   await fecharSheet(emissorMesmaId);
 });
 

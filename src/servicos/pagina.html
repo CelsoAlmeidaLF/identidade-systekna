@@ -117,6 +117,7 @@
         <label class="f" style="margin-top:0"><span>Nome do serviço</span><input id="sName" autocomplete="off"></label>
         <label class="f"><span>Apps que o serviço quer proteger, separados por vírgula</span><input id="sApps" autocomplete="off" placeholder="Ex.: Portaria, Aulas"></label>
         <button class="btn ghost" id="sSave">Salvar</button>
+        <p class="note" id="sLeg" hidden>Este serviço foi criado antes da separação por app: as mesmas 12 palavras geram o mesmo DID na Carteira. Para ter uma identidade só do serviço, faça backup do que precisar, apague o serviço e recupere com as mesmas 12 palavras.</p>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID do serviço</small><span><button class="mini sm" id="sDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="sDid"></div></div>
       </div>
       <div class="sec-h">Governança <button class="link" id="sGovRot" style="margin:0;padding:0;font-size:13px">Importar troca de chave</button></div>

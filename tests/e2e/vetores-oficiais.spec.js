@@ -14,11 +14,17 @@ const lista = nome => fs.readFileSync(path.join(FIX, `bip39-${nome}.txt`), 'utf8
 // Identidade de teste usada nos outros testes E2E.
 const PALAVRAS = 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about';
 // Regressão: se a derivação mudar, quem já tem identidade perde o acesso a ela com as mesmas 12 palavras.
-const DID_ESPERADO = 'did:key:z6MkuKwMejuU5tavPVP5ZVWg9W1z28SY62DNXp3aBzyMsLXr';
+// Cada app tem o próprio domínio (separação de domínio): as mesmas palavras geram um DID diferente em cada um.
+// A Carteira usa os rótulos originais, sem domínio.
+const APPS = {
+  'carteira-systekna.html': { dom: '', did: 'did:key:z6MkuKwMejuU5tavPVP5ZVWg9W1z28SY62DNXp3aBzyMsLXr' },
+  'governanca-systekna.html': { dom: 'governanca', did: 'did:key:z6MkohsTCo516S9bWUsrYgaSZbgo6ceuiBbem6M72xTgqeK8' },
+  'servicos-systekna.html': { dom: 'servicos', did: 'did:key:z6MkgDybLQfXEU58P9x27wLjA5W3ibXW6x7GcKDkX4FtRVPn' },
+};
 
 const PKCS8 = { ed: '302e020100300506032b657004220420', x: '302e020100300506032b656e04220420' };
 
-for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html', 'servicos-systekna.html']) {
+for (const [arquivo, { dom, did: DID_ESPERADO }] of Object.entries(APPS)) {
   test.describe(arquivo, () => {
     test.beforeEach(async ({ page }) => {
       await page.goto(arquivo);
@@ -121,10 +127,10 @@ for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html', 'se
       }
     });
 
-    test('identidade derivada das 12 palavras confere com uma implementação independente (Node)', async ({ page }) => {
+    test(`identidade derivada das 12 palavras (domínio "${dom || 'nenhum'}") confere com uma implementação independente (Node)`, async ({ page }) => {
       // Referência: PBKDF2 → HKDF → chaves, tudo com o crypto do Node.
       const seed = nodeCrypto.pbkdf2Sync(PALAVRAS, 'mnemonic', 2048, 64, 'sha512');
-      const hk = info => Buffer.from(nodeCrypto.hkdfSync('sha256', seed, 'systekna-cofre-v1', info, 32));
+      const hk = info => Buffer.from(nodeCrypto.hkdfSync('sha256', seed, 'systekna-cofre-v1', dom ? `${dom}/${info}` : info, 32));
       const pubDe = (prefixo, s) => nodeCrypto.createPublicKey(nodeCrypto.createPrivateKey({ key: Buffer.concat([Buffer.from(prefixo, 'hex'), s]), format: 'der', type: 'pkcs8' }))
         .export({ format: 'jwk' }).x;
       const edPub = Buffer.from(/** @type {string} */ (pubDe(PKCS8.ed, hk('ssi/ed25519'))), 'base64url').toString('hex');
@@ -134,7 +140,7 @@ for (const arquivo of ['carteira-systekna.html', 'governanca-systekna.html', 'se
       const cifrado = Buffer.concat([c.update(texto), c.final(), c.getAuthTag()]).toString('hex');
 
       const r = await page.evaluate(async ({ palavras, iv, texto }) => {
-        const id = await deriveIdentity(await wordsToSeed(palavras.split(' ')));
+        const id = await deriveIdentity(await wordsToSeed(palavras.split(' ')), APP.dominio);
         const ct = await S.encrypt({ name: 'AES-GCM', iv: hexB(iv) }, id.vaultKey, hexB(texto));
         return { did: id.did, edPub: hex(id.edPub), xPub: hex(id.xPub), cifrado: hex(ct) };
       }, { palavras: PALAVRAS, iv: iv.toString('hex'), texto: texto.toString('hex') });

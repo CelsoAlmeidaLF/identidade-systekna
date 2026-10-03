@@ -3,7 +3,7 @@
 // Governança, emite crachás (CV:KEY) para quem tem a Identidade aprovada e confere o acesso na portaria.
 let st=null;
 const APP={
-  db:'systekna-servicos',label:'Serviços',dataKeys:['state'],createdMsg:'Serviço criado',autoDefault:10,
+  db:'systekna-servicos',dominio:'servicos',label:'Serviços',dataKeys:['state'],createdMsg:'Serviço criado',autoDefault:10,
   importHint:'Substitui o livro e os registros deste serviço',
   howHtml:`<p><b>Papel.</b> O serviço dá acesso aos apps dele (portaria, aulas, sistema) sem guardar cadastro: quem prova quem é a pessoa é a Identidade aprovada pela Governança, que fica na carteira dela.</p>
   <p><b>Credenciamento.</b> O serviço só emite crachás depois de credenciado pela Governança, que define para quais apps e até quando. O Cartão do serviço leva esse credenciamento, para a carteira conferir antes de pedir o crachá.</p>
@@ -73,7 +73,7 @@ $('#pAll').onclick=showBook;
 /* ================= serviço: nome, Governança, credenciamento, cartão ================= */
 function renderSrv(){
   if(!st)return;
-  $('#sName').value=st.name;$('#sApps').value=st.apps.join(', ');$('#sDid').textContent=ses.did;
+  $('#sName').value=st.name;$('#sApps').value=st.apps.join(', ');$('#sDid').textContent=ses.did;$('#sLeg').hidden=!!ses.dom;
   $('#sGovN').textContent=st.gov?st.gov.name:'Governança não informada';
   $('#sGovD').textContent=st.gov?shortDid(govDid()):'Toque para informar o DID';
   $('#sCred').innerHTML=credResumo();$('#sCred').firstElementChild.style.marginTop='0';
