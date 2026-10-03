@@ -197,7 +197,7 @@ test.describe('credenciamento de serviços', () => {
     await carteira.click('#dockAdd');
     await carteira.click('#sheetBody [data-act="ask"]');
     await expect(carteira.locator('#aqT')).toHaveCount(0);
-    await expect(carteira.locator('#aqI option')).toHaveText(['Pessoal']);
+    await expect(carteira.locator('#aqP option')).toHaveText(['Identidade', 'Profissional', 'Personalizada']);
     await fecharSheet(carteira);
   });
 });

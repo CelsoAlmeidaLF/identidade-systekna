@@ -105,7 +105,7 @@ function modoIdentidade(sim){
   const p=pedido.payload,ativa=st.issued.find(i=>i.sub===pedido.did&&i.type==='IdentityCredential'&&issStatus(i)[0]==='ok');
   $('#iIdent').innerHTML=`<div class="list glass flat mt">
     <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="iIdNome">${esc(p.name||'')}</div></div>
-    <div class="kr"><div class="h"><small>Apelido da identidade</small></div><div class="v" id="iIdApelido">${esc(p.apelido||'Não informado')}</div></div>
+    <div class="kr"><div class="h"><small>Perfil</small></div><div class="v" id="iIdApelido">${esc(p.apelido||'Identidade')}</div></div>
     <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(pedido.did)}</div></div></div>
     ${ativa?`<p class="note">Este DID já tem uma identidade aprovada${ativa.exp?' até '+fmtDate(ativa.exp*1000):''}. Aprovar de novo substitui a anterior.</p>`:''}`;
 }
