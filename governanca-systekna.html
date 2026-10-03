@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-MYAx1Gsa3GdSJHDXmIlpW97YcZ/81zdeWIpx0Y1vvKU='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-a+OPdEHSdvZmUwiGB32/LUjs6QqnOVWQ+ULU6kJc1yE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -487,8 +487,9 @@ body[data-screen="sApp"] .dock{display:grid}
       <div class="glass flat card">
         <label class="f" style="margin-top:0"><span>Nome público, vai nas próximas credenciais</span><div class="inrow"><input id="gName" autocomplete="off"><button class="mini" id="gNameS">Salvar</button></div></label>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID da Governança</small><span><button class="mini sm" id="gDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="gDid"></div></div>
+        <div class="pair" style="margin-top:12px"><button class="btn ghost" id="gRot">Trocar a chave</button><button class="btn ghost" id="gRotAv" hidden>Copiar aviso de troca</button></div>
       </div>
-      <div class="sec-h">Emissores confiáveis <button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></div>
+      <div class="sec-h">Emissores confiáveis <span><button class="link" id="gTrustRot" style="margin:0 12px 0 0;padding:0;font-size:13px">Importar troca de chave</button><button class="link" id="gTrustAdd" style="margin:0;padding:0;font-size:13px">Adicionar</button></span></div>
       <div class="list glass flat" id="gTrust"></div>
       <div class="sec-h">Política de verificação</div>
       <div class="list glass flat"><button class="tx" id="gPol"><span class="dot" data-ic="shield"></span><span class="t"><b>Status não verificável</b><small>Credencial de outro emissor, sem como conferir a revogação</small></span><span class="rv" id="gPolV"></span></button></div>
@@ -799,6 +800,7 @@ function tipoPacote(header,payload){
     case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CREDENCIAL');
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
+    case 'rotacao+jwt':return 'ROTACAO';
   }
   return null;
 }
@@ -1298,14 +1300,14 @@ const APP={
   async importData(d){
     if(!d||!Array.isArray(d.book)||!d.book.length)return 'Backup sem livro de registros';
     // O livro do backup é conferido antes de substituir o estado: um backup adulterado não entra.
-    const c=await checkBook(d.book);
+    const c=await checkBook(d.book,chaves(d));
     if(!c.ok)return `Backup recusado: o livro se rompe no ato nº ${c.at}. Nada foi alterado.`;
     st=d;await save();$('#whoLabel').textContent=st.name;renderPanel();
     return `Governança restaurada com ${st.book.length} atos`;
   }
 };
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
-const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield'};
+const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield',rotacao:'key'};
 async function ato(act,text,ref){
   const prev=st.book.length?st.book[st.book.length-1].hash:'0'.repeat(64);
   const e={n:st.book.length+1,at:Date.now(),act,text,ref:ref||null,prev};
@@ -1313,20 +1315,24 @@ async function ato(act,text,ref){
   e.sig=b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(e.hash)));
   st.book.push(e);
 }
-async function checkBook(book=st.book){
-  const pub=await S.importKey('raw',ses.edPub,{name:'Ed25519'},false,['verify']);
+// Chaves da Governança ao longo do tempo: cada uma assina os atos a partir do ato "from". Sem troca, só a atual.
+const chaves=(s=st)=>s&&s.keys&&s.keys.length?s.keys:[{did:ses.did,from:1}];
+const minhas=()=>chaves().map(k=>k.did);
+async function checkBook(book=st.book,keys=chaves()){
+  const pubs=new Map();
+  const pubDe=async n=>{const k=keys.filter(x=>x.from<=n).at(-1)||keys[0];if(!pubs.has(k.did))pubs.set(k.did,await didToEdKey(k.did));return pubs.get(k.did)};
   let prev='0'.repeat(64);
   for(const e of book){
     const body={n:e.n,at:e.at,act:e.act,text:e.text,ref:e.ref,prev:e.prev};
     const h=hex(await sha256(te.encode(JSON.stringify(body))));
-    if(e.prev!==prev||h!==e.hash||!await S.verify({name:'Ed25519'},pub,b64u.dec(e.sig),te.encode(e.hash)))return{ok:false,at:e.n};
+    if(e.prev!==prev||h!==e.hash||!await S.verify({name:'Ed25519'},await pubDe(e.n),b64u.dec(e.sig),te.encode(e.hash)))return{ok:false,at:e.n};
     prev=e.hash;
   }
   return{ok:true,n:book.length};
 }
 const atoRow=(e,full)=>`<div class="ato"><span class="n">${e.n}</span><span class="dot">${ic(ATO_IC[e.act]||'book')}</span><div class="t"><b>${esc(e.text)}</b><small>${fmtTime(e.at)}</small>${full?`<br><code>${e.hash}</code>`:''}</div></div>`;
 const issStatus=i=>i.revoked?['no','Revogada']:(i.exp&&i.exp<now())?['warn','Expirada']:['ok','Ativa'];
-const trustedName=did=>did===ses.did?st.name:(st.trust.find(t=>t.did===did)||{}).name;
+const trustedName=did=>minhas().includes(did)?st.name:(st.trust.find(t=>t.did===did)||{}).name;
 const CLOCK_SKEW=60;
 // Credencial de outro emissor: a revogação não pode ser conferida aqui. A política decide (padrão: recusar).
 const unverifiableStatus=()=>st.acceptUnverifiable?null:false;
@@ -1463,7 +1469,7 @@ async function checkVP(tok){
   add(q.sub===vp.did,'Credencial pertence ao titular',q.sub===vp.did?'O DID da credencial é o mesmo de quem apresentou.':'A credencial é de outra pessoa.');
   const tn=trustedName(vc.did);
   add(!!tn,'Emissor confiável',tn?`${esc(tn)} está na lista de confiança.`:'Este emissor não está na sua lista de confiança.');
-  if(vc.did===ses.did){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Não revogada',!rec?'Não consta no registro de emissões.':rec.revoked?`Revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativa no registro de emissões.')}
+  if(minhas().includes(vc.did)){const rec=st.issued.find(i=>i.jti===q.jti);add(!!rec&&!rec.revoked,'Não revogada',!rec?'Não consta no registro de emissões.':rec.revoked?`Revogada em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativa no registro de emissões.')}
   else add(unverifiableStatus(),'Não revogada',unverifiableMsg);
   // 1.2: além do exp, confere o nbf (com folga de relógio entre aparelhos).
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
@@ -1486,7 +1492,7 @@ $('#vpGo').onclick=async()=>{
 /* ================= governança ================= */
 function renderGov(){
   if(!st)return;
-  $('#gName').value=st.name;$('#gDid').textContent=ses.did;
+  $('#gName').value=st.name;$('#gDid').textContent=ses.did;$('#gRotAv').hidden=!(st.rotations||[]).length;
   $('#gPolV').textContent=st.acceptUnverifiable?'Aceitar':'Recusar';
   $('#gTrust').innerHTML=`<div class="tx"><span class="dot">${ic('gov')}</span><span class="t"><b>${esc(st.name)}</b><small>Este emissor</small></span><span class="pill ok">Você</span></div>`
     +st.trust.map((t,i)=>`<div class="tx"><span class="dot">${ic('shield')}</span><span class="t"><b>${esc(t.name)}</b><small class="mono">${esc(shortDid(t.did))}</small></span><button class="mini sm" data-untrust="${i}" aria-label="Remover emissor">${ic('trash')}</button></div>`).join('');
@@ -1500,6 +1506,83 @@ $('#gNameS').onclick=async()=>{
   st.name=n;await ato('nome',`Nome público alterado para ${n}`);await save();$('#whoLabel').textContent=n;toast('Nome salvo');
 };
 $('#gDidC').onclick=()=>copy(ses.did,'DID copiado');
+
+/* ================= troca da chave (DP-09) ================= */
+// A Governança passa a assinar com uma identidade nova, de 12 palavras novas. A chave antiga assina o aviso
+// de troca e a nova assina junto, provando que aceita. O livro, as emissões e a confiança continuam; cada ato
+// é conferido com a chave da época dele, e credenciais da chave antiga continuam sendo desta Governança.
+let rot=null;
+async function avisoValido(texto){
+  const r=await verifyJWT(texto,'rotacao+jwt');
+  if(!r.ok)throw new Error('A assinatura da chave antiga não confere: o aviso foi alterado.');
+  const p=r.payload;
+  if(!p.novo||p.novo===p.iss)throw new Error('O aviso não diz qual é a chave nova.');
+  const ok=await S.verify({name:'Ed25519'},await didToEdKey(p.novo),b64u.dec(p.aceite||''),te.encode(`${p.iss}>${p.novo}`)).catch(()=>false);
+  if(!ok)throw new Error('A chave nova não assinou o aceite: o aviso não vale.');
+  return r;
+}
+$('#gRot').onclick=async()=>{
+  if(!await confirmSheet('Trocar a chave da Governança','A Governança passa a assinar com 12 palavras novas. As palavras atuais deixam de abrir esta Governança, a biometria precisa ser ativada de novo e quem confia nela deve importar o aviso de troca. O livro e as emissões continuam.','Continuar',true))return;
+  if(!await reauth('Trocar a chave'))return;
+  const ent=rnd(16),words=await entropyToWords(ent,'pt'),pos=[];
+  while(pos.length<3){const p=1+crypto.getRandomValues(new Uint32Array(1))[0]%12;if(!pos.includes(p))pos.push(p)}
+  rot={ent,words,check:pos.sort((a,b)=>a-b),pin:null};
+  openSheet(`<h3>As 12 palavras novas</h3><p class="sub">Anote em papel, nesta ordem. Elas passam a ser a identidade da Governança.</p>
+    <ol class="words glass veil" id="rtWords">${words.map(w=>`<li>${w}</li>`).join('')}</ol><div class="reveal"><button class="link" id="rtVeil" style="margin:0">Mostrar palavras</button></div>
+    <div id="rtConf">${rot.check.map(p=>`<label class="f" data-p="${p}"><span>Palavra nº ${p}</span><input autocomplete="off" autocapitalize="none" spellcheck="false"></label>`).join('')}</div>
+    <p class="hint" id="rtH"></p><button class="btn" id="rtGo">Conferir e criar o PIN</button>`,()=>{if(rot&&rot.ent)rot.ent.fill(0);rot=null});
+  $('#rtVeil').onclick=()=>{const g=$('#rtWords');g.classList.toggle('veil');$('#rtVeil').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
+  $('#rtGo').onclick=()=>{
+    let ok=true;
+    $('#rtConf').querySelectorAll('.f').forEach(f=>{const good=normWords(f.querySelector('input').value)[0]===rot.words[f.dataset.p-1];f.classList.toggle('bad',!good);if(!good)ok=false});
+    if(!ok){$('#rtH').textContent='Alguma palavra não confere. Confira a anotação.';$('#rtH').classList.add('bad');return}
+    $('#sheetBody').innerHTML=`<div style="text-align:center"><h3 id="rtT">PIN da chave nova</h3><p class="sub">Seis dígitos, sem sequências. Ele abre a Governança neste aparelho.</p><div id="rtPad"></div></div>`;
+    let first=null;
+    makePad($('#rtPad'),{onPin:async(pin,a)=>{
+      if(!first){if(weakPin(pin))return a.reset(WEAK_MSG,true);first=pin;$('#rtT').textContent='Repita o PIN';return a.reset()}
+      if(pin!==first){first=null;$('#rtT').textContent='PIN da chave nova';return a.reset('Os PINs não conferem. Comece de novo.',true)}
+      a.say('Trocando a chave…');
+      await trocarChave(pin);
+    }});
+  };
+};
+async function trocarChave(pin){
+  const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed);seed.fill(0);
+  const aceite=b64u.enc(await S.sign({name:'Ed25519'},novo.edPriv,te.encode(`${velho}>${novo.did}`)));
+  const iat=now(),aviso=await signJWT('rotacao+jwt',{iss:velho,novo:novo.did,name:st.name,aceite,iat});
+  if(!st.keys)st.keys=[{did:velho,from:1}];
+  await ato('rotacao',`Chave trocada: ${shortDid(velho)} → ${shortDid(novo.did)}`,novo.did);
+  st.keys.push({did:novo.did,from:st.book.length+1});
+  st.rotations=[...(st.rotations||[]),aviso];
+  // Daqui em diante, tudo é assinado e cifrado com a identidade nova.
+  ses.ent.fill(0);
+  ses={...novo,ent:new Uint8Array(rot.ent),lang:'pt'};
+  rot.ent.fill(0);rot=null;
+  await ato('rotacao','Nova chave em uso: este ato já é assinado por ela',velho);
+  // O cadeado e o estado mudam juntos: a entropia nova com o PIN novo e o estado cifrado com a chave nova.
+  await writeLock(ses.ent,pin);await DB.set('guard',{fails:0,until:0});
+  await save();
+  await DB.set('meta',{did:ses.did,lang:'pt',created:Date.now()});
+  const bio=await DB.get('bioLock');if(bio){forgetPasskey(b64u.dec(bio.cred));await DB.del('bioLock')}
+  sheetClose=null;closeSheet();
+  $('#didShort').textContent=shortDid(ses.did);renderGov();refreshBio();
+  toast('Chave trocada. Copie o aviso para quem confia na Governança');
+}
+$('#gRotAv').onclick=()=>{const a=(st.rotations||[]).at(-1);if(a)copy(embrulhar(a),'Aviso de troca copiado')};
+$('#gTrustRot').onclick=()=>{
+  openSheet(`<h3>Importar troca de chave</h3><p class="sub">Cole o aviso de troca de um emissor em que você confia. Ele passa a ser reconhecido pela chave nova.</p>
+    <label class="f" id="irF"><span>Aviso de troca</span><textarea class="mono" id="irT" rows="5" spellcheck="false" placeholder="SYSTEKNA:ROTACAO:…"></textarea></label><p class="hint" id="irH"></p>
+    <button class="btn" id="irGo">Conferir e importar</button>`);
+  $('#irGo').onclick=async()=>{
+    const H=$('#irH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#irF'))};
+    let r;try{r=await avisoValido($('#irT').value)}catch(e){return fail(e.message)}
+    const t=st.trust.find(x=>x.did===r.payload.iss);
+    if(!t)return fail(st.trust.some(x=>x.did===r.payload.novo)?'Esta troca já foi importada.':'O emissor da chave antiga não está na sua lista de confiança.');
+    t.did=r.payload.novo;t.at=Date.now();
+    await ato('confianca',`${t.name} trocou de chave: ${shortDid(r.payload.iss)} → ${shortDid(r.payload.novo)}`,r.payload.novo);await save();
+    closeSheet();renderGov();toast('Troca de chave importada');
+  };
+};
 $('#gPol').onclick=async()=>{
   const accept=!st.acceptUnverifiable;
   if(accept&&!await confirmSheet('Aceitar status não verificável','Credenciais de emissores confiáveis passam a ser aprovadas mesmo sem conferir se foram revogadas. Uma credencial revogada por outro emissor pode passar.','Aceitar',true))return;

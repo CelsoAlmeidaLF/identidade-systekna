@@ -290,6 +290,7 @@ function tipoPacote(header,payload){
     case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CREDENCIAL');
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
+    case 'rotacao+jwt':return 'ROTACAO';
   }
   return null;
 }

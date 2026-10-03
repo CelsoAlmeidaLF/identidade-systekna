@@ -94,7 +94,7 @@
 |---|---|---|
 | 1 | ~~Decidir DP-01, DP-02, DP-03 e DP-06~~ (feito em 03/10/2026) | — |
 | 2 | Extrair o núcleo em módulos ES e criar os testes unitários (doc 07) | — |
-| 3 | Governança: aprovar identidade (só nome), credenciar serviço, rotação da chave, envelope | — |
+| 3 | Governança: aprovar identidade (só nome), credenciar serviço, rotação da chave, envelope | 🧪 Feito na branch `governanca` (03/10/2026), 127 testes passando; falta publicar |
 | 4 | Serviços: pedido de credenciamento, Cartão do serviço, emissão de crachá com validade escolhida | — |
 | 5 | Carteira: "Minha identidade", "Serviços", "Meus crachás" | Etapas 3 e 4 |
 | 6 | Portaria (desafio e prova) | Etapa 4 |
