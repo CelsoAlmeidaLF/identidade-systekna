@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-A8THzbxcOVpsIKfEwgPVVMycM8N30r6W90cfCtqk8Cs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-gOH1EcBews0F8qxqSqXMV73onKXrdmr86ojlu4PmZdg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -301,6 +301,15 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-DocumentRegistrationCredential{--cg:linear-gradient(150deg,#9DB4CC 0%,#4F6E8F 45%,#22364F 100%)}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
+.g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
+/* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
+.cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
+.cred.p-profissional{--cg:linear-gradient(150deg,#A98BF0 0%,#6A45D1 45%,#33206F 100%)}
+.cred.p-personalizada{--cg:linear-gradient(150deg,#F6C46B 0%,#D9831C 45%,#7A3E06 100%)}
+.cred .did{display:flex;align-items:center;gap:8px;font-size:12px;margin-top:-6px}
+.cred .did .mono{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;opacity:.95}
+.cred .did .cp{flex:none;display:inline-grid;place-items:center;width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.2);box-shadow:inset 0 0 0 1px rgba(255,255,255,.35);cursor:pointer}
+.cred .did .cp svg.i{width:15px;height:15px}
 
 /* passos (sequência real) */
 .steps{list-style:none;counter-reset:s;margin:0;padding:6px 0}
@@ -360,7 +369,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.18.1</p>
+<p class="ver boot" aria-hidden="true">Versão 0.18.2</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -372,7 +381,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.18.1</p>
+    <p class="ver">Versão 0.18.2</p>
   </div>
 </section>
 
@@ -420,7 +429,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.18.1</p>
+    <p class="ver">Versão 0.18.2</p>
   </div>
 </section>
 
@@ -570,7 +579,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.18.1';
+const APP_VERSION='0.18.2';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 

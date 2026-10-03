@@ -109,12 +109,18 @@ function credMain(d){
   const p=decodeJWT(d.jwt).payload,cl=vcClaims(p);
   return cl.length?fmtVal(cl[0][1]):vcLabel(d.vtype);
 }
-// Cartão: 1ª linha, o tipo (na identidade, o perfil: Identidade, Profissional, Personalizada: Clube);
-// 2ª, o nome; 3ª, quem emitiu e a validade.
+// Cartão: o tipo (na identidade, o perfil: Identidade, Profissional, Personalizada: Clube), o nome, o DID
+// com o botão de copiar e, por último, quem emitiu e a validade. Cada perfil tem a sua cor.
 function credCard(it,asDiv){
-  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button';
-  const dono=d.vtype==='IdentityCredential'?idDoDid(subDe(d)):null,tipo=dono?perfilTxt(dono):vcLabel(d.vtype);
-  return `<${tag} class="cred g-${esc(d.vtype)} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b class="tipo">${esc(tipo)}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="r3"><span class="emissor">${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+  const d=it.data,[st,stl]=credState(d),tag=asDiv?'div':'button',did=subDe(d);
+  const dono=d.vtype==='IdentityCredential'?idDoDid(did):null,tipo=dono?perfilTxt(dono):vcLabel(d.vtype);
+  return `<${tag} class="cred g-${esc(d.vtype)}${dono?' p-'+esc(dono.perfil):''} ${st==='no'?'dim':''}" ${asDiv?'':`data-cid="${it.rec.id}"`}><div class="r1"><b class="tipo">${esc(tipo)}</b>${ic('badge')}</div><div class="main">${esc(credMain(d))}</div><div class="did"><span class="mono" title="${esc(did)}">${esc(shortDid(did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(d.issuerName)}</span><span class="pill on-card">${stl}</span></div></${tag}>`;
+}
+// O botão de copiar fica dentro do cartão: copia o DID sem abrir a credencial.
+function copiarDidDoCartao(e){
+  const c=e.target.closest('[data-copydid]');if(!c)return false;
+  if(e.type==='keydown'&&e.key!=='Enter'&&e.key!==' ')return false;
+  e.preventDefault();e.stopPropagation();copy(c.dataset.copydid,'DID copiado');return true;
 }
 function renderCreds(){
   if(!ses)return;
@@ -126,7 +132,8 @@ function renderCreds(){
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
       <li><span>Cole a aprovação em <b>+</b> › <b>Receber aprovação de identidade</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
-$('#cList').onclick=e=>{const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
+$('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
+$('#cList').addEventListener('keydown',e=>{if(e.target.closest('[data-copydid]'))copiarDidDoCartao(e)});
 
 function actionMenu(){
   const row=(k,icn,t,s)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${s}</small></span>${ic('chev')}</button>`;
@@ -213,6 +220,7 @@ function showCred(id){
     <details class="raw"><summary>Ver credencial (JWT)</summary><p>É este texto que o emissor assinou. Sozinho, ele não serve como prova de posse.</p><pre class="mono">${esc(d.jwt)}</pre></details>
     <button class="btn" id="scP">Apresentar</button>
     <button class="btn ghost" id="scD" style="color:var(--out)">Remover da carteira</button>`);
+  $('#sheetBody').onclick=e=>copiarDidDoCartao(e);
   $('#scP').onclick=()=>present(id);
   $('#scD').onclick=async()=>{
     if(!await confirmSheet('Remover credencial','Ela sai desta carteira. O registro no emissor continua igual, e você pode pedir outra.','Remover',true))return;
