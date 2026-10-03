@@ -49,6 +49,7 @@ async function saveItem(data,id){
   await persistItems();
 }
 $('#dockAdd').onclick=()=>actionMenu();
+$('#dockShow').onclick=()=>present();
 
 /* ================= identidades ================= */
 // Cada identidade tem nome, perfil (Identidade, Profissional ou Personalizada, com o nome do perfil) e um DID
