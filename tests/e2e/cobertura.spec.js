@@ -117,9 +117,9 @@ const ponto = (out, estado, texto) => out.locator(`.chk.${estado}`).filter({ has
 test.beforeAll(async ({ browser }) => {
   [carteira, emissor, outroEmissor, emissorMesmaId, nova] = await Promise.all([1, 2, 3, 4, 5].map(async () => (await browser.newContext()).newPage()));
   for (const p of [carteira, emissor, outroEmissor, emissorMesmaId, nova]) vigiarCsp(p, violacoesCsp);
-  await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
-  await preparar(outroEmissor, 'emissor-systekna.html', WORDS.outroEmissor);
-  await preparar(emissorMesmaId, 'emissor-systekna.html', WORDS.carteira);
+  await preparar(emissor, 'governanca-systekna.html', WORDS.emissor);
+  await preparar(outroEmissor, 'governanca-systekna.html', WORDS.outroEmissor);
+  await preparar(emissorMesmaId, 'governanca-systekna.html', WORDS.carteira);
   await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
   didCarteira = await carteira.evaluate(() => ses.did);
   didEmissor = await emissor.evaluate(() => ses.did);
@@ -220,8 +220,8 @@ test('P04 · restaurar o emissor substitui o estado; backup sem livro ou com liv
   expect(await emissor.evaluate(() => st.book.length)).toBe(atos + 1);
 
   await restaurar(emissor, backup);
-  await expect(toast(emissor)).toHaveText(`Emissor restaurado com ${atos} atos`);
-  expect(await emissor.evaluate(() => [st.book.length, st.name])).toEqual([atos, 'Emissor de Credenciais Systekna']);
+  await expect(toast(emissor)).toHaveText(`Governança restaurada com ${atos} atos`);
+  expect(await emissor.evaluate(() => [st.book.length, st.name])).toEqual([atos, 'Governança Systekna']);
   await aba(emissor, 'vPanel');
   await expect(emissor.locator('#pBook')).toContainText('Livro íntegro');
 
@@ -242,7 +242,7 @@ test('P04 · restaurar o emissor substitui o estado; backup sem livro ou com liv
   });
   await restaurar(emissor, await montar(adulterado));
   await expect(toast(emissor)).toHaveText('Backup recusado: o livro se rompe no ato nº 1. Nada foi alterado.');
-  expect(await emissor.evaluate(() => [st.book.length, st.name])).toEqual([atos, 'Emissor de Credenciais Systekna']);
+  expect(await emissor.evaluate(() => [st.book.length, st.name])).toEqual([atos, 'Governança Systekna']);
 });
 
 test('P05 · mensagem cifrada: abre para a própria chave e falha adulterada ou para outra chave', async () => {

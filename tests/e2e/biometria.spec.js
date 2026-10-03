@@ -156,7 +156,7 @@ test('aparelho sem PRF: não ativa e explica por quê', async ({ browser }) => {
 test('emissor também desbloqueia com biometria', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   await sensor(page);
-  await preparar(page, 'emissor-systekna.html', WORDS.emissor);
+  await preparar(page, 'governanca-systekna.html', WORDS.emissor);
   await ativarBio(page);
   await bloquear(page);
   await page.click('#bioBtn');
@@ -291,7 +291,7 @@ test('só biometria: biometria recusada ao ativar mantém o PIN', async ({ brows
 test('só biometria: recusa na tela de bloqueio não oferece o PIN', async ({ browser }) => {
   const page = await (await browser.newContext()).newPage();
   const dedo = await sensor(page);
-  await preparar(page, 'emissor-systekna.html', WORDS.emissor);
+  await preparar(page, 'governanca-systekna.html', WORDS.emissor);
   await ativarBio(page);
   await ativarSoBio(page);
   await page.click('#lockBtn');

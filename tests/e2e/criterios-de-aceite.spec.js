@@ -61,7 +61,7 @@ test.beforeAll(async ({ browser }) => {
   emissor = await (await browser.newContext()).newPage();
   vigiarCsp(carteira, violacoesCsp);
   vigiarCsp(emissor, violacoesCsp);
-  await preparar(emissor, 'emissor-systekna.html', WORDS.emissor);
+  await preparar(emissor, 'governanca-systekna.html', WORDS.emissor);
   await preparar(carteira, 'carteira-systekna.html', WORDS.carteira);
 });
 
@@ -70,9 +70,9 @@ test.afterAll(async () => {
   await emissor?.context().close();
 });
 
-test('01 · emissor criado com o livro aberto e íntegro', async () => {
+test('01 · Governança criada com o livro aberto e íntegro', async () => {
   await expect(emissor.locator('#pBook')).toContainText('Livro íntegro');
-  await expect(emissor.locator('#pAtos')).toContainText('Livro aberto e emissor criado');
+  await expect(emissor.locator('#pAtos')).toContainText('Livro aberto e Governança criada');
 });
 
 test('02 · pedido válido é conferido e o mesmo pedido reenviado é recusado', async () => {

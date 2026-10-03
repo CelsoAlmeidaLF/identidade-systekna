@@ -1,5 +1,5 @@
 // Monta os HTML de arquivo único a partir de src/.
-//   node scripts/build.js          grava carteira-systekna.html e emissor-systekna.html
+//   node scripts/build.js          grava carteira-, governanca- e servicos-systekna.html
 //   node scripts/build.js --check  só confere se os HTML publicados estão em dia com src/
 //
 // Em src/<app>/pagina.html, uma linha `<!-- @inclui caminho -->` é trocada pelo conteúdo do
@@ -12,7 +12,7 @@ const RAIZ = path.join(__dirname, '..');
 // Versão mostrada nos apps (boas-vindas, PIN, Ajustes → Sobre): vem só do package.json.
 const VERSAO = require(path.join(RAIZ, 'package.json')).version;
 if (!/^\d+\.\d+\.\d+$/.test(VERSAO || '')) throw new Error('package.json precisa de "version" no formato 1.2.3');
-const APPS = ['carteira', 'emissor'];
+const APPS = ['carteira', 'governanca', 'servicos'];
 const INCLUI = /^[ \t]*<!-- @inclui (\S+) -->\n/gm;
 
 function monta(arquivo, pilha = []) {

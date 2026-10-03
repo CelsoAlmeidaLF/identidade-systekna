@@ -4,7 +4,8 @@ const { test, expect } = require('@playwright/test');
 
 const APPS = [
   { arquivo: 'carteira-systekna.html', manifesto: 'carteira.webmanifest', nome: 'Carteira' },
-  { arquivo: 'emissor-systekna.html', manifesto: 'emissor.webmanifest', nome: 'Emissor' },
+  { arquivo: 'governanca-systekna.html', manifesto: 'governanca.webmanifest', nome: 'Governança' },
+  { arquivo: 'servicos-systekna.html', manifesto: 'servicos.webmanifest', nome: 'Serviços' },
 ];
 
 /** Espera o service worker assumir a página (o primeiro carregamento só o instala). */

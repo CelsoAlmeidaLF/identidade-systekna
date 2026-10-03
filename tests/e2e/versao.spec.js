@@ -6,7 +6,8 @@ const { version } = require('../../package.json');
 
 const APPS = [
   { arquivo: 'carteira-systekna.html', palavras: WORDS.carteira, ajustes: 'vSet', nome: 'Carteira' },
-  { arquivo: 'emissor-systekna.html', palavras: WORDS.emissor, ajustes: 'vGov', nome: 'Emissor' },
+  { arquivo: 'governanca-systekna.html', palavras: WORDS.emissor, ajustes: 'vGov', nome: 'Governança' },
+  { arquivo: 'servicos-systekna.html', palavras: WORDS.servico, ajustes: 'vSrv', nome: 'Serviços' },
 ];
 
 for (const app of APPS) {

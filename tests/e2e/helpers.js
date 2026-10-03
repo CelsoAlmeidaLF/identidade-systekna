@@ -8,6 +8,7 @@ const WORDS = {
   carteira: 'abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon abandon about',
   emissor: 'zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo zoo wrong',
   outroEmissor: 'legal winner thank year wave sausage worth useful legal winner thank yellow',
+  servico: 'letter advice cage absurd amount doctor acoustic avoid letter advice cage above',
 };
 
 /**

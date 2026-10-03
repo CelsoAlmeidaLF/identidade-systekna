@@ -1,17 +1,22 @@
-// Service worker da Carteira e do Emissor: permite instalar e abrir os apps sem internet.
+// Service worker da Carteira, da Governança e dos Serviços: permite instalar e abrir os apps sem internet.
 // Páginas e arquivos do site: rede primeiro, para que cada publicação chegue logo; sem rede,
 // usa a última cópia guardada. Nada é buscado fora do site.
 // O nome do cache acompanha a versão do package.json (o build atualiza esta linha):
 // cada versão publicada troca o cache e apaga o anterior.
-const VERSAO = 'systekna-0.14.0';
+const VERSAO = 'systekna-0.15.0';
 const ESSENCIAIS = [
   './',
   'index.html',
   'carteira-systekna.html',
-  'emissor-systekna.html',
-  'cartorio-systekna.html', // endereço antigo, redireciona para o emissor
+  'governanca-systekna.html',
+  'emissor-systekna.html', // endereço antigo, redireciona para a Governança
+  'cartorio-systekna.html', // endereço antigo, redireciona para a Governança
   'carteira.webmanifest',
-  'emissor.webmanifest',
+  'governanca.webmanifest',
+  'servicos-systekna.html',
+  'servicos.webmanifest',
+  'icons/servicos-192.png',
+  'icons/servicos-512.png',
   'icons/carteira-192.png',
   'icons/carteira-512.png',
   'icons/emissor-192.png',
