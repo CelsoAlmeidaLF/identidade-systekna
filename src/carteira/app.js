@@ -92,13 +92,17 @@ function askCred(){
   openSheet(`<h3>Pedir credencial</h3><p class="sub">O pedido leva o seu DID e é assinado com a sua chave privada. É assim que o emissor sabe que é você mesmo quem pede.</p>
     <label class="f" id="aqNF"><span>Seu nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na credencial"></label>
     <label class="f"><span>Credencial desejada</span><select id="aqT">${Object.entries(VC_TYPES).map(([k,v])=>`<option value="${k}">${v.label}</option>`).join('')}</select></label>
+    <label class="f" id="aqEF"><span>DID do emissor (opcional)</span><input id="aqE" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint" id="aqEH">Com o DID, só esse emissor consegue atender o pedido.</p>
     <label class="f"><span>Observação para o emissor (opcional)</span><input id="aqO" autocomplete="off"></label>
     <button class="btn" id="aqGo">Assinar pedido</button>
     <div id="aqOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="aqJ" rows="5" readonly></textarea></label><button class="btn ghost" id="aqC">Copiar pedido</button></div>`);
   $('#aqGo').onclick=async()=>{
     const name=$('#aqN').value.trim();if(!name){shake($('#aqNF'));$('#aqN').focus();return}
+    const aud=$('#aqE').value.trim(),EH=$('#aqEH');
+    if(aud){try{await didToEdKey(aud)}catch(e){EH.textContent=e.message;EH.classList.add('bad');shake($('#aqEF'));return}}
+    EH.textContent='Com o DID, só esse emissor consegue atender o pedido.';EH.classList.remove('bad');
     const iat=now();
-    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
+    $('#aqJ').value=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:aud||'emissor',name,wanted:$('#aqT').value,note:$('#aqO').value.trim(),nonce:b64u.enc(rnd(16)),iat,exp:iat+7*86400});
     $('#aqOut').hidden=false;toast('Pedido assinado');
   };
   $('#aqC').onclick=()=>copy($('#aqJ').value,'Pedido copiado');

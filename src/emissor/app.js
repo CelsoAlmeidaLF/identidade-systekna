@@ -25,13 +25,16 @@ const APP={
   },
   exportData:async()=>st,
   async importData(d){
-    if(!d||!d.book)return 'Backup sem livro de registros';
+    if(!d||!Array.isArray(d.book)||!d.book.length)return 'Backup sem livro de registros';
+    // O livro do backup é conferido antes de substituir o estado: um backup adulterado não entra.
+    const c=await checkBook(d.book);
+    if(!c.ok)return `Backup recusado: o livro se rompe no ato nº ${c.at}. Nada foi alterado.`;
     st=d;await save();$('#whoLabel').textContent=st.name;renderPanel();
     return `Emissor restaurado com ${st.book.length} atos`;
   }
 };
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
-const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',registro:'file',confianca:'shield',nome:'note',politica:'shield',grupo:'user'};
+const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield'};
 async function ato(act,text,ref){
   const prev=st.book.length?st.book[st.book.length-1].hash:'0'.repeat(64);
   const e={n:st.book.length+1,at:Date.now(),act,text,ref:ref||null,prev};
@@ -39,16 +42,16 @@ async function ato(act,text,ref){
   e.sig=b64u.enc(await S.sign({name:'Ed25519'},ses.edPriv,te.encode(e.hash)));
   st.book.push(e);
 }
-async function checkBook(){
+async function checkBook(book=st.book){
   const pub=await S.importKey('raw',ses.edPub,{name:'Ed25519'},false,['verify']);
   let prev='0'.repeat(64);
-  for(const e of st.book){
+  for(const e of book){
     const body={n:e.n,at:e.at,act:e.act,text:e.text,ref:e.ref,prev:e.prev};
     const h=hex(await sha256(te.encode(JSON.stringify(body))));
     if(e.prev!==prev||h!==e.hash||!await S.verify({name:'Ed25519'},pub,b64u.dec(e.sig),te.encode(e.hash)))return{ok:false,at:e.n};
     prev=e.hash;
   }
-  return{ok:true,n:st.book.length};
+  return{ok:true,n:book.length};
 }
 const atoRow=(e,full)=>`<div class="ato"><span class="n">${e.n}</span><span class="dot">${ic(ATO_IC[e.act]||'book')}</span><div class="t"><b>${esc(e.text)}</b><small>${fmtTime(e.at)}</small>${full?`<br><code>${e.hash}</code>`:''}</div></div>`;
 const issStatus=i=>i.revoked?['no','Revogada']:(i.exp&&i.exp<now())?['warn','Expirada']:['ok','Ativa'];
@@ -98,6 +101,8 @@ $('#iqGo').onclick=async()=>{
   if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira, o titular gera o pedido em + e Pedir credencial.');
   if(!r.ok)return fail('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
   if(r.payload.exp&&r.payload.exp<now())return fail('Este pedido expirou. Peça um novo ao titular.');
+  // Pedido endereçado a um DID: só o emissor com esse DID atende. "emissor" (sem DID) vale para qualquer um.
+  if(r.payload.aud&&r.payload.aud!=='emissor'&&r.payload.aud!==ses.did)return fail('Este pedido foi feito para outro emissor. Peça ao titular um pedido para este emissor.');
   if(st.issued.some(i=>i.nonce&&i.nonce===r.payload.nonce))return fail('Este pedido já foi atendido. Peça um novo ao titular.');
   pedido=r;
   $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
