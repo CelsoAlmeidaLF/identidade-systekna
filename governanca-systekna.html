@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-b+8gvt8v3oGa4LDBX7cjS+Ot9kxOdc2iezKvSsZb8gM='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-RogK8djSxlCK6VG5bbHDQXQBitLHQKd6rObLsHh2UHg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -302,6 +302,9 @@ body[data-screen="sApp"] .dock{display:grid}
 .g-MembroDoGrupo{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
 .g-CustomCredential{--cg:linear-gradient(150deg,#79B8E8 0%,#2E6FB0 45%,#14365E 100%)}
 .g-BadgeCredential{--cg:linear-gradient(150deg,#7EDCA0 0%,#2A9457 45%,#11512D 100%)}
+.g-ServiceAccreditationCredential{--cg:linear-gradient(150deg,#6FD3B8 0%,#1F9C86 45%,#0B4F4A 100%)}
+.cred .apps{font-size:13px;opacity:.95;margin-top:-6px}
+.creds .pend{border:1px dashed var(--line)}
 /* Uma cor por perfil de identidade: Identidade azul, Profissional roxo, Personalizada âmbar. */
 .cred.p-identidade{--cg:linear-gradient(150deg,#5BB6F2 0%,#1A7AD4 45%,#0D3F78 100%)}
 .cred.p-profissional{--cg:linear-gradient(150deg,#A98BF0 0%,#6A45D1 45%,#33206F 100%)}
@@ -369,7 +372,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.18.3</p>
+<p class="ver boot" aria-hidden="true">Versão 0.19.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -381,7 +384,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.18.3</p>
+    <p class="ver">Versão 0.19.0</p>
   </div>
 </section>
 
@@ -429,7 +432,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.18.3</p>
+    <p class="ver">Versão 0.19.0</p>
   </div>
 </section>
 
@@ -465,6 +468,7 @@ body[data-screen="sApp"] .dock{display:grid}
         <div id="iWho"></div>
         <label class="f" id="iTypeF"><span>Tipo de credencial</span><select id="iType"></select></label>
         <div id="iIdent" hidden></div>
+        <div id="iSrv" hidden></div>
         <div id="iClaims"></div>
         <button class="link" id="iAdd" style="margin:6px 0 0;padding:6px 0">Adicionar campo</button>
         <label class="f" id="iDaysF"><span>Validade</span><select id="iDays"><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="1825">5 anos</option><option value="0">Sem validade</option></select></label>
@@ -579,7 +583,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.18.3';
+const APP_VERSION='0.19.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -776,8 +780,9 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
-  // A Governança autoriza um serviço a emitir crachás para os apps listados.
-  ServiceAccreditationCredential:{label:'Credenciamento',claims:[['servico',''],['apps','']]},
+  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás para os apps listados.
+  // Um serviço pode ter várias ativas ao mesmo tempo, cada uma com os apps dela.
+  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico',''],['apps','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
   // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
   BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}
@@ -1439,7 +1444,7 @@ $('#iqGo').onclick=async()=>{
   // Limpa a conferência anterior: o formulário só reaparece com o pedido novo.
   H.textContent='';H.classList.remove('bad');$('#iOut').hidden=true;$('#iForm').hidden=true;$('#iWho').innerHTML='';
   let r;try{r=await verifyJWT($('#iqT').value)}catch(e){return fail(e.message)}
-  if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira, a pessoa toca em Identidades e Solicitar aprovação.');
+  if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira: + › Solicitar aprovação de identidade. No Serviços: + › Solicitar aprovação de emissão.');
   if(!r.ok)return fail('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
   if(r.payload.exp&&r.payload.exp<now())return fail('Este pedido expirou. Peça um novo ao titular.');
   // Pedido endereçado a um DID: só o emissor com esse DID atende. "emissor" (sem DID) vale para qualquer um.
@@ -1452,14 +1457,30 @@ $('#iqGo').onclick=async()=>{
   // Pedido de crachá é para o app Serviços, não para a Governança.
   if(VC_TYPES[r.payload.wanted]&&VC_TYPES[r.payload.wanted].servicos)return fail('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
   if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
-  modoIdentidade($('#iType').value==='IdentityCredential');
+  modoCartao($('#iType').value);
   drawClaims();$('#iForm').hidden=false;
 };
 // Pedido de identidade: um cartão de aprovação, sem tipo nem campos para editar. A identidade leva só o nome.
-function modoIdentidade(sim){
-  $('#iTypeF').hidden=sim;$('#iClaims').hidden=sim;$('#iAdd').hidden=sim;$('#iIdent').hidden=!sim;$('#iRec').hidden=!sim;
-  $('#iGo').textContent=sim?'Aprovar identidade':'Emitir credencial';
-  if(!sim)return;
+// Pedido de serviço: cartão de aprovação de emissão, com os apps marcados (a STK pode desmarcar alguns).
+function modoCartao(type){
+  const ident=type==='IdentityCredential',srv=type==='ServiceAccreditationCredential',cartao=ident||srv;
+  $('#iTypeF').hidden=cartao;$('#iClaims').hidden=cartao;$('#iAdd').hidden=cartao;$('#iRec').hidden=!cartao;
+  $('#iIdent').hidden=!ident;$('#iSrv').hidden=!srv;
+  $('#iGo').textContent=ident?'Aprovar identidade':srv?'Aprovar emissão':'Emitir credencial';
+  if(ident)modoIdentidade();
+  if(srv)modoServico();
+}
+function modoServico(){
+  const p=pedido.payload,apps=[...new Set((Array.isArray(p.apps)?p.apps:[]).map(a=>String(a).trim()).filter(Boolean))];
+  const ativo=app=>st.issued.find(i=>i.sub===pedido.did&&i.type==='ServiceAccreditationCredential'&&issStatus(i)[0]==='ok'&&(i.claims.apps||[]).includes(app));
+  $('#iSrv').innerHTML=`<div class="list glass flat mt">
+    <div class="kr"><div class="h"><small>Serviço</small></div><div class="v" id="iSrvNome">${esc(p.name||'')}</div></div>
+    <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(pedido.did)}</div></div></div>
+    <div class="sec-h">Apps para aprovar</div>
+    <div class="list glass flat" id="iSrvApps">${apps.length?apps.map(a=>{const at=ativo(a);return `<button class="choice" data-app="${esc(a)}" aria-pressed="true"><span class="rd"></span><span class="t"><b>${esc(a)}</b>${at?`<small>Já aprovado${at.exp?' até '+fmtDate(at.exp*1000):', sem validade'}</small>`:''}</span></button>`}).join(''):'<div class="empty">O pedido não traz nenhum app.</div>'}</div>`;
+  $('#iSrvApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
+}
+function modoIdentidade(){
   const p=pedido.payload,ativa=st.issued.find(i=>i.sub===pedido.did&&i.type==='IdentityCredential'&&issStatus(i)[0]==='ok');
   $('#iIdent').innerHTML=`<div class="list glass flat mt">
     <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="iIdNome">${esc(p.name||'')}</div></div>
@@ -1468,7 +1489,8 @@ function modoIdentidade(sim){
     ${ativa?`<p class="note">Este DID já tem uma identidade aprovada${ativa.exp?' até '+fmtDate(ativa.exp*1000):''}. Aprovar de novo substitui a anterior.</p>`:''}`;
 }
 // Um ativo por DID: a nova Identidade ou o novo credenciamento revoga o anterior do mesmo titular.
-const UNICO={IdentityCredential:'Substituída por nova Identidade',ServiceAccreditationCredential:'Substituído por novo credenciamento'};
+// A aprovação de emissão não é única: um serviço pode ter várias ativas, cada uma com os apps dela.
+const UNICO={IdentityCredential:'Substituída por nova Identidade'};
 const soCampos=(claims,ok,quem)=>{const x=Object.keys(claims).find(k=>!ok.includes(k));if(x)throw new Error(`${quem} leva só ${ok.join(' e ')}. Tire o campo “${x}”.`)};
 async function issue(sub,type,claims,days,holderName,nonce,apelido){
   const pii=piiProblem({...claims,...(holderName?{titular:holderName}:{})});if(pii)throw new Error(pii);
@@ -1501,14 +1523,20 @@ async function issue(sub,type,claims,days,holderName,nonce,apelido){
 }
 $('#iGo').onclick=async()=>{
   if(!pedido)return;
-  const type=$('#iType').value,ident=type==='IdentityCredential';
+  const type=$('#iType').value,ident=type==='IdentityCredential',srv=type==='ServiceAccreditationCredential';
   let claims={};
   if(ident)claims={nome:String(pedido.payload.name||'').trim()};
+  else if(srv){
+    const apps=[...$('#iSrvApps').querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.app);
+    if(!apps.length){toast('Escolha ao menos um app',true);return}
+    claims={servico:String(pedido.payload.name||'').trim(),apps};
+  }
   else $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
   if(!Object.values(claims).some(Boolean)){toast(ident?'O pedido não traz o nome da pessoa':'Preencha ao menos um campo com valor',true);return}
   try{$('#iJwt').value=embrulhar(await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce,ident?pedido.payload.apelido:''))}catch(e){toast(e.message,true);return}
   const quem=`${esc(pedido.payload.name||shortDid(pedido.did))}${ident&&pedido.payload.apelido?' ('+esc(pedido.payload.apelido)+')':''}`;
   $('#iOk').innerHTML=ident?verdictHtml(true,'Identidade aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação à pessoa.`)
+    :srv?verdictHtml(true,'Emissão aprovada',`Credencial emitida para ${quem}: ${esc(claims.apps.join(', '))}, registrada no livro. Entregue a aprovação ao serviço.`)
     :verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${quem}, registrada no livro.`);
   $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
 };
@@ -1516,14 +1544,14 @@ $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
 // Recusa: fica só no livro, com o motivo (a carteira continua aguardando). O pedido recusado não volta.
 $('#iRec').onclick=async()=>{
   if(!pedido)return;
-  const p=pedido.payload,did=pedido.did;
-  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise a pessoa por fora; ela pode enviar um pedido novo.</p>
-    <label class="f"><span>Motivo</span><select id="rcM"><option>Pessoa não identificada</option><option>Dados não conferem</option><option>Pedido duplicado</option><option>Outro</option></select></label>
+  const p=pedido.payload,did=pedido.did,srv=$('#iType').value==='ServiceAccreditationCredential';
+  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise ${srv?'o serviço':'a pessoa'} por fora; ${srv?'ele':'ela'} pode enviar um pedido novo.</p>
+    <label class="f"><span>Motivo</span><select id="rcM">${(srv?['Serviço não identificado','Apps não autorizados','Pedido duplicado','Outro']:['Pessoa não identificada','Dados não conferem','Pedido duplicado','Outro']).map(m=>`<option>${m}</option>`).join('')}</select></label>
     <button class="btn danger" id="rcGo">Recusar</button>`);
   $('#rcGo').onclick=async()=>{
     const motivo=$('#rcM').value;
     st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:did,nome:p.name||'',apelido:p.apelido||'',motivo,at:Date.now()}];
-    await ato('recusa',`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
+    await ato('recusa',srv?`Aprovação de emissão de ${p.name||shortDid(did)} recusada: ${motivo}`:`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
     closeSheet();pedido=null;$('#iForm').hidden=true;$('#iWho').innerHTML='';$('#iqT').value='';
     $('#iqH').textContent=`Pedido recusado: ${motivo}. Registrado no livro.`;$('#iqH').classList.remove('bad');toast('Pedido recusado');
   };
