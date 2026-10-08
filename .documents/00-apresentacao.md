@@ -36,10 +36,12 @@
 5. Na hora de entrar, a pessoa responde ao desafio da **portaria** com a carteira. Cópia de crachá não funciona.
 6. Perdeu o aparelho? Cada app volta pelas **12 palavras** ou pelo **código de recuperação** do PDF, que traz um QR code.
 
-## Onde estamos (0.23.0)
+## Onde estamos (1.0.0)
 
 - Os 3 apps estão publicados e funcionam **100% no navegador**, sem servidor, inclusive offline.
-- O responsável aprovou as funcionalidades até a 0.20.0 nos primeiros testes e a recuperação com PDF da 0.23.0; o cartão do app (0.21) e Serviço › Apps › Funcionalidades (0.22) seguem em homologação (ver [12-homologacao](12-homologacao.md)).
+- **Versão 1.0.0 (08/10/2026):** os 3 apps foram homologados (pré-aprovados) pelo responsável (ver [12-homologacao](12-homologacao.md)).
+- A Carteira guarda identidades (**did:key**) e crachás (**cv:key**), cifra e abre **mensagens** e tem um **cofre de anotações**, onde cabem as mensagens cifradas.
+- A Governança emite as credenciais de identidade e aprova os serviços; cada serviço emite os crachás dos seus apps.
 - Proteções: PIN com espera e apagamento no 10º erro, biometria do aparelho (passkey com PRF), backup cifrado, livro de registros assinado, nenhum dado sai do aparelho sem a pessoa copiar.
 - Recuperação: 12 palavras ou código STK1-…, com PDF de recuperação (QR code, código e palavras).
 
@@ -56,6 +58,7 @@
 
 - O transporte entre os apps é **copiar e colar** (QR Code entre os apps adiado; o QR existe no PDF de recuperação).
 - Os apps das organizações (Câmbio etc.) **ainda não leem o crachá sozinhos**: a conferência é na Portaria do app Serviços. A integração ("Entrar com a carteira") é um próximo passo.
+- A revisão de criptografia de 08/10/2026 deixou pontos abertos: a carteira ainda não fixa o DID da Governança nem confere o emissor do crachá, e o PIN de 6 dígitos é protegido só por JavaScript ([11](11-decisoes-e-roteiro.md) §4).
 - O ambiente publicado é **de demonstração** (origem compartilhada no GitHub Pages): não usar para identidades reais.
 - O **PDF de recuperação é uma cópia completa da conta**: imprimir e apagar o arquivo.
 - As credenciais valem **entre as partes que aceitam o meio**; o sistema não tem fé pública e não substitui cartório, ICP-Brasil ou gov.br.

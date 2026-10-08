@@ -46,9 +46,9 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | RTE-04 | Identidades de teste só com frases BIP39 conhecidas; nunca dados reais |
 | RTE-05 | Todo arquivo de fluxo termina conferindo que não houve violação de CSP |
 
-## 4. Situação da suíte completa (08/10/2026, código 0.22.1)
+## 4. Situação da suíte completa (08/10/2026, código 1.0.0)
 
-**156 passaram · 4 falharam · 37 não rodaram** (dependiam dos que falharam, no mesmo arquivo). Na 0.23.0, `recuperacao.spec.js` (9 testes) passou, e os arquivos afetados pela recuperação rodaram com 80 aprovados e só a falha antiga de `identidades.spec.js`.
+**177 passaram · 4 falharam · 37 não rodaram** (dependiam dos que falharam, no mesmo arquivo), em 13,9 min. São as mesmas 4 falhas da 0.22.1; nenhuma nova. Na 0.22.1 eram 156 aprovados. Na 0.23.0, `recuperacao.spec.js` (9 testes) passou, e os arquivos afetados pela recuperação rodaram com 80 aprovados e só a falha antiga de `identidades.spec.js`.
 
 As 4 falhas são de **testes antigos que esperam telas que mudaram depois deles** — os testes de cada entrega nova passaram:
 
