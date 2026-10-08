@@ -345,6 +345,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .choice .t{flex:1;min-width:0}
 .choice b{display:block;font-weight:500;font-size:14px}
 .choice small{color:var(--soft);font-size:12px}
+.choice small.blk{display:block;margin-top:2px}
 .rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .card{padding:16px}
 .card+.card{margin-top:12px}

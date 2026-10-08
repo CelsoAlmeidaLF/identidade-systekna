@@ -94,11 +94,10 @@ test.beforeAll(async ({ browser }) => {
   aprovProf = await aprovarNaStk(pedidoProf);
   await receberIdentidade(aprovProf);
 
-  // Serviço com Câmbio e Taxômetro aprovados pela STK.
+  // Serviço aprovado pela STK, com os apps Câmbio e Taxômetro cadastrados por ele.
   await srv.click('#dockAdd');
   await srv.click('#sheetBody [data-act="ask"]');
   await srv.fill('#saN', 'Meus Serviços Financeiros');
-  for (const a of ['Câmbio', 'Taxômetro']) { await srv.fill('#saA', a); await srv.click('#saAdd'); }
   await srv.fill('#saG', didGov);
   await srv.click('#saGo');
   // Espera o pedido assinado aparecer: a assinatura termina depois do clique.
@@ -111,6 +110,14 @@ test.beforeAll(async ({ browser }) => {
   await srv.fill('#srT', aprovSrv);
   await srv.click('#srGo');
   await expect(toast(srv)).toHaveText('Aprovação de emissão guardada');
+  for (const a of ['Câmbio', 'Taxômetro']) {
+    await aba(srv, 'vSrv');
+    await srv.click('#sAppNovo');
+    await srv.fill('#naN', a);
+    await srv.click('#naGo');
+    await expect(srv.locator('#sheetBody h3')).toHaveText(`App ${a}`);
+    await fecharSheet(srv);
+  }
   await srv.click('#dockAdd');
   await srv.click('#sheetBody [data-act="card"]');
   await expect(srv.locator('#scJ')).not.toHaveValue('');
@@ -160,7 +167,7 @@ test('cartão alterado ou com apps de outra Governança é recusado; sem identid
     const aprov = await signJWT('vc+jwt', { iss: ses.did, sub: ses.did, iat, nbf: iat, jti: 'urn:uuid:' + crypto.randomUUID(), vc: { '@context': VC_CONTEXT, type: ['VerifiableCredential', 'ServiceAccreditationCredential'], issuer: { id: ses.did, name: 'Falsa' }, credentialSubject: { id: ses.did, servico: 'X', apps: ['Câmbio'] } } });
     return embrulhar(await signJWT('cartao+jwt', { iss: ses.did, name: 'X', apps: ['Câmbio'], aprovacoes: [aprov], iat }));
   });
-  expect(await ler(carteira, falso)).toBe('Este serviço não tem apps aprovados pela mesma Governança da sua identidade.');
+  expect(await ler(carteira, falso)).toBe('Este serviço não foi aprovado pela mesma Governança da sua identidade.');
 
   const nova = await (await browser.newContext()).newPage();
   vigiarCsp(nova, violacoesCsp);
@@ -198,7 +205,7 @@ test('o Cartão do app mostra só aquele app, já marcado', async () => {
   await carteira.evaluate(async n => { const it = ses.items.find(i => i.data.type === 'acesso' && i.data.nonce === n); ses.items = ses.items.filter(i => i !== it); await persistItems(); }, p.nonce);
 });
 
-test('Cartão do app alterado ou com app fora da aprovação é recusado', async () => {
+test('Cartão do app alterado ou sem o app na lista é recusado', async () => {
   const ler = async texto => {
     await menuCarteira('access');
     await carteira.fill('#paC', texto);
@@ -212,12 +219,12 @@ test('Cartão do app alterado ou com app fora da aprovação é recusado', async
   const alterado = `${pre}${h}.${Buffer.from(JSON.stringify({ ...payloadDe(doApp), app: 'Taxômetro', apps: ['Taxômetro'] })).toString('base64url')}.${sig}`;
   expect(await ler(alterado)).toBe('A assinatura do cartão não confere: ele foi alterado.');
 
-  // Assinado pelo serviço, mas com um app que a aprovação da Governança não cobre.
+  // Assinado pelo serviço, mas o app do cartão não está na lista de apps dele.
   const fora = await srv.evaluate(async () => {
     const a = st.aprovacoes[0];
-    return embrulhar(await signJWT('cartao+jwt', { iss: ses.did, name: nomeServico(), app: 'Piscina', apps: ['Piscina'], aprovacoes: [a.jwt], iat: now() }));
+    return embrulhar(await signJWT('cartao+jwt', { iss: ses.did, name: nomeServico(), app: 'Piscina', apps: ['Câmbio'], aprovacoes: [a.jwt], iat: now() }));
   });
-  expect(await ler(fora)).toBe('Este app não foi aprovado pela mesma Governança da sua identidade.');
+  expect(await ler(fora)).toBe('Este cartão não traz o app.');
 });
 
 let pedidoCambio = '';

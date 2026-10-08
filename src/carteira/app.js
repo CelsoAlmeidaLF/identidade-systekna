@@ -203,7 +203,7 @@ function askCred(){
 // Identidades com aprovação válida e a Governança que aprovou cada uma.
 const aprovadas=()=>identidades().map(x=>({x,c:aprovacaoDe(x.id.did)})).filter(o=>o.c&&credState(o.c.data)[0]!=='no');
 function pedirAcesso(){
-  openSheet(`<h3>Solicitar acesso a um app</h3><p class="sub">Cole o Cartão do serviço ou do app. A carteira confere que os apps foram aprovados pela mesma Governança que aprovou a sua identidade.</p>
+  openSheet(`<h3>Solicitar acesso a um app</h3><p class="sub">Cole o Cartão do serviço ou do app. A carteira confere que o serviço foi aprovado pela mesma Governança que aprovou a sua identidade.</p>
     <label class="f" id="paF"><span>Cartão do serviço ou do app</span><textarea class="mono" id="paC" rows="4" spellcheck="false" placeholder="SYSTEKNA:CARTAO-…"></textarea></label><p class="hint" id="paH"></p>
     <button class="btn" id="paLer">Ler cartão</button><div id="paStep"></div>`);
   $('#paLer').onclick=async()=>{
@@ -213,19 +213,25 @@ function pedirAcesso(){
     if(!ok.length)return fail('Você ainda não tem identidade aprovada. Use + › Solicitar aprovação de identidade.');
     let r;try{r=await verifyJWT($('#paC').value,'cartao+jwt')}catch(e){return fail(e.message)}
     if(!r.ok)return fail('A assinatura do cartão não confere: ele foi alterado.');
-    // Só valem os apps que o serviço pôs no cartão (o do app traz um só) e que a Governança aprovou.
-    const c=r.payload,t0=now(),govs=new Set(ok.map(o=>o.c.data.issuerDid)),apps=new Set();
-    const doCartao=new Set((Array.isArray(c.apps)?c.apps:[]).map(String)),soApp=typeof c.app==='string'?c.app:'';
+    // A Governança aprova o serviço; os apps e as funcionalidades são dele e vêm no cartão, assinado pelo serviço.
+    const c=r.payload,t0=now(),govs=new Set(ok.map(o=>o.c.data.issuerDid));
+    const soApp=typeof c.app==='string'?c.app:'',lista=[...new Set((Array.isArray(c.apps)?c.apps:[]).map(String))].filter(x=>!soApp||x===soApp);
+    let aprovado=false;
     for(const tok of Array.isArray(c.aprovacoes)?c.aprovacoes:[]){
       try{
-        const a=await verifyJWT(tok,'vc+jwt'),q=a.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
-        if(a.ok&&vcType(q)==='ServiceAccreditationCredential'&&q.sub===r.did&&govs.has(a.did)&&!(q.exp&&q.exp<=t0))(cs.apps||[]).map(String).filter(x=>doCartao.has(x)&&(!soApp||x===soApp)).forEach(x=>apps.add(x));
+        const a=await verifyJWT(tok,'vc+jwt'),q=a.payload;
+        if(a.ok&&vcType(q)==='ServiceAccreditationCredential'&&q.sub===r.did&&govs.has(a.did)&&!(q.exp&&q.exp<=t0))aprovado=true;
       }catch{}
     }
-    if(!apps.size)return fail(soApp?'Este app não foi aprovado pela mesma Governança da sua identidade.':'Este serviço não tem apps aprovados pela mesma Governança da sua identidade.');
-    const lista=[...apps],ids=ok.filter(o=>govs.has(o.c.data.issuerDid)),marcado=soApp?'true':'false';
-    $('#paStep').innerHTML=`${verdictHtml(true,esc(soApp?`${soApp} · ${c.name||'Serviço'}`:c.name||'Serviço'),`${soApp?'App aprovado':'Apps aprovados'} pela Governança: ${esc(lista.join(', '))}.`)}
-      <div class="sec-h">Apps</div><div class="list glass flat" id="paApps">${lista.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${marcado}"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('')}</div>
+    if(!aprovado)return fail('Este serviço não foi aprovado pela mesma Governança da sua identidade.');
+    if(!lista.length)return fail(soApp?'Este cartão não traz o app.':'Este serviço ainda não tem apps.');
+    const ids=ok.filter(o=>govs.has(o.c.data.issuerDid)),marcado=soApp?'true':'false';
+    // O catálogo mostra o que cada app faz: as funcionalidades e os grupos delas. Quem libera é o serviço.
+    const cat=new Map((Array.isArray(c.catalogo)?c.catalogo:[]).map(a=>[String(a.nome),a]));
+    const detalhe=nome=>{const a=cat.get(nome);if(!a)return '';const fns=(a.funcoes||[]).map(f=>String(f.nome)),gr=(a.grupos||[]).map(g=>String(g.nome));
+      return [fns.length?'Funcionalidades: '+fns.join(', '):'',gr.length?'Grupos: '+gr.join(', '):''].filter(Boolean).map(t=>`<small class="blk">${esc(t)}</small>`).join('')};
+    $('#paStep').innerHTML=`${verdictHtml(true,esc(soApp?`${soApp} · ${c.name||'Serviço'}`:c.name||'Serviço'),`Serviço aprovado pela Governança da sua identidade.`)}
+      <div class="sec-h">Apps</div><div class="list glass flat" id="paApps">${lista.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${marcado}"><span class="rd"></span><span class="t"><b>${esc(a)}</b>${detalhe(a)}</span></button>`).join('')}</div>
       <label class="f"><span>Identidade que vai usar o crachá</span><select id="paI">${ids.map(o=>`<option value="${o.x.n}">${esc(credMain(o.c.data))} · ${esc(perfilTxt(o.x))}</option>`).join('')}</select></label>
       <button class="btn" id="paGo">Assinar pedido</button>
       <div id="paOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="paJ" rows="5" readonly></textarea></label><button class="btn ghost" id="paCp">Copiar pedido</button></div>`;

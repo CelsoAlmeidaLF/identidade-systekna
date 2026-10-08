@@ -254,12 +254,12 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
-  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás para os apps listados.
-  // Um serviço pode ter várias ativas ao mesmo tempo, cada uma com os apps dela.
-  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico',''],['apps','']]},
+  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás. Os apps e as funcionalidades são do
+  // serviço e não entram aqui (aprovações antigas ainda podem trazer apps: valem para o serviço todo).
+  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
-  // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
-  BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}
+  // Crachá (CV:KEY): emitido só pelo app Serviços, para um app dele, com as funcionalidades liberadas.
+  BadgeCredential:{label:'Crachá',claims:[['servico',''],['app',''],['funcionalidades','']],servicos:true}
 };
 // Âncora de confiança (DP-08): o DID publicado da Governança Systekna vem pré-carregado nos apps.
 // Vazio até a Governança de produção ser criada; enquanto isso, cada app informa o DID nos ajustes.

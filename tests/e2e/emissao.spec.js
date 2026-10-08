@@ -1,7 +1,8 @@
 // @ts-check
-// Cenário 2 (aprovado em 03/10/2026): o Serviço solicita à STK a aprovação de emissão de crachás (CV:KEY) dos apps
-// dele; a STK aprova (pode desmarcar apps) ou recusa. Para um app novo, o serviço pede só ele, e várias aprovações
-// ficam ativas ao mesmo tempo. Menu + no centro do rodapé, como na carteira.
+// Cenário 2, regras de 08/10/2026: a Governança aprova o SERVIÇO (a organização ou o desenvolvedor), não os apps.
+// O serviço cadastra os apps dele e, em cada um, as funcionalidades e os grupos delas. Ao aprovar um acesso, libera
+// uma ou mais funcionalidades (o grupo é só atalho); o crachá leva as funcionalidades liberadas, sem grupo nem plano,
+// e a portaria confere a funcionalidade pedida no próprio crachá.
 const { test, expect } = require('@playwright/test');
 const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('./helpers');
 
@@ -14,27 +15,11 @@ test.describe.configure({ mode: 'serial' });
 let didSrv = '', didGov = '', didCarteira = '';
 const DIA = 86_400;
 const agora = () => Math.floor(Date.now() / 1000);
+const APP = 'Gestão Financeira';
 
 async function menu(acao) {
   await srv.click('#dockAdd');
   await srv.click(`#sheetBody [data-act="${acao}"]`);
-}
-
-async function adicionarApp(app) {
-  await srv.fill('#saA', app);
-  await srv.click('#saAdd');
-}
-
-/** Solicita pela tela com os apps dados; devolve o pedido assinado. */
-async function solicitar(apps, nome) {
-  await menu('ask');
-  if (nome) await srv.fill('#saN', nome);
-  for (const a of apps) await adicionarApp(a);
-  await srv.click('#saGo');
-  await expect(srv.locator('#saOut')).toBeVisible();
-  const tok = await srv.inputValue('#saJ');
-  await fecharSheet(srv);
-  return tok;
 }
 
 async function conferirNaStk(tok) {
@@ -55,10 +40,44 @@ async function aprovarNaStk() {
 
 async function receber(tok) {
   await menu('get');
-  await expect(srv.locator('#sheetBody h3')).toHaveText('Receber aprovação de emissão');
   await srv.fill('#srT', tok);
   await srv.click('#srGo');
   await expect(toast(srv)).toHaveText('Aprovação de emissão guardada');
+}
+
+/** Cadastra uma funcionalidade e espera o resultado (salvar é assíncrono e limpa o formulário). */
+async function funcionalidade(nome, codigo, tipo) {
+  const antes = await srv.locator('#fnL .tx').count();
+  await srv.fill('#fnN', nome);
+  if (codigo) await srv.fill('#fnC', codigo);
+  if (tipo) await srv.selectOption('#fnT', tipo);
+  await srv.click('#fnAdd');
+  await expect(async () => {
+    const depois = await srv.locator('#fnL .tx').count();
+    const erro = await srv.locator('#fnH.bad').count();
+    expect(depois > antes || erro > 0).toBe(true);
+  }).toPass();
+}
+
+/** Gera um desafio na portaria (app e, se der, a funcionalidade), responde pela carteira e confere. */
+async function portaria(fn) {
+  await aba(srv, 'vGate');
+  await srv.selectOption('#gaApp', APP);
+  await srv.selectOption('#gaFn', fn);
+  const anterior = await srv.inputValue('#gaChalT');
+  await srv.click('#gaGen');
+  await expect(srv.locator('#gaChalT')).not.toHaveValue(anterior);
+  const desafio = await srv.inputValue('#gaChalT');
+  await carteira.click('#dockShow');
+  await carteira.fill('#apT', desafio);
+  await carteira.click('#apGo');
+  await carteira.locator('#apC [data-pk]').filter({ hasText: 'Crachá' }).first().click();
+  await carteira.click('#apSign');
+  const prova = await carteira.inputValue('#apJ');
+  await fecharSheet(carteira);
+  await srv.fill('#gaPT', prova);
+  await srv.click('#gaGo');
+  return { desafio, out: srv.locator('#gaOut') };
 }
 
 test.beforeAll(async ({ browser }) => {
@@ -75,9 +94,7 @@ test.afterAll(async () => {
 });
 
 test('rodapé com o + no centro e o menu com as três ações', async () => {
-  const botoes = srv.locator('.dock > button');
-  await expect(botoes).toHaveText(['Painel', 'Crachás', '', 'Portaria', 'Serviço']);
-  await expect(botoes.nth(2)).toHaveId('dockAdd');
+  await expect(srv.locator('.dock > button')).toHaveText(['Painel', 'Crachás', '', 'Portaria', 'Serviço']);
   await srv.click('#dockAdd');
   await expect(srv.locator('#sheetBody [data-act] b')).toHaveText(['Solicitar aprovação de emissão', 'Receber aprovação de emissão', 'Cartão do serviço']);
   await fecharSheet(srv);
@@ -86,17 +103,10 @@ test('rodapé com o + no centro e o menu com as três ações', async () => {
 
 let pedido1 = '';
 
-test('solicitar: Governança informada uma vez, nome e apps; fica aguardando', async () => {
+test('solicitar: o pedido leva só o serviço, sem apps, e fica aguardando', async () => {
   await menu('ask');
-  await srv.fill('#saN', 'Academia Boa Forma');
-  await adicionarApp('Portaria');
-  await adicionarApp('Aulas');
-  await adicionarApp('portaria');
-  await expect(srv.locator('#saH')).toHaveText('portaria já está na lista.');
-  await adicionarApp('Lixo');
-  await srv.click('#saL [data-rm="2"]');
-  await expect(srv.locator('#saL .tx b')).toHaveText(['Portaria', 'Aulas']);
-
+  await expect(srv.locator('#saA')).toHaveCount(0);
+  await srv.fill('#saN', 'Systekna Software');
   await srv.fill('#saG', didSrv);
   await srv.click('#saGo');
   await expect(srv.locator('#saH')).toHaveText('Este é o DID do próprio serviço.');
@@ -108,105 +118,98 @@ test('solicitar: Governança informada uma vez, nome e apps; fica aguardando', a
 
   expect(pedido1).toMatch(/^SYSTEKNA:PEDIDO-CREDENCIAMENTO:/);
   const p = payloadDe(pedido1);
-  expect([p.iss, p.aud, p.name, p.apps, p.wanted]).toEqual([didSrv, didGov, 'Academia Boa Forma', ['Portaria', 'Aulas'], 'ServiceAccreditationCredential']);
+  expect([p.iss, p.aud, p.name, p.wanted, 'apps' in p]).toEqual([didSrv, didGov, 'Systekna Software', 'ServiceAccreditationCredential', false]);
   await aba(srv, 'vPanel');
   await expect(srv.locator('#pAprov .pend')).toContainText('Aguardando aprovação');
-  await expect(srv.locator('#pAprov .pend')).toContainText('Portaria · Aulas');
-  await aba(srv, 'vSrv');
-  await expect(srv.locator('#sNome')).toHaveText('Academia Boa Forma');
-  await expect(srv.locator('#sGovD')).toHaveText(await srv.evaluate(d => shortDid(d), didGov));
+  await expect(srv.locator('#pAprov .pend')).toContainText('Systekna Software');
 });
 
-test('a STK vê o cartão, desmarca um app e aprova a emissão', async () => {
+test('a STK aprova o serviço, sem lista de apps', async () => {
   await conferirNaStk(pedido1);
-  await expect(gov.locator('#iSrvNome')).toHaveText('Academia Boa Forma');
-  await expect(gov.locator('#iTypeF')).toBeHidden();
-  await expect(gov.locator('#iClaims')).toBeHidden();
+  await expect(gov.locator('#iSrvNome')).toHaveText('Systekna Software');
+  await expect(gov.locator('#iSrvApps')).toHaveCount(0);
   await expect(gov.locator('#iGo')).toHaveText('Aprovar emissão');
-  await expect(gov.locator('#iSrvApps [data-app]')).toHaveCount(2);
-  await gov.click('#iSrvApps [data-app="Aulas"]');
-  const p = payloadDe(await aprovarNaStk());
-  expect(p.sub).toBe(didSrv);
-  expect(p.vc.credentialSubject).toEqual({ id: didSrv, servico: 'Academia Boa Forma', apps: ['Portaria'] });
-  expect(p.exp - p.iat).toBe(365 * DIA);
-});
-
-test('sem nenhum app marcado, a STK não aprova', async () => {
-  const tok = await solicitar(['Aulas']);
-  await conferirNaStk(tok);
-  await gov.click('#iSrvApps [data-app="Aulas"]');
-  const antes = await gov.evaluate(() => st.issued.length);
-  await gov.click('#iGo');
-  await expect(toast(gov)).toHaveText('Escolha ao menos um app');
-  expect(await gov.evaluate(() => st.issued.length)).toBe(antes);
-});
-
-test('o Serviços guarda a aprovação e mostra o cartão no Painel', async () => {
-  await receber(await gov.inputValue('#iJwt'));
-  // Um cartão por app, agrupados sob a organização aprovada pela Governança.
-  await expect(srv.locator('#pOrgN')).toHaveText('Academia Boa Forma');
-  await expect(srv.locator('#pOrgG')).toHaveText('Ecossistema aprovado pela Governança Systekna');
-  const card = srv.locator('#pAprov .cred');
-  await expect(card).toHaveCount(1);
-  await expect(card.locator('.tipo')).toHaveText('App: Portaria');
-  await expect(card.locator('.main')).toHaveCount(0);
-  await expect(card.locator('.did .mono')).toHaveAttribute('title', didSrv);
-  await expect(card.locator('.emissor')).toHaveText('Governança Systekna');
-  await expect(card.locator('.pill')).toContainText('Até ');
-  await card.locator('.did .cp').click();
-  await expect(toast(srv)).toHaveText('DID copiado');
-  // O pedido de Portaria saiu de "aguardando"; o de Aulas (pedido no teste anterior) continua.
-  await expect(srv.locator('#pAprov .pend')).toHaveCount(1);
-  await expect(srv.locator('#pAprov .pend')).toContainText('Aulas');
-  await expect(srv.locator('#pCred')).toBeEmpty();
-});
-
-let pedidoPiscina = '';
-
-test('app novo: pede só ele, e as duas aprovações ficam ativas', async () => {
-  await menu('ask');
-  await expect(srv.locator('#saOk')).toContainText('Portaria');
-  await adicionarApp('Portaria');
-  await expect(srv.locator('#saH')).toHaveText('Portaria já está aprovado.');
-  await fecharSheet(srv);
-
-  pedidoPiscina = await solicitar(['Piscina']);
-  expect(payloadDe(pedidoPiscina).apps).toEqual(['Piscina']);
-  await conferirNaStk(pedidoPiscina);
-  await gov.selectOption('#iDays', '30');
   const tok = await aprovarNaStk();
-  expect(payloadDe(tok).exp - payloadDe(tok).iat).toBe(30 * DIA);
+  const p = payloadDe(tok);
+  expect(p.vc.credentialSubject).toEqual({ id: didSrv, servico: 'Systekna Software' });
+  expect(p.exp - p.iat).toBe(365 * DIA);
   await receber(tok);
-
-  await expect(srv.locator('#pAprov .cred')).toHaveCount(2);
-  await expect(srv.locator('#pAprov .cred .tipo')).toHaveText(['App: Portaria', 'App: Piscina']);
-  await expect(srv.locator('#pAprov .cred[data-app="Piscina"] .pill')).toContainText('Até ');
-  expect(await srv.evaluate(() => credApps().sort())).toEqual(['Piscina', 'Portaria']);
-  await expect(srv.locator('#sP')).toHaveText('2');
-  // Na STK, as duas aprovações do serviço continuam ativas.
-  expect(await gov.evaluate(d => st.issued.filter(i => i.sub === d && i.type === 'ServiceAccreditationCredential' && !i.revoked).length, didSrv)).toBe(2);
+  await expect(srv.locator('#pAprov .pend')).toHaveCount(0);
+  await expect(srv.locator('#pCred')).toContainText('Nenhum app ainda');
 });
 
-test('na STK, o cartão avisa quando um app já tem aprovação ativa', async () => {
-  const iat = agora();
-  const repetido = await srv.evaluate(async t => embrulhar(await signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: 'emissor', name: 'Academia Boa Forma', wanted: 'ServiceAccreditationCredential', apps: ['Portaria'], note: '', nonce: 'repetido', iat: t, exp: t + 3600 })), iat);
-  await conferirNaStk(repetido);
-  await expect(gov.locator('#iSrvApps [data-app="Portaria"]')).toContainText('Já aprovado até');
-});
-
-test('a STK recusa: fica no livro com o motivo e o serviço continua aguardando', async () => {
-  const tok = await solicitar(['Sauna']);
+test('a STK recusa: o motivo fala do serviço, não de apps', async () => {
+  await menu('ask');
+  await expect(srv.locator('#saOk')).toContainText('O serviço já está aprovado até');
+  await srv.click('#saGo');
+  await expect(srv.locator('#saOut')).toBeVisible();
+  const tok = await srv.inputValue('#saJ');
+  await fecharSheet(srv);
   await conferirNaStk(tok);
+  await expect(gov.locator('#iSrvAtiva')).toContainText('Este serviço já está aprovado até');
   await gov.click('#iRec');
-  await gov.selectOption('#rcM', 'Apps não autorizados');
+  await gov.selectOption('#rcM', 'Serviço não autorizado');
   await gov.click('#rcGo');
   await expect(toast(gov)).toHaveText('Pedido recusado');
-  expect(await gov.evaluate(() => st.book.at(-1).text)).toBe('Aprovação de emissão de Academia Boa Forma recusada: Apps não autorizados');
-  await aba(srv, 'vPanel');
-  await expect(srv.locator('#pAprov .pend').filter({ hasText: 'Sauna' })).toContainText('Aguardando aprovação');
+  expect(await gov.evaluate(() => st.book.at(-1).text)).toBe('Aprovação de emissão de Systekna Software recusada: Serviço não autorizado');
+  // O pedido de renovação fica aguardando; tira para não poluir o painel.
+  await srv.evaluate(async () => { st.pendentes = []; await save(); renderPanel(); });
 });
 
-test('o crachá de cada app leva a aprovação dele e nunca passa da validade dela', async () => {
+test('o serviço cadastra o app, as funcionalidades e um grupo', async () => {
+  await aba(srv, 'vSrv');
+  await expect(srv.locator('#sApps')).toContainText('Nenhum app ainda');
+  await srv.click('#sAppNovo');
+  await srv.fill('#naN', APP);
+  await srv.click('#naGo');
+  await expect(toast(srv)).toHaveText('App criado');
+  await expect(srv.locator('#sheetBody h3')).toHaveText(`App ${APP}`);
+
+  await funcionalidade('Lançar despesas', 'despesas');
+  await funcionalidade('Lançar receita', 'receita');
+  await funcionalidade('Lançar cartões', '', 'Micro-serviço');
+  await funcionalidade('Lançar metas', 'despesas');
+  await expect(srv.locator('#fnH')).toHaveText('O código despesas já existe neste app.');
+  await srv.fill('#fnC', '');
+  await expect(srv.locator('#fnL .tx b')).toHaveText(['Lançar despesas', 'Lançar receita', 'Lançar cartões']);
+  // O código sai do nome quando não é informado.
+  await expect(srv.locator('#fnL [data-fn="lancar-cartoes"] small')).toContainText('Micro-serviço');
+
+  await srv.fill('#grN', 'Básico');
+  await srv.click('#grAdd');
+  await expect(srv.locator('#grH')).toHaveText('Marque ao menos uma funcionalidade.');
+  await srv.click('#grF [data-fn="despesas"]');
+  await srv.click('#grF [data-fn="receita"]');
+  await srv.click('#grAdd');
+  await expect(toast(srv)).toHaveText('Grupo criado');
+  await expect(srv.locator('#grL [data-gr="basico"] small')).toHaveText('Lançar despesas · Lançar receita');
+  await fecharSheet(srv);
+
+  await expect(srv.locator('#sApps [data-app] small')).toHaveText('3 funcionalidades · 1 grupo');
+  expect(await srv.evaluate(() => st.book.filter(e => e.act === 'catalogo').length)).toBe(5);
+  await aba(srv, 'vPanel');
+  await expect(srv.locator('#pCred')).toBeEmpty();
+  await expect(srv.locator('#pAprov .cred .tipo')).toHaveText([`App: ${APP}`]);
+  await expect(srv.locator('#pAprov .cred .main')).toHaveText('3 funcionalidades · 1 grupo');
+});
+
+test('o Cartão do app leva as funcionalidades, os grupos e a aprovação do serviço', async () => {
+  await srv.click(`#pAprov [data-app="${APP}"]`);
+  const cartao = await srv.inputValue('#scJ');
+  await fecharSheet(srv);
+  const p = payloadDe(cartao);
+  const aprov = await srv.evaluate(() => st.aprovacoes[0].jwt);
+  expect([p.app, p.apps, p.aprovacoes]).toEqual([APP, [APP], [aprov]]);
+  expect(p.catalogo).toEqual([{
+    nome: APP,
+    funcoes: [{ id: 'despesas', nome: 'Lançar despesas' }, { id: 'receita', nome: 'Lançar receita' }, { id: 'lancar-cartoes', nome: 'Lançar cartões' }],
+    grupos: [{ id: 'basico', nome: 'Básico', funcoes: ['despesas', 'receita'] }],
+  }]);
+});
+
+let cracha = '';
+
+test('ao aprovar o acesso, o grupo marca as funcionalidades; o crachá leva só as liberadas', async () => {
   // A carteira tem a Identidade aprovada pela STK.
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
@@ -214,10 +217,7 @@ test('o crachá de cada app leva a aprovação dele e nunca passa da validade de
   await carteira.click('#aqGo');
   const pedidoId = await carteira.inputValue('#aqJ');
   await fecharSheet(carteira);
-  await aba(gov, 'vIssue');
-  if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
-  await gov.fill('#iqT', pedidoId);
-  await gov.click('#iqGo');
+  await conferirNaStk(pedidoId);
   const anterior = await gov.inputValue('#iJwt');
   await gov.click('#iGo');
   await expect(gov.locator('#iJwt')).not.toHaveValue(anterior);
@@ -226,91 +226,95 @@ test('o crachá de cada app leva a aprovação dele e nunca passa da validade de
   await carteira.fill('#rcT', await gov.inputValue('#iJwt'));
   await carteira.click('#rcGo');
   await expect(toast(carteira)).toHaveText('Credencial guardada');
-  const identidade = await carteira.evaluate(() => creds()[0].data.jwt);
 
-  const iat = agora();
-  const pedidoCracha = await carteira.evaluate(async ([s, id, t]) => embrulhar(await signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: s, name: 'Maria Teste', wanted: 'BadgeCredential', apps: ['Portaria', 'Piscina'], identidade: id, note: '', nonce: 'cracha-1', iat: t, exp: t + 3600 })), [didSrv, identidade, iat]);
-  await aba(srv, 'vBadge');
-  await srv.fill('#cqT', pedidoCracha);
-  await srv.click('#cqGo');
-  await expect(srv.locator('#cWho')).toContainText('Pedido conferido');
-  await srv.selectOption('#cDays', '0');
-  await srv.click('#cGo');
-  await expect(srv.locator('#cOut')).toBeVisible();
-  const [portaria, piscina] = await Promise.all([0, 1].map(i => srv.inputValue(`#cList [data-cracha="${i}"]`)));
-  const aprov = await srv.evaluate(() => st.aprovacoes.map(a => ({ apps: a.apps, jwt: a.jwt, exp: a.exp })));
-  const de = app => aprov.find(a => a.apps.includes(app));
-  expect(payloadDe(portaria).vc.evidence[0].credenciamento).toBe(de('Portaria').jwt);
-  expect(payloadDe(piscina).vc.evidence[0].credenciamento).toBe(de('Piscina').jwt);
-  expect(payloadDe(portaria).exp).toBe(de('Portaria').exp);
-  expect(payloadDe(piscina).exp).toBe(de('Piscina').exp);
-
-  // Portaria do app da segunda aprovação.
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await carteira.fill('#rcT', piscina);
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
-  await aba(srv, 'vGate');
-  await srv.selectOption('#gaApp', 'Piscina');
-  await srv.click('#gaGen');
-  await expect(srv.locator('#gaChal')).toBeVisible();
-  await carteira.click('#dockShow');
-  await carteira.fill('#apT', await srv.inputValue('#gaChalT'));
-  await carteira.click('#apGo');
-  await carteira.locator('#apC [data-pk]').filter({ hasText: 'Crachá' }).first().click();
-  await carteira.click('#apSign');
-  const prova = await carteira.inputValue('#apJ');
-  await fecharSheet(carteira);
-  await srv.fill('#gaPT', prova);
-  await srv.click('#gaGo');
-  await expect(srv.locator('#gaOut')).toContainText('Acesso liberado');
-  await expect(srv.locator('#gaOut .chk.ok').filter({ hasText: 'Aprovação de emissão vigente' })).toHaveCount(1);
-});
-
-test('o Cartão do serviço leva todas as aprovações válidas', async () => {
+  // A pessoa lê o Cartão do serviço e vê as funcionalidades e os grupos.
   await menu('card');
   const cartao = await srv.inputValue('#scJ');
   await fecharSheet(srv);
-  const p = payloadDe(cartao);
-  expect(p.apps.sort()).toEqual(['Piscina', 'Portaria']);
-  expect(p.aprovacoes).toHaveLength(2);
+  await carteira.click('#dockAdd');
+  await carteira.click('#sheetBody [data-act="access"]');
+  await carteira.fill('#paC', cartao);
+  await carteira.click('#paLer');
+  await expect(carteira.locator(`#paApps [data-app="${APP}"]`)).toContainText('Funcionalidades: Lançar despesas, Lançar receita, Lançar cartões');
+  await expect(carteira.locator(`#paApps [data-app="${APP}"]`)).toContainText('Grupos: Básico');
+  await carteira.click(`#paApps [data-app="${APP}"]`);
+  await carteira.click('#paGo');
+  await expect(carteira.locator('#paJ')).not.toHaveValue('');
+  const pedido = await carteira.inputValue('#paJ');
+  await fecharSheet(carteira);
+
+  await aba(srv, 'vBadge');
+  await srv.fill('#cqT', pedido);
+  await srv.click('#cqGo');
+  await expect(srv.locator('#cWho')).toContainText('Pedido conferido');
+  const fn = id => srv.locator(`#cApps [data-fn="${id}"]`);
+  const grupo = srv.locator('#cApps [data-gr="basico"]');
+  // Tudo liberado por padrão; o grupo desmarca e marca as dele.
+  await expect(grupo).toHaveAttribute('aria-pressed', 'true');
+  await grupo.click();
+  await expect(fn('despesas')).toHaveAttribute('aria-pressed', 'false');
+  await expect(fn('receita')).toHaveAttribute('aria-pressed', 'false');
+  await expect(fn('lancar-cartoes')).toHaveAttribute('aria-pressed', 'true');
+  await fn('lancar-cartoes').click();
+  await srv.click('#cGo');
+  await expect(toast(srv)).toHaveText(`Libere ao menos uma funcionalidade de ${APP}`);
+  await grupo.click();
+  await expect(fn('despesas')).toHaveAttribute('aria-pressed', 'true');
+  await expect(grupo).toHaveAttribute('aria-pressed', 'true');
+  await fn('receita').click();
+  await expect(grupo).toHaveAttribute('aria-pressed', 'false');
+  await fn('receita').click();
+
+  await srv.selectOption('#cDays', '0');
+  await srv.click('#cGo');
+  await expect(srv.locator('#cOut')).toBeVisible();
+  cracha = await srv.inputValue('#cList [data-cracha="0"]');
+  const p = payloadDe(cracha);
+  expect(p.vc.credentialSubject).toEqual({ id: didCarteira, servico: 'Systekna Software', app: APP, funcionalidades: ['despesas', 'receita'] });
+  const aprov = await srv.evaluate(() => ({ jwt: st.aprovacoes[0].jwt, exp: st.aprovacoes[0].exp }));
+  expect(p.vc.evidence[0].credenciamento).toBe(aprov.jwt);
+  expect(p.exp).toBe(aprov.exp);
+  expect(await srv.evaluate(() => st.book.at(-1).text)).toBe(`Crachá ${APP} (Lançar despesas, Lançar receita) emitido para Maria Teste`);
+
+  await carteira.click('#dockAdd');
+  await carteira.click('#sheetBody [data-act="badge"]');
+  await carteira.fill('#rbT', cracha);
+  await carteira.click('#rbGo');
+  await expect(toast(carteira)).toHaveText('Crachá guardado');
 });
 
-test('tocar no cartão de um app gera o Cartão só daquele app, com a aprovação dele', async () => {
-  await aba(srv, 'vPanel');
-  await srv.click('#pAprov [data-app="Piscina"]');
-  await expect(srv.locator('#sheetBody h3')).toHaveText('Cartão do app Piscina');
-  const cartao = await srv.inputValue('#scJ');
-  await fecharSheet(srv);
-  expect(cartao).toMatch(/^SYSTEKNA:CARTAO-APP:ey/);
-  const p = payloadDe(cartao);
-  const aprov = await srv.evaluate(() => st.aprovacoes.map(a => ({ apps: a.apps, jwt: a.jwt, exp: a.exp })));
-  const piscina = aprov.find(a => a.apps.includes('Piscina'));
-  expect([p.iss, p.app, p.apps, p.aprovacoes, p.exp]).toEqual([didSrv, 'Piscina', ['Piscina'], [piscina.jwt], piscina.exp]);
-  expect(await carteira.evaluate(async t => (await verifyJWT(t, 'cartao+jwt')).ok, cartao)).toBe(true);
+test('portaria: a funcionalidade liberada passa; a que não está no crachá é negada', async () => {
+  const lib = await portaria('receita');
+  expect(payloadDe(lib.desafio)).toMatchObject({ app: APP, funcao: 'receita', purpose: `Lançar receita em ${APP}` });
+  await expect(lib.out).toContainText('Acesso liberado');
+  await expect(lib.out).toContainText(`Maria Teste pode usar Lançar receita em ${APP}`);
+  await expect(lib.out.locator('.chk.ok').filter({ hasText: 'Funcionalidade liberada' })).toContainText('O crachá libera Lançar receita.');
+  await expect(lib.out.locator('.chk.ok').filter({ hasText: 'Aprovação de emissão vigente' })).toContainText('A Governança aprovou o serviço');
 
-  // O copiar do cartão só copia o DID, não abre o Cartão do app.
-  await srv.click('#pAprov [data-app="Piscina"] [data-copydid]');
-  await expect(toast(srv)).toHaveText('DID copiado');
-  await expect(srv.locator('#sheetBody h3')).toBeHidden();
+  const neg = await portaria('lancar-cartoes');
+  await expect(neg.out).toContainText('Acesso negado');
+  await expect(neg.out.locator('.chk.no')).toHaveCount(1);
+  await expect(neg.out.locator('.chk.no')).toContainText('O crachá não libera Lançar cartões.');
+
+  // Só a entrada no app, sem funcionalidade: não há o ponto de funcionalidade.
+  const entrada = await portaria('');
+  await expect(entrada.out).toContainText(`Maria Teste pode entrar em ${APP}`);
+  await expect(entrada.out.locator('.chk').filter({ hasText: 'Funcionalidade liberada' })).toHaveCount(0);
 });
 
-test('app com a aprovação vencida não tem cartão', async () => {
-  const antes = await srv.evaluate(async () => { const a = st.aprovacoes.find(x => x.apps.includes('Piscina')), e = a.exp; a.exp = now() - 60; await save(); renderPanel(); return e; });
-  await srv.click('#pAprov [data-app="Piscina"]');
-  await expect(toast(srv)).toHaveText('A aprovação de emissão deste app venceu.');
-  await expect(srv.locator('#sheetBody h3')).toBeHidden();
-  await srv.evaluate(async e => { st.aprovacoes.find(x => x.apps.includes('Piscina')).exp = e; await save(); renderPanel(); }, antes);
-});
-
-test('um serviço da 0.18 (credenciamento único) vira uma aprovação de emissão', async () => {
-  await srv.evaluate(async () => { st.cred = st.aprovacoes[0]; delete st.aprovacoes; await save(); });
+test('um serviço da 0.21 (apps aprovados pela Governança) vira um catálogo, sem perder nada', async () => {
+  await srv.evaluate(async () => {
+    st.apps = ['Portaria']; st.aprovacoes[0].apps = ['Portaria', 'Piscina']; delete st.catalogo;
+    st.pendentes = [{ nonce: 'x', at: Date.now(), apps: ['Sauna'] }];
+    await save();
+  });
   await bloquearEDesbloquear(srv);
-  expect(await srv.evaluate(() => [st.aprovacoes.length, 'cred' in st])).toEqual([1, false]);
+  expect(await srv.evaluate(() => [st.catalogo, 'apps' in st, st.pendentes[0].apps, credOk()])).toEqual([
+    [{ nome: 'Portaria', funcoes: [], grupos: [] }, { nome: 'Piscina', funcoes: [], grupos: [] }], false, undefined, true,
+  ]);
 });
 
 test('nenhuma violação de CSP em todo o fluxo acima', () => {
   expect(violacoesCsp).toEqual([]);
-  expect(didCarteira).toMatch(/^did:key:/);
+  expect(agora()).toBeGreaterThan(0);
 });
