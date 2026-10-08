@@ -68,6 +68,14 @@
 | CA-87 | Backups: recusados em outra identidade; livro adulterado recusado |
 | CA-88 | Nenhuma tela mostra "cartório"; o banco antigo (`systekna-cartorio`) é mantido. Os redirecionamentos dos endereços antigos foram retirados em 03/10/2026 (publicado na 0.22.1) |
 
+## 5A. Relatório de uso (`stk-servicos/tests/uso.spec.js` e `emissao.spec.js`, 0.24)
+
+| CA | Critério |
+|---|---|
+| CA-100 | **Dado** conferências na Portaria, **quando** abre o Painel, **então** vê liberados e negados por dia (7 e 30 dias), por app, por funcionalidade e os motivos de negação |
+| CA-101 | As conferências antigas, só com o texto do livro, também entram, com "Motivo não registrado (antes da 0.24)"; o livro continua íntegro |
+| CA-101a | O filtro por app muda os acessos; a gestão (emitidos, recusados, revogados) vale para o serviço todo |
+
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
 
 | CA | Critério |

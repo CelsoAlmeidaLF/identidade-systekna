@@ -302,6 +302,21 @@ test('portaria: a funcionalidade liberada passa; a que não está no crachá é 
   await expect(entrada.out.locator('.chk').filter({ hasText: 'Funcionalidade liberada' })).toHaveCount(0);
 });
 
+test('relatório de uso: as três conferências da portaria entram com app, funcionalidade e motivo', async () => {
+  await aba(srv, 'vPanel');
+  await expect(srv.locator('#uLib')).toHaveText('2');
+  await expect(srv.locator('#uNeg')).toHaveText('1');
+  await expect(srv.locator(`#uApps [data-uso="${APP}"]`)).toContainText('2 liberados · 1 negado');
+  await expect(srv.locator(`#uFns [data-uso="${APP} › Lançar receita"]`)).toContainText('1 liberado · 0 negados');
+  await expect(srv.locator(`#uFns [data-uso="${APP} › Lançar cartões"]`)).toContainText('0 liberados · 1 negado');
+  await expect(srv.locator('#uMot')).toContainText('Funcionalidade liberada');
+  const emitidos = await srv.evaluate(() => st.book.filter(e => e.act === 'emissao').length);
+  await expect(srv.locator('#uEmi')).toHaveText(String(emitidos));
+  expect(await srv.evaluate(() => st.acessos.map(a => [a.ok, a.app, a.fn, a.motivo]))).toEqual([
+    [true, APP, 'Lançar receita', ''], [false, APP, 'Lançar cartões', 'Funcionalidade liberada'], [true, APP, '', ''],
+  ]);
+});
+
 test('um serviço da 0.21 (apps aprovados pela Governança) vira um catálogo, sem perder nada', async () => {
   await srv.evaluate(async () => {
     st.apps = ['Portaria']; st.aprovacoes[0].apps = ['Portaria', 'Piscina']; delete st.catalogo;

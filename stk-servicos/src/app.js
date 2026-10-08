@@ -17,7 +17,7 @@ const APP={
     st=r?await unseal(ses.vaultKey,r,'state'):null;
     if(!st){
       const gov=GOVERNANCA_PADRAO.did?{name:GOVERNANCA_PADRAO.name,dids:[GOVERNANCA_PADRAO.did]}:null;
-      st={name:'',catalogo:[],gov,aprovacoes:[],pendentes:[],issued:[],book:[],challenges:[],seq:0,verifs:0};
+      st={name:'',catalogo:[],gov,aprovacoes:[],pendentes:[],issued:[],book:[],challenges:[],seq:0,verifs:0,acessos:[]};
       await ato('abertura','Livro aberto e serviço criado',ses.did);await save();
     }
     // Até a 0.18: um único credenciamento (st.cred). Agora: várias aprovações de emissão.
@@ -94,6 +94,56 @@ $('#pAprov').onclick=e=>{
 // Teclado: Enter ou espaço no copiar não abre o cartão.
 $('#pAprov').addEventListener('keydown',e=>{const c=e.target.closest('[data-copydid]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();copy(c.dataset.copydid,'DID copiado')}});
 
+/* ================= relatório de uso (Portaria e gestão) ================= */
+// Cada conferência da Portaria fica em st.acessos, ligada ao ato do livro (n), com o app, a funcionalidade e o
+// primeiro ponto que falhou. As de antes da 0.24 só têm o texto do livro: são lidas dele, sem o motivo.
+let relDias=7,relApp='';
+function acessosDoLivro(){
+  const reg=new Map((st.acessos||[]).map(a=>[a.n,a]));
+  return st.book.filter(e=>e.act==='verificacao').map(e=>{
+    if(reg.has(e.n))return reg.get(e.n);
+    const m=/^Acesso (liberado|negado)(?: a (.+?) em (.+?)| a (.+?))?(?: para .*)?$/.exec(e.text)||[];
+    return{n:e.n,at:e.at,ok:m[1]==='liberado',app:m[3]||m[4]||'',fn:m[2]||'',motivo:''};
+  });
+}
+const meiaNoite=t=>{const d=new Date(t);return new Date(d.getFullYear(),d.getMonth(),d.getDate()).getTime()};
+function renderUso(){
+  if(!st)return;
+  const hoje=new Date(),dias=[...Array(relDias)].map((_,i)=>new Date(hoje.getFullYear(),hoje.getMonth(),hoje.getDate()-relDias+1+i).getTime()),ini=dias[0];
+  const periodo=acessosDoLivro().filter(a=>a.at>=ini);
+  const apps=[...new Set(appNomes().concat(periodo.map(a=>a.app).filter(Boolean)))].sort((x,y)=>x.localeCompare(y,'pt'));
+  if(relApp&&!apps.includes(relApp))relApp='';
+  $('#usoApp').innerHTML='<option value="">Todos os apps</option>'+apps.map(a=>`<option value="${esc(a)}"${a===relApp?' selected':''}>${esc(a)}</option>`).join('');
+  const L=relApp?periodo.filter(a=>a.app===relApp):periodo,lib=L.filter(a=>a.ok).length,neg=L.length-lib;
+  // Gestão do período: o que o serviço fez com os pedidos (vale para o serviço todo, não por app).
+  const atos=st.book.filter(e=>e.at>=ini),conta=act=>atos.filter(e=>e.act===act).length;
+  const porDia=new Map(dias.map(d=>[d,{l:0,n:0}]));
+  L.forEach(a=>{const x=porDia.get(meiaNoite(a.at));if(x)a.ok?x.l++:x.n++});
+  const max=Math.max(1,...[...porDia.values()].map(x=>x.l+x.n));
+  const dm=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'});
+  const plural=(n,um,varios)=>`${n} ${n===1?um:varios}`;
+  const agrupa=chave=>{const m=new Map();L.forEach(a=>{const k=chave(a);if(!k)return;const v=m.get(k)||{k,l:0,n:0};a.ok?v.l++:v.n++;m.set(k,v)});return[...m.values()].sort((x,y)=>y.l+y.n-x.l-x.n)};
+  const linhas=(l,vazio)=>l.length?l.map(v=>`<div class="tx" data-uso="${esc(v.k)}"><span class="t"><b>${esc(v.k)}</b><small>${plural(v.l,'liberado','liberados')} · ${plural(v.n,'negado','negados')}</small></span><span class="rv">${v.l+v.n} · ${Math.round((v.l+v.n)/L.length*100)}%</span></div>`).join(''):`<div class="empty">${vazio}</div>`;
+  const motivos=new Map();L.filter(a=>!a.ok).forEach(a=>{const k=a.motivo||'Motivo não registrado (antes da 0.24)';motivos.set(k,(motivos.get(k)||0)+1)});
+  $('#pUso').innerHTML=`<div class="stats">
+      <div class="stat glass flat"><small>Acessos liberados</small><b id="uLib">${lib}</b></div>
+      <div class="stat glass flat"><small>Acessos negados</small><b id="uNeg">${neg}</b></div></div>
+    <div class="glass flat mt" id="uBars" aria-label="Acessos por dia">
+      <div class="uso-bars">${dias.map(d=>{const x=porDia.get(d);return `<div class="d" title="${dm(d)}: ${plural(x.l,'liberado','liberados')}, ${plural(x.n,'negado','negados')}" data-dia="${dm(d)}" data-l="${x.l}" data-n="${x.n}"><i class="l" style="height:${x.l/max*100}%"></i><i class="n" style="height:${x.n/max*100}%"></i></div>`}).join('')}</div>
+      <div class="uso-eixo"><span>${dm(ini)}</span><span>hoje</span></div>
+      <div class="uso-leg"><span><i style="background:var(--in)"></i>Liberados</span><span><i style="background:var(--out)"></i>Negados</span></div></div>
+    <div class="sec-h">Por app</div><div class="list glass flat" id="uApps">${linhas(agrupa(a=>a.app),'Nenhuma conferência na Portaria neste período.')}</div>
+    <div class="sec-h">Por funcionalidade</div><div class="list glass flat" id="uFns">${linhas(agrupa(a=>a.fn&&`${a.app} › ${a.fn}`),'Nenhum desafio de funcionalidade neste período.')}</div>
+    <div class="sec-h">Por que negou</div><div class="list glass flat" id="uMot">${motivos.size?[...motivos].sort((x,y)=>y[1]-x[1]).map(([k,n])=>`<div class="tx"><span class="t"><b>${esc(k)}</b></span><span class="rv">${n}</span></div>`).join(''):'<div class="empty">Nenhum acesso negado neste período.</div>'}</div>
+    <div class="sec-h">Gestão no período <small>todo o serviço</small></div>
+    <div class="list glass flat" id="uGest">
+      <div class="tx"><span class="t"><b>Crachás emitidos</b></span><span class="rv" id="uEmi">${conta('emissao')}</span></div>
+      <div class="tx"><span class="t"><b>Pedidos recusados</b></span><span class="rv" id="uRec">${conta('recusa')}</span></div>
+      <div class="tx"><span class="t"><b>Crachás revogados</b></span><span class="rv" id="uRev">${conta('revogacao')}</span></div></div>`;
+}
+wireSeg($('#usoSeg'),b=>{relDias=+b.dataset.d;renderUso()});
+$('#usoApp').onchange=()=>{relApp=$('#usoApp').value;renderUso()};
+
 /* ================= painel ================= */
 async function renderPanel(){
   if(!st)return;
@@ -107,6 +157,7 @@ async function renderPanel(){
   $('#sR').textContent=crachas.filter(i=>i.revoked).length;
   $('#sP').textContent=st.catalogo.length;$('#sV').textContent=st.verifs;
   $('#pAtos').innerHTML=st.book.slice(-6).reverse().map(e=>atoRow(e)).join('');
+  renderUso();
   const c=await checkBook();
   $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo serviço.`)
     :verdictHtml(false,'Livro adulterado',`A corrente se rompe no ato nº ${c.at}. Restaure um backup.`);
@@ -476,7 +527,11 @@ $('#gaGo').onclick=async()=>{
   $('#gaOut').innerHTML=verdictHtml(ok,ok?'Acesso liberado':'Acesso negado',ok?`${esc(r.nome||shortDid(r.holder))} pode ${r.fn?'usar '+esc(r.fn)+' em':'entrar em'} ${esc(r.app)}. Conferido em ${r.checks.length} pontos.`:'Veja abaixo o que não passou.')
     +`<div class="list glass flat mt">${r.checks.map(chkRow).join('')}</div>`;
   st.verifs++;
-  await ato('verificacao',`Acesso ${ok?'liberado':'negado'}${r.fn?' a '+r.fn+' em':''}${r.app?(r.fn?' ':' a ')+r.app:''}${r.nome?' para '+r.nome:''}`,r.holder||null);await save();
+  await ato('verificacao',`Acesso ${ok?'liberado':'negado'}${r.fn?' a '+r.fn+' em':''}${r.app?(r.fn?' ':' a ')+r.app:''}${r.nome?' para '+r.nome:''}`,r.holder||null);
+  // Registro estruturado para o relatório de uso: o app e a funcionalidade do desafio e o primeiro ponto que falhou.
+  const e=st.book[st.book.length-1],falhou=r.checks.find(c=>c.ok!==true);
+  (st.acessos=st.acessos||[]).push({n:e.n,at:e.at,ok,app:(r.ch&&r.ch.app)||r.app||'',fn:r.fn||'',motivo:ok?'':(falhou?falhou.label:'')});
+  await save();
 };
 
 boot();

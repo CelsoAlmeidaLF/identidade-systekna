@@ -19,6 +19,7 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 |---|---|
 | `stk-carteira/tests/identidades.spec.js` | Várias identidades, perfis, solicitar/aprovar identidade, cartões, rodapé |
 | `stk-servicos/tests/emissao.spec.js` | Aprovação do serviço (sem apps), Serviço › Apps › Funcionalidades e grupos, Cartão do app, crachá com funcionalidades, portaria por funcionalidade, migração da 0.21 |
+| `stk-servicos/tests/uso.spec.js` | Relatório de uso do Painel: períodos, filtro por app, registros antigos do livro, gestão (0.24) |
 | `stk-carteira/tests/acesso.spec.js` | Acesso a apps: Cartão do serviço e do app, pedido, análise, crachá com cv:key, recusa assinada, portaria |
 | `stk-governanca/tests/governanca.spec.js` | Envelope, uma identidade ativa por DID, regras da STK |
 | `stk-governanca/tests/rotacao.spec.js` | Troca de chave da STK e importação do aviso |
