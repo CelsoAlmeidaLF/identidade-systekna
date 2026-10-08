@@ -14,13 +14,16 @@
 | RNF-08 | Desafios de uso único (10 min) e provas de 5 min com `aud` | `criterios-de-aceite`, `servicos`, `acesso` |
 | RNF-09 | Pacote com tipo trocado ou alterado é recusado (envelope + `typ` + assinatura) | `governanca.spec.js` |
 | RNF-10 | Livro encadeado e assinado; backup com livro adulterado é recusado | `criterios-de-aceite`, `cobertura` |
+| RNF-11 | Código de recuperação com conferência (3 bytes do SHA-256): erro de digitação é recusado, sem abrir conta errada | `recuperacao.spec.js` |
+| RNF-12 | PDF de recuperação só depois de confirmar o PIN ou a biometria; o PDF e a tela avisam que o arquivo é uma cópia completa da conta | `recuperacao.spec.js` |
+| RNF-13 | QR e PDF gerados no aparelho, sem biblioteca externa e sem mudar a CSP; o arquivo não sai do aparelho sem a pessoa enviar | `recuperacao.spec.js`, `seguranca.spec.js` |
 
 ## 2. Privacidade
 
 | ID | Requisito |
 |---|---|
-| RNF-20 | Identidade leva **só o nome**; crachá, **só serviço e app** |
-| RNF-21 | CPF, RG, CNH, foto, endereço, filiação e afins são recusados em qualquer credencial (pelo nome do campo e por CPF válido no valor) |
+| RNF-20 | Identidade leva **só o nome**; crachá, **só serviço, app e os códigos das funcionalidades liberadas** (sem grupo nem plano) |
+| RNF-21 | CPF, RG, CNH, foto, endereço, filiação e afins são recusados em qualquer credencial (pelo nome do campo e por CPF válido no valor), inclusive no nome e no código das funcionalidades |
 | RNF-22 | Nenhum cadastro em servidor; a Governança e os Serviços guardam só o registro do que emitiram, cifrado no aparelho deles |
 | RNF-23 | DIDs das várias identidades e dos apps não têm ligação entre si |
 
@@ -34,12 +37,14 @@
 | RNF-33 | DID de cada app confere com implementação independente em Node | `vetores-oficiais.spec.js` |
 | RNF-34 | W3C Verifiable Credentials 1.1 em JWT EdDSA | Inspeção |
 | RNF-35 | WebAuthn Level 3 com PRF | `biometria.spec.js` |
+| RNF-36 | QR code ISO/IEC 18004 (modo byte, correção M, versões 1 a 9), lido por leitor independente | `recuperacao.spec.js` (jsQR) |
+| RNF-37 | PDF 1.4 com fontes padrão (Helvetica e Courier, WinAnsi) | `recuperacao.spec.js` |
 
 ## 4. Desempenho e portabilidade
 
 | ID | Requisito |
 |---|---|
-| RNF-40 | Um HTML por app (~140 KB), sem dependências em tempo de execução |
+| RNF-40 | Um HTML por app (~170 KB), sem dependências em tempo de execução |
 | RNF-41 | Desbloqueio pelo PIN em segundos (custo proposital do PBKDF2) |
 | RNF-42 | PWA instalável, funciona offline, cada versão chega ao celular (cache com o número da versão) — `pwa.spec.js`, `versao.spec.js` |
 | RNF-43 | Navegadores com Ed25519/X25519 no WebCrypto (Chrome/Brave 137+, Safari 17+, Firefox 130+); aviso se faltar |
@@ -58,14 +63,15 @@
 
 | ID | Requisito |
 |---|---|
-| RNF-60 | Código só em `src/`; HTML gerados pelo build e conferidos (`build:check`) |
+| RNF-60 | Código só em `stk-<app>/src/` e `compartilhado/src/`; HTML gerados pelo build na raiz e conferidos (`build:check`) |
 | RNF-61 | Cada entrega com teste do que mudou; merge só com teste aprovado |
 | RNF-62 | Testes podem rodar contra o site publicado (`BASE_URL`) |
-| RNF-63 | Única dependência de desenvolvimento: `@playwright/test` |
+| RNF-63 | Dependências só de desenvolvimento: `@playwright/test` e `jsqr` (leitor de QR usado só nos testes) |
 
 ## 7. Restrições aceitas (ambiente de demonstração)
 
 - Origem compartilhada no GitHub Pages: não usar para identidades reais.
 - PIN sem hardware seguro: um código malicioso no navegador pode testar os PINs fora do contador. Mitigação: "usar só biometria".
 - Revogação só visível para quem revogou.
+- O PDF de recuperação é uma cópia completa da conta. Se ficar no celular, no e-mail ou na nuvem, quem tiver acesso ao arquivo tem a conta. Mitigação: imprimir e apagar o arquivo (aviso no PDF e na tela).
 - Uso comercial exige termos de uso, política de privacidade e canal com o titular (ver [09](09-legislacao.md)).

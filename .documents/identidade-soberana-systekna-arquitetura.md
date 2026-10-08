@@ -1,5 +1,7 @@
 # Identidade Soberana Systekna — Carteira + Emissor de Credenciais
 
+> **Documento histórico.** Descreve o projeto na época em que foi escrito e não é atualizado. A versão atual (0.23.0) está no [README da documentação](README.md).
+
 Ambiente de teste com dois serviços independentes, em HTML/JS únicos e sem servidor. Os dois usam o design Systekna Aero 2.0 (claro e escuro).
 
 | Serviço | Arquivo | Papel no ecossistema |

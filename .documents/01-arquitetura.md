@@ -5,11 +5,11 @@
 | # | Princípio | Como aparece no desenho |
 |---|---|---|
 | P1 | **Soberania** | Toda identidade nasce no aparelho, de 12 palavras que só o dono tem. Ninguém guarda nem recupera as palavras |
-| P2 | **Minimização** | Credenciais levam só o necessário: a identidade, só o nome; o crachá, só o serviço e o app. CPF, RG e afins são recusados |
+| P2 | **Minimização** | Credenciais levam só o necessário: a identidade, só o nome; o crachá, só o serviço, o app e os códigos das funcionalidades liberadas. CPF, RG e afins são recusados |
 | P3 | **Verificação local** | A chave pública vem dentro do DID (`did:key`): conferir é verificar assinaturas, sem servidor |
 | P4 | **Posse comprovada** | Todo uso responde a um desafio novo, de uso único |
 | P5 | **Papéis separados** | Carteira, Governança e Serviços são apps distintos, com chaves e armazenamento próprios |
-| P6 | **Recuperável pelo dono** | As 12 palavras recriam as identidades; o backup cifrado devolve os dados |
+| P6 | **Recuperável pelo dono** | As 12 palavras, ou o código de recuperação STK1-… equivalente, recriam as identidades; o backup cifrado devolve os dados |
 | P7 | **Zero dependência** | Cada app é um HTML único: nada é carregado de fora do site |
 
 ## 2. Os três aplicativos
@@ -30,15 +30,18 @@ compartilhado/
 ├─ src/
 │  ├─ nucleo.js   cripto (BIP39, HKDF, Ed25519, X25519, AES-GCM), PIN, biometria, sessão,
 │  │              JWT, envelope SYSTEKNA:<TIPO>:, cv:key, dados pessoais, UI base, PWA
+│  ├─ recuperacao.js código de recuperação STK1-…, gerador de QR code, PDF de recuperação,
+│  │              leitura do QR pela câmera (BarcodeDetector)
 │  ├─ livro.js    livro de registros, registro de emissões, revogação, troca de chave
 │  │              (usado pela Governança e pelos Serviços)
 │  ├─ estilo.css  design Systekna Aero 2.0, cartões por perfil
-│  ├─ telas.html  palavras, confirmação, recuperação, PIN
+│  ├─ telas.html  confirmação, recuperação (12 palavras ou código), PIN
 │  └─ folha.html  folha deslizante e aviso (toast)
 └─ tests/      testes que valem para os 3 apps, helpers.js e fixtures/ (vetores oficiais)
 stk-carteira/      src/ (pagina.html + app.js: identidades, credenciais, crachás, pedidos, apresentação) · tests/
+                   (pagina.html de cada app traz a tela das 12 palavras, com o botão do PDF)
 stk-governanca/    src/ (aprovar identidade e emissão, verificar, governança) · tests/
-stk-servicos/      src/ (aprovação de emissão, crachás, portaria, serviço) · tests/
+stk-servicos/      src/ (aprovação de emissão, apps e funcionalidades, cartões, crachás, portaria, serviço) · tests/
 compartilhado/scripts/build.js  monta um HTML por app na raiz (@inclui), versão, hash da CSP, cache do sw.js
 ```
 
@@ -61,6 +64,7 @@ Entropia (128 bits) → 12 palavras BIP39 → semente (PBKDF2-SHA512, 2048)
 - **Mesmas 12 palavras, DIDs diferentes** em cada app e em cada identidade; um DID não revela outro.
 - O `meta.dom` guarda o domínio da identidade do aparelho. Governança e Serviços criados antes da 0.16.0 continuam com o DID antigo e mostram um aviso.
 - Só a entropia é guardada, cifrada em duas camadas (chave do aparelho + PIN ou segredo PRF da biometria).
+- **Código de recuperação (0.23):** `STK1-` + 32 caracteres (alfabeto sem 0, 1, O, I) = 20 bytes: versão e idioma (1), entropia (16) e conferência (3 primeiros bytes do SHA-256 dos 17 anteriores). É outra forma de escrever as 12 palavras: leva à mesma semente e ao mesmo DID. O idioma vai junto porque palavras em português e em inglês geram sementes diferentes.
 
 ## 5. Artefatos (o que passa entre os apps)
 
@@ -70,13 +74,14 @@ Todos são JWT EdDSA com `kid` = DID de quem assina e saem no envelope `SYSTEKNA
 |---|---|---|---|---|---|
 | Pedido de aprovação de identidade | `pedido+jwt` | `PEDIDO-APROVACAO` | Identidade escolhida | nome, perfil, nome do perfil, nonce | 7 dias, uso único |
 | **Aprovação de identidade** | `vc+jwt` | `APROVACAO` | STK | `IdentityCredential`: só `nome` | Escolhida pela STK (padrão 1 ano) |
-| Pedido de aprovação de emissão | `pedido+jwt` | `PEDIDO-CREDENCIAMENTO` | Serviço | nome do serviço, apps novos | 7 dias, uso único |
-| **Aprovação de emissão** | `vc+jwt` | `CREDENCIAMENTO` | STK | `ServiceAccreditationCredential`: serviço, apps | Escolhida pela STK |
-| Cartão do serviço | `cartao+jwt` | `CARTAO-SERVICO` | Serviço | nome, apps, aprovações de emissão válidas | Até a última aprovação vencer |
+| Pedido de aprovação de emissão | `pedido+jwt` | `PEDIDO-CREDENCIAMENTO` | Serviço | nome do serviço (sem apps desde a 0.22) | 7 dias, uso único |
+| **Aprovação de emissão** | `vc+jwt` | `CREDENCIAMENTO` | STK | `ServiceAccreditationCredential`: só o serviço (aprovações antigas com apps valem para o serviço todo) | Escolhida pela STK |
+| Cartão do serviço | `cartao+jwt` | `CARTAO-SERVICO` | Serviço | nome, apps, catálogo (funcionalidades e grupos de cada app), aprovação de emissão | Até a aprovação vencer |
+| Cartão do app | `cartao+jwt` | `CARTAO-APP` | Serviço | o mesmo, com um app só (`app`) | Até a aprovação vencer |
 | Pedido de acesso | `pedido+jwt` | `PEDIDO-CRACHA` | Identidade escolhida | apps, perfil, aprovação da identidade junto | 7 dias, uso único |
-| **Crachá (CV:KEY)** | `vc+jwt` | `CRACHA` | Serviço | `BadgeCredential`: serviço, app + aprovação de emissão do app (evidência) | Escolhida pelo serviço, limitada à aprovação do app |
+| **Crachá (CV:KEY)** | `vc+jwt` | `CRACHA` | Serviço | `BadgeCredential`: serviço, app, `funcionalidades` (códigos liberados; sem grupo nem plano) + aprovação de emissão do serviço (evidência) | Escolhida pelo serviço, limitada à aprovação do serviço |
 | Recusa de acesso | `recusa+jwt` | `RECUSA` | Serviço | nonce do pedido, apps, motivo | — |
-| Desafio | `desafio+jwt` | `DESAFIO` | STK ou portaria do serviço | nonce, finalidade, tipo/app exigido | 10 min, uso único |
+| Desafio | `desafio+jwt` | `DESAFIO` | STK ou portaria do serviço | nonce, finalidade, tipo/app exigido e, opcional, a funcionalidade (`funcao`) | 10 min, uso único |
 | Prova (apresentação) | `vp+jwt` | `PROVA` | Identidade dona da credencial | credencial + nonce, `aud` = quem desafiou | 5 min |
 | Aviso de troca de chave | `rotacao+jwt` | `ROTACAO` | Chave antiga da STK, com aceite da nova | DID novo | — |
 
@@ -88,17 +93,23 @@ Carteira: + › Solicitar aprovação de identidade ─PEDIDO-APROVACAO─▶ ST
 Carteira: + › Receber aprovação de identidade   ◀────APROVACAO──── (ou recusa, só no livro da STK)
 
 F2 · Aprovação de emissão
-Serviços: + › Solicitar aprovação de emissão ─PEDIDO-CREDENCIAMENTO─▶ STK: Aprovar emissão (apps marcáveis)
+Serviços: + › Solicitar aprovação de emissão ─PEDIDO-CREDENCIAMENTO─▶ STK: Aprovar emissão (só o serviço)
 Serviços: + › Receber aprovação de emissão   ◀──────CREDENCIAMENTO─── (ou recusa, só no livro da STK)
 
 F3 · Acesso a um app
+Serviços: Serviço › Apps (apps, funcionalidades, grupos)
 Serviços: + › Cartão do serviço ──CARTAO-SERVICO──▶ Carteira: + › Solicitar acesso a um app
-Carteira ──PEDIDO-CRACHA──▶ Serviços: Crachás › Aprovar acesso | Recusar pedido
+          Painel › cartão de um app ──CARTAO-APP──▶ (o app já vem marcado)
+Carteira ──PEDIDO-CRACHA──▶ Serviços: Crachás › Aprovar acesso (marca as funcionalidades) | Recusar pedido
 Carteira: + › Receber crachá de acesso ◀──CRACHA ou RECUSA──
 
 F4 · Uso
-Serviços: Portaria › Gerar desafio (app) ──DESAFIO──▶ Carteira: Apresentar
+Serviços: Portaria › Gerar desafio (app ou funcionalidade) ──DESAFIO──▶ Carteira: Apresentar
 Carteira ──PROVA──▶ Portaria: Acesso liberado | Acesso negado
+
+F5 · Recuperação (cada app)
+Recuperar ◀── 12 palavras | código STK1-… | QR code do PDF (câmera, onde o navegador lê QR)
+Ajustes › Salvar PDF de recuperação (PIN ou biometria) ──▶ PDF: QR + código + 12 palavras + DID
 ```
 
 ## 7. Dados guardados
@@ -113,7 +124,7 @@ Carteira ──PROVA──▶ Portaria: Acesso liberado | Acesso negado
 
 **Governança (`systekna-cartorio`, um `state` cifrado):** nome, emissões (`issued`), emissores confiáveis, livro, desafios, recusas, chaves ao longo do tempo (`keys`), avisos de troca (`rotations`), política, contadores.
 
-**Serviços (`systekna-servicos`, um `state` cifrado):** nome, apps pedidos, Governança (`gov.dids`, com o histórico de DIDs), aprovações de emissão (`aprovacoes`), pedidos aguardando (`pendentes`), crachás emitidos (`issued`), livro, desafios, recusas, contadores.
+**Serviços (`systekna-servicos`, um `state` cifrado):** nome, catálogo (`catalogo`: apps, cada um com `funcoes` {id, nome, tipo} e `grupos` {id, nome, funcoes}), Governança (`gov.dids`, com o histórico de DIDs), aprovações de emissão (`aprovacoes`), pedidos aguardando (`pendentes`), crachás emitidos (`issued`), livro, desafios, recusas, contadores.
 
 ## 8. Implantação
 
@@ -135,18 +146,23 @@ Carteira ──PROVA──▶ Portaria: Acesso liberado | Acesso negado
 | ADR-07 | Livro encadeado e assinado na STK e nos Serviços | Auditoria e detecção de adulteração |
 | ADR-08 | **Três apps separados** (Carteira, Governança, Serviços) | Cada papel com a própria chave |
 | ADR-09 | Envelope `SYSTEKNA:<TIPO>:<JWT>` em todo pacote | O app sabe o que leu; tipo trocado é recusado |
-| ADR-10 | Várias aprovações de emissão ativas por serviço | App novo pede só ele |
-| ADR-11 | Crachá leva a aprovação de emissão do app | O verificador confere a autorização da STK |
+| ADR-10 | Várias aprovações de emissão ativas por serviço | Renovar soma uma aprovação nova (até a 0.21, app novo pedia só ele) |
+| ADR-11 | Crachá leva a aprovação de emissão do serviço | O verificador confere a autorização da STK |
 | ADR-12 | Troca de chave da STK com aviso assinado pelas duas chaves | Rotação sem perder a confiança |
 | ADR-13 | "Cartório Digital" → Emissor → **Governança Systekna** | Sem vocabulário de fé pública |
+| ADR-14 | **Governança aprova o serviço; Serviço › Apps › Funcionalidades** (0.22) | Os apps são do serviço; o crachá leva só os códigos das funcionalidades, sem grupo nem plano |
+| ADR-15 | Pastas por projeto (`stk-*`, `compartilhado/`) com o site na raiz (0.22.1) | Organização sem mudar o endereço do Pages |
+| ADR-16 | **Código de recuperação e PDF com QR**, escritos à mão (0.23) | Recuperar sem digitar 12 palavras, sem biblioteca externa nem mudança na CSP |
 
 ## 10. Limites conhecidos
 
 | Limite | Evolução possível |
 |---|---|
-| Copiar e colar entre apps | QR Code (adiado) |
+| Copiar e colar entre apps (o QR existe só no PDF de recuperação) | QR Code entre os apps (adiado) |
 | Apps das organizações não leem o crachá | "Entrar com a carteira" (login sem senha) |
 | Revogação só visível a quem revogou | Lista pública de status |
 | A apresentação revela todas as afirmações | SD-JWT |
 | DID da Governança informado à mão (âncora vazia) | Pré-carregar o DID da STK de produção |
 | Chaves no navegador | HSM / hardware seguro em produção |
+| PDF de recuperação é uma cópia completa da conta | Senha no PDF (não feito); orientar imprimir e apagar |
+| Ler QR pela câmera só onde há `BarcodeDetector` (Chrome do Android) | Leitor de QR próprio |

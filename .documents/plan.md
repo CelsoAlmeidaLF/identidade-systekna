@@ -1,5 +1,7 @@
 # Plano: carteira para amigos, família e clientes
 
+> **Documento histórico.** Descreve o projeto na época em que foi escrito e não é atualizado. A versão atual (0.23.0) está no [README da documentação](README.md).
+
 Data: 2026-10-01
 
 ## Objetivo
