@@ -6,7 +6,7 @@ const APP={
   db:'systekna-servicos',dominio:'servicos',label:'Serviços',dataKeys:['state'],createdMsg:'Serviço criado',autoDefault:10,
   importHint:'Substitui o livro e os registros deste serviço',
   howHtml:`<p><b>Papel.</b> O serviço dá acesso aos apps dele (portaria, aulas, sistema) sem guardar cadastro: quem prova quem é a pessoa é a Identidade aprovada pela Governança, que fica na carteira dela.</p>
-  <p><b>Aprovação de emissão.</b> O serviço só emite crachás de um app depois que a Governança aprova a emissão dele, até a data que ela define. Pode haver várias aprovações ativas, cada uma com os apps dela: para um app novo, basta pedir só ele. O Cartão do serviço leva as aprovações, para a carteira conferir antes de pedir o crachá.</p>
+  <p><b>Aprovação de emissão.</b> O serviço só emite crachás de um app depois que a Governança aprova a emissão dele, até a data que ela define. Pode haver várias aprovações ativas, cada uma com os apps dela: para um app novo, basta pedir só ele. O Cartão do serviço leva as aprovações, para a carteira conferir antes de pedir o crachá. Tocar no cartão de um app no painel gera o Cartão só daquele app.</p>
   <p><b>Crachá.</b> A pessoa pede pela carteira, com a Identidade junto. O serviço confere, sem consultar a Governança, que a Identidade foi assinada por ela, é da mesma pessoa e está válida, e emite um crachá por app, com a validade escolhida, nunca além da aprovação daquele app. Cada pessoa tem um crachá ativo por app.</p>
   <p><b>Portaria.</b> O desafio vale 10 minutos e uma única vez. A portaria confere que quem responde é o dono do crachá, que o crachá foi emitido aqui, é do app certo, não foi revogado e está válido, e que a aprovação de emissão do app continua vigente.</p>
   <p><b>Limite.</b> O serviço não enxerga revogações feitas pela Governança: a proteção é a validade da Identidade e da aprovação de emissão.</p>`,
@@ -73,10 +73,16 @@ function appsAprovados(){
 }
 function cartaoApp({app,a}){
   const venc=!valida(a),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
-  return `<div class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(app)}"><div class="r1"><b class="tipo">App: ${esc(app)}</b>${ic('badge')}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></div>`;
+  return `<button class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(app)}" aria-label="Cartão do app ${esc(app)}"><div class="r1"><b class="tipo">App: ${esc(app)}</b>${ic('badge')}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></button>`;
 }
 const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(p.apps.join(' · '))}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
-$('#pAprov').onclick=e=>{const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado')}};
+// Tocar no cartão do app abre o Cartão daquele app; o botão de copiar só copia o DID.
+$('#pAprov').onclick=e=>{
+  const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado');return}
+  const b=e.target.closest('[data-app]');if(b)cartaoDoApp(b.dataset.app);
+};
+// Teclado: Enter ou espaço no copiar não abre o cartão.
+$('#pAprov').addEventListener('keydown',e=>{const c=e.target.closest('[data-copydid]');if(c&&(e.key==='Enter'||e.key===' ')){e.preventDefault();e.stopPropagation();copy(c.dataset.copydid,'DID copiado')}});
 
 /* ================= painel ================= */
 async function renderPanel(){
@@ -235,8 +241,19 @@ async function cartaoServico(){
   if(!credOk())return toast('Sem aprovação de emissão válida, o serviço não tem cartão.',true);
   const validas=aprovValidas(),iat=now(),pl={iss:ses.did,name:nomeServico(),apps:credApps(),aprovacoes:validas.map(a=>a.jwt),iat};
   if(validas.every(a=>a.exp))pl.exp=Math.max(...validas.map(a=>a.exp));
-  const tok=embrulhar(await signJWT('cartao+jwt',pl));
-  openSheet(`<h3>Cartão do serviço</h3><p class="sub">É público: a carteira lê o cartão e confere que a Governança aprovou a emissão dos apps antes de pedir o crachá.</p>
+  mostrarCartao('Cartão do serviço',await signJWT('cartao+jwt',pl));
+}
+// Cartão de um app só: leva o app e apenas a aprovação que o cobre. A carteira já abre com ele marcado.
+async function cartaoDoApp(app){
+  const a=aprovDoApp(app);
+  if(!a)return toast('A aprovação de emissão deste app venceu.',true);
+  const pl={iss:ses.did,name:nomeServico(),app,apps:[app],aprovacoes:[a.jwt],iat:now()};
+  if(a.exp)pl.exp=a.exp;
+  mostrarCartao(`Cartão do app ${esc(app)}`,await signJWT('cartao+jwt',pl));
+}
+function mostrarCartao(titulo,jwt){
+  const tok=embrulhar(jwt);
+  openSheet(`<h3>${titulo}</h3><p class="sub">É público: a carteira lê o cartão e confere que a Governança aprovou a emissão dos apps antes de pedir o crachá.</p>
     <label class="f"><span>Cartão assinado</span><textarea class="mono" id="scJ" rows="6" readonly>${tok}</textarea></label><button class="btn" id="scC">Copiar cartão</button>`);
   $('#scC').onclick=()=>copy(tok,'Cartão copiado');
 }

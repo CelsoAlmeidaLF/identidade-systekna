@@ -298,7 +298,7 @@ function tipoPacote(header,payload){
   switch(header.typ){
     case 'pedido+jwt':return qual(payload.wanted,'PEDIDO-APROVACAO','PEDIDO-CREDENCIAMENTO','PEDIDO-CRACHA','PEDIDO-CREDENCIAL');
     case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CRACHA','CREDENCIAL');
-    case 'cartao+jwt':return 'CARTAO-SERVICO';
+    case 'cartao+jwt':return payload.app?'CARTAO-APP':'CARTAO-SERVICO';
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
     case 'rotacao+jwt':return 'ROTACAO';
