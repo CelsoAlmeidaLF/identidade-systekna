@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Dw9MYR1fCVKg2bG/hdKYJO1ufAMKWV3BGzzyhQVfy78='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-mdqqdWUYEHrjsfsXjlZujZnjJeAfffqdMj0WCF9OGiE='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="servicos.webmanifest">
@@ -364,6 +364,7 @@ body[data-screen="sApp"] .dock{display:grid}
 .choice .t{flex:1;min-width:0}
 .choice b{display:block;font-weight:500;font-size:14px}
 .choice small{color:var(--soft);font-size:12px}
+.choice small.blk{display:block;margin-top:2px}
 .rowline{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .card{padding:16px}
 .card+.card{margin-top:12px}
@@ -373,7 +374,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.21.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.22.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -385,7 +386,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.21.0</p>
+    <p class="ver">Versão 0.22.0</p>
   </div>
 </section>
 
@@ -433,7 +434,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.21.0</p>
+    <p class="ver">Versão 0.22.0</p>
   </div>
 </section>
 
@@ -455,7 +456,7 @@ body[data-screen="sApp"] .dock{display:grid}
       <div class="stats mt">
         <div class="stat glass flat"><small>Crachás ativos</small><b id="sA">0</b></div>
         <div class="stat glass flat"><small>Revogados</small><b id="sR">0</b></div>
-        <div class="stat glass flat"><small>Apps aprovados</small><b id="sP">0</b></div>
+        <div class="stat glass flat"><small>Apps</small><b id="sP">0</b></div>
         <div class="stat glass flat"><small>Conferências</small><b id="sV">0</b></div>
       </div>
       <div class="sec-h">Últimos atos <button class="link" id="pAll" style="margin:0;padding:0;font-size:13px">Ver livro completo</button></div>
@@ -464,7 +465,7 @@ body[data-screen="sApp"] .dock{display:grid}
 
     <section class="view" id="vBadge">
       <h2>Crachás</h2>
-      <p class="sub">A pessoa pede o acesso pela carteira, com a identidade aprovada pela Governança junto. Confira, marque os apps e aprove ou recuse.</p>
+      <p class="sub">A pessoa pede o acesso pela carteira, com a identidade aprovada pela Governança junto. Confira, marque os apps e as funcionalidades liberadas e aprove ou recuse.</p>
       <label class="f" id="cqF"><span>Pedido de acesso</span><textarea class="mono" id="cqT" rows="5" spellcheck="false" placeholder="SYSTEKNA:PEDIDO-CRACHA:…"></textarea></label>
       <p class="hint" id="cqH"></p>
       <button class="btn" id="cqGo">Conferir pedido</button>
@@ -474,7 +475,7 @@ body[data-screen="sApp"] .dock{display:grid}
         <div class="sec-h">Apps do crachá</div>
         <div class="list glass flat" id="cApps"></div>
         <label class="f"><span>Validade</span><select id="cDays"><option value="1">1 dia</option><option value="30">30 dias</option><option value="365" selected>1 ano</option><option value="0">Sem validade</option></select></label>
-        <p class="hint" id="cDaysH">Nunca passa da validade da aprovação de emissão do app.</p>
+        <p class="hint" id="cDaysH">Nunca passa da validade da aprovação de emissão do serviço.</p>
         <button class="btn" id="cGo">Aprovar acesso</button>
         <button class="btn ghost" id="cRec" style="color:var(--out)">Recusar pedido</button>
       </div>
@@ -490,6 +491,7 @@ body[data-screen="sApp"] .dock{display:grid}
       <p class="sub">Na hora do acesso, o serviço gera um desafio para o app, a pessoa responde pela carteira e a portaria confere o crachá.</p>
       <div class="sec-h">Gerar desafio</div>
       <label class="f" style="margin-top:0"><span>App</span><select id="gaApp"></select></label>
+      <label class="f"><span>Funcionalidade</span><select id="gaFn"></select></label>
       <button class="btn" id="gaGen">Gerar desafio</button>
       <div id="gaChal" hidden><label class="f"><span>Desafio, válido por 10 minutos e uma única vez</span><textarea class="mono" id="gaChalT" rows="4" readonly></textarea></label><button class="btn ghost" id="gaChalC">Copiar desafio</button></div>
       <div class="sec-h">Conferir crachá</div>
@@ -506,6 +508,8 @@ body[data-screen="sApp"] .dock{display:grid}
         <p class="note" id="sLeg" hidden>Este serviço foi criado antes da separação por app: as mesmas 12 palavras geram o mesmo DID na Carteira. Para ter uma identidade só do serviço, faça backup do que precisar, apague o serviço e recupere com as mesmas 12 palavras.</p>
         <div class="kr" style="padding:14px 0 0"><div class="h"><small>DID do serviço</small><span><button class="mini sm" id="sDidC" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="sDid"></div></div>
       </div>
+      <div class="sec-h">Apps <button class="link" id="sAppNovo" style="margin:0;padding:0;font-size:13px">Novo app</button></div>
+      <div class="list glass flat" id="sApps"></div>
       <div class="sec-h">Governança <button class="link" id="sGovRot" style="margin:0;padding:0;font-size:13px">Importar troca de chave</button></div>
       <div class="list glass flat"><button class="tx" id="sGov"><span class="dot" data-ic="gov"></span><span class="t"><b id="sGovN">Governança não informada</b><small class="mono" id="sGovD">Toque para informar o DID</small></span><span class="rv">Alterar</span></button></div>
       <div class="sec-h">Crachás emitidos <small id="sIssN"></small></div>
@@ -581,7 +585,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.21.0';
+const APP_VERSION='0.22.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -778,12 +782,12 @@ const WEAK_MSG='Evite números repetidos e sequências. Escolha outro PIN.';
 const VC_TYPES={
   // A Identidade define o usuário e leva só o nome (DP-03). Nenhum dado de documento entra (RN-51).
   IdentityCredential:{label:'Identidade',claims:[['nome','']],carteira:true},
-  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás para os apps listados.
-  // Um serviço pode ter várias ativas ao mesmo tempo, cada uma com os apps dela.
-  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico',''],['apps','']]},
+  // Aprovação de emissão: a Governança autoriza um serviço a emitir crachás. Os apps e as funcionalidades são do
+  // serviço e não entram aqui (aprovações antigas ainda podem trazer apps: valem para o serviço todo).
+  ServiceAccreditationCredential:{label:'Aprovação de emissão',claims:[['servico','']]},
   CustomCredential:{label:'Personalizada',claims:[['campo','']],carteira:true},
-  // Crachá (CV:KEY): emitido só pelo app Serviços, para um app do escopo do credenciamento.
-  BadgeCredential:{label:'Crachá',claims:[['servico',''],['app','']],servicos:true}
+  // Crachá (CV:KEY): emitido só pelo app Serviços, para um app dele, com as funcionalidades liberadas.
+  BadgeCredential:{label:'Crachá',claims:[['servico',''],['app',''],['funcionalidades','']],servicos:true}
 };
 // Âncora de confiança (DP-08): o DID publicado da Governança Systekna vem pré-carregado nos apps.
 // Vazio até a Governança de produção ser criada; enquanto isso, cada app informa o DID nos ajustes.
@@ -1367,34 +1371,44 @@ async function avisoValido(texto){
   return r;
 }
 /* ================= serviço ================= */
-// Serviços Systekna: cada empresa ou serviço (SRV) tem a própria identidade, pede à Governança a aprovação de
-// emissão dos apps dele, emite crachás (CV:KEY) para quem tem a Identidade aprovada e confere o acesso na portaria.
+// Serviços Systekna: cada empresa ou serviço (SRV) tem a própria identidade e pede à Governança a aprovação de
+// emissão do serviço. Os apps e as funcionalidades de cada app são do serviço: ele emite crachás (CV:KEY) com as
+// funcionalidades liberadas para quem tem a Identidade aprovada e confere o acesso na portaria.
 let st=null;
 const APP={
   db:'systekna-servicos',dominio:'servicos',label:'Serviços',dataKeys:['state'],createdMsg:'Serviço criado',autoDefault:10,
   importHint:'Substitui o livro e os registros deste serviço',
   howHtml:`<p><b>Papel.</b> O serviço dá acesso aos apps dele (portaria, aulas, sistema) sem guardar cadastro: quem prova quem é a pessoa é a Identidade aprovada pela Governança, que fica na carteira dela.</p>
-  <p><b>Aprovação de emissão.</b> O serviço só emite crachás de um app depois que a Governança aprova a emissão dele, até a data que ela define. Pode haver várias aprovações ativas, cada uma com os apps dela: para um app novo, basta pedir só ele. O Cartão do serviço leva as aprovações, para a carteira conferir antes de pedir o crachá. Tocar no cartão de um app no painel gera o Cartão só daquele app.</p>
-  <p><b>Crachá.</b> A pessoa pede pela carteira, com a Identidade junto. O serviço confere, sem consultar a Governança, que a Identidade foi assinada por ela, é da mesma pessoa e está válida, e emite um crachá por app, com a validade escolhida, nunca além da aprovação daquele app. Cada pessoa tem um crachá ativo por app.</p>
-  <p><b>Portaria.</b> O desafio vale 10 minutos e uma única vez. A portaria confere que quem responde é o dono do crachá, que o crachá foi emitido aqui, é do app certo, não foi revogado e está válido, e que a aprovação de emissão do app continua vigente.</p>
+  <p><b>Aprovação de emissão.</b> A Governança aprova o serviço, até a data que ela define. Ela não vê os apps: eles são do serviço.</p>
+  <p><b>Apps e funcionalidades.</b> Em Serviço › Apps, você cadastra os apps (aplicativo, serviço ou ferramenta) e, em cada um, as funcionalidades (módulo, micro-serviço ou ferramenta) e os grupos delas, para liberar várias de uma vez. O Cartão do serviço e o Cartão do app levam esse catálogo, para a pessoa ver o que pode pedir.</p>
+  <p><b>Crachá.</b> A pessoa pede pela carteira, com a Identidade junto. O serviço confere, sem consultar a Governança, que a Identidade foi assinada por ela, é da mesma pessoa e está válida, e emite um crachá por app, com as funcionalidades liberadas e a validade, nunca além da aprovação do serviço. Cada funcionalidade confere o crachá sozinha. Cada pessoa tem um crachá ativo por app; para liberar outra funcionalidade, emita um crachá novo.</p>
+  <p><b>Portaria.</b> O desafio é para um app ou para uma funcionalidade dele, vale 10 minutos e uma única vez. A portaria confere que quem responde é o dono do crachá, que o crachá foi emitido aqui, é do app certo, libera a funcionalidade pedida, não foi revogado e está válido, e que a aprovação do serviço continua vigente.</p>
   <p><b>Limite.</b> O serviço não enxerga revogações feitas pela Governança: a proteção é a validade da Identidade e da aprovação de emissão.</p>`,
   async load(){
     const r=await DB.get('state');
     st=r?await unseal(ses.vaultKey,r,'state'):null;
     if(!st){
       const gov=GOVERNANCA_PADRAO.did?{name:GOVERNANCA_PADRAO.name,dids:[GOVERNANCA_PADRAO.did]}:null;
-      st={name:'',apps:[],gov,aprovacoes:[],pendentes:[],issued:[],book:[],challenges:[],seq:0,verifs:0};
+      st={name:'',catalogo:[],gov,aprovacoes:[],pendentes:[],issued:[],book:[],challenges:[],seq:0,verifs:0};
       await ato('abertura','Livro aberto e serviço criado',ses.did);await save();
     }
     // Até a 0.18: um único credenciamento (st.cred). Agora: várias aprovações de emissão.
     if(!st.aprovacoes){st.aprovacoes=st.cred?[st.cred]:[];delete st.cred;await save()}
     if(!st.pendentes)st.pendentes=[];
+    // Até a 0.21: os apps eram nomes aprovados pela Governança. Agora são do serviço, com as funcionalidades deles.
+    if(!st.catalogo){
+      const nomes=[...new Set([...(st.apps||[]),...st.aprovacoes.flatMap(a=>a.apps||[])])];
+      st.catalogo=nomes.map(nome=>({nome,funcoes:[],grupos:[]}));delete st.apps;
+      st.pendentes=st.pendentes.map(({nonce,at})=>({nonce,at}));
+      await save();
+    }
+    st.catalogo.forEach(a=>{if(!a.grupos)a.grupos=[]});
   },
   enter(){$('#whoLabel').textContent=nomeServico();mountCommonSettings($('#commonSet'));setView('vPanel')},
   onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
   onLock(){
     st=null;pedido=null;
-    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued'].forEach(s=>$(s).innerHTML='');
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued','#sApps'].forEach(s=>$(s).innerHTML='');
     ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
@@ -1408,42 +1422,42 @@ const APP={
     return `Serviço restaurado com ${st.book.length} atos`;
   }
 };
-ATO_IC.credenciamento='badge';ATO_IC.pedido='send';
+ATO_IC.credenciamento='badge';ATO_IC.pedido='send';ATO_IC.catalogo='sliders';
 const CLOCK_SKEW=60;
 const nomeServico=()=>st&&st.name||'Serviços Systekna';
 // A Governança guarda todos os DIDs que já teve: Identidades da chave antiga continuam valendo.
 const govDid=()=>st.gov&&st.gov.dids.at(-1);
 const daGov=did=>!!st.gov&&st.gov.dids.includes(did);
-// Aprovações de emissão: o serviço pode ter várias ativas, cada uma com os apps dela.
+// Aprovação de emissão: a Governança aprova o serviço inteiro. Vale a de validade mais longa (sem validade vale mais).
+// Aprovações antigas, que listavam apps, valem para o serviço todo.
 const valida=a=>!a.exp||a.exp>now();
-const aprovValidas=()=>st.aprovacoes.filter(valida);
-const credApps=()=>[...new Set(aprovValidas().flatMap(a=>a.apps))];
-const credOk=()=>credApps().length>0;
-// A aprovação que cobre um app: a de validade mais longa (sem validade vale mais).
-const aprovDoApp=app=>aprovValidas().filter(a=>a.apps.includes(app)).sort((x,y)=>(y.exp||Infinity)-(x.exp||Infinity))[0];
-const listaApps=t=>[...new Set(String(t||'').split(',').map(a=>a.trim()).filter(Boolean))];
+const maisLonga=l=>l.slice().sort((x,y)=>(y.exp||Infinity)-(x.exp||Infinity))[0];
+const aprovServico=()=>maisLonga(st.aprovacoes.filter(valida));
+const credOk=()=>!!aprovServico();
+// Catálogo do serviço: apps, cada um com funcionalidades {id,nome,tipo} e grupos delas {id,nome,funcoes:[id]}.
+// O grupo é um atalho para liberar várias funcionalidades de uma vez: no crachá vão só as funcionalidades.
+const appNomes=()=>st.catalogo.map(a=>a.nome);
+const appDe=nome=>st.catalogo.find(a=>a.nome===nome);
+const TIPOS_FN=['Módulo','Micro-serviço','Ferramenta'];
+const codigo=t=>fold(t).replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+// O que vai no cartão público: nomes e códigos, sem o tipo (que é do desenvolvedor).
+const catalogoPublico=a=>({nome:a.nome,funcoes:a.funcoes.map(f=>({id:f.id,nome:f.nome})),grupos:a.grupos.map(g=>({id:g.id,nome:g.nome,funcoes:g.funcoes.slice()}))});
+const nomesFn=(a,ids)=>ids.map(id=>(a.funcoes.find(f=>f.id===id)||{nome:id}).nome);
+const resumoApp=a=>[a.funcoes.length?`${a.funcoes.length} ${a.funcoes.length===1?'funcionalidade':'funcionalidades'}`:'Sem funcionalidades',a.grupos.length?`${a.grupos.length} ${a.grupos.length===1?'grupo':'grupos'}`:''].filter(Boolean).join(' · ');
 
 function credResumo(){
   if(!st.gov)return verdictHtml(false,'Governança não informada','Em Serviço, informe o DID da Governança em que este serviço confia.');
-  if(!credOk())return verdictHtml(false,st.aprovacoes.length?'Aprovações de emissão vencidas':'Sem aprovação de emissão','Toque em + › Solicitar aprovação de emissão. Sem ela, o serviço não emite crachás.');
+  if(!credOk())return verdictHtml(false,st.aprovacoes.length?'Aprovação de emissão vencida':'Sem aprovação de emissão','Toque em + › Solicitar aprovação de emissão. Sem ela, o serviço não emite crachás.');
+  if(!st.catalogo.length)return verdictHtml(false,'Nenhum app ainda','Em Serviço › Apps, cadastre os apps e as funcionalidades do serviço.');
   return '';
 }
-// Um cartão por app aprovado: o app, o DID do serviço com copiar e quem aprovou + a validade. Todos ficam
-// agrupados sob a organização (o serviço), no ecossistema aprovado pela Governança.
-function appsAprovados(){
-  const porApp=new Map();
-  for(const a of st.aprovacoes)for(const app of a.apps){
-    const atual=porApp.get(app);
-    // Fica a aprovação que vale por mais tempo (sem validade vale mais); vencida só se não houver outra.
-    if(!atual||(valida(a)&&!valida(atual))||(valida(a)===valida(atual)&&(a.exp||Infinity)>(atual.exp||Infinity)))porApp.set(app,a);
-  }
-  return[...porApp].map(([app,a])=>({app,a}));
+// Um cartão por app do serviço: o app, quantas funcionalidades tem, o DID do serviço com copiar e a validade da
+// aprovação do serviço. Todos ficam agrupados sob a organização (o serviço).
+function cartaoApp(a){
+  const ap=aprovServico()||maisLonga(st.aprovacoes),venc=!ap||!valida(ap),pill=!ap?'Sem aprovação':!ap.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(ap.exp*1000);
+  return `<button class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(a.nome)}" aria-label="Cartão do app ${esc(a.nome)}"><div class="r1"><b class="tipo">App: ${esc(a.nome)}</b>${ic('badge')}</div><div class="main">${esc(resumoApp(a))}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></button>`;
 }
-function cartaoApp({app,a}){
-  const venc=!valida(a),pill=!a.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(a.exp*1000);
-  return `<button class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(app)}" aria-label="Cartão do app ${esc(app)}"><div class="r1"><b class="tipo">App: ${esc(app)}</b>${ic('badge')}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></button>`;
-}
-const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(p.apps.join(' · '))}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
+const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(nomeServico())}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
 // Tocar no cartão do app abre o Cartão daquele app; o botão de copiar só copia o DID.
 $('#pAprov').onclick=e=>{
   const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado');return}
@@ -1457,14 +1471,13 @@ async function renderPanel(){
   if(!st)return;
   $('#pName').textContent=nomeServico();
   $('#pCred').innerHTML=credResumo();if($('#pCred').firstElementChild)$('#pCred').firstElementChild.style.marginTop='0';
-  const apps=appsAprovados();
-  $('#pOrg').hidden=!apps.length;
-  $('#pOrgN').textContent=nomeServico();$('#pOrgG').textContent=`Ecossistema aprovado pela ${st.gov?st.gov.name:'Governança'}`;
-  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+apps.map(cartaoApp).join('');
+  $('#pOrg').hidden=!st.catalogo.length;
+  $('#pOrgN').textContent=nomeServico();$('#pOrgG').textContent=credOk()?`Serviço aprovado pela ${st.gov?st.gov.name:'Governança'}`:'Serviço sem aprovação de emissão válida';
+  $('#pAprov').innerHTML=st.pendentes.map(cartaoPendente).join('')+st.catalogo.map(cartaoApp).join('');
   const crachas=st.issued.filter(i=>i.type==='BadgeCredential');
   $('#sA').textContent=crachas.filter(i=>issStatus(i)[0]==='ok').length;
   $('#sR').textContent=crachas.filter(i=>i.revoked).length;
-  $('#sP').textContent=credApps().length;$('#sV').textContent=st.verifs;
+  $('#sP').textContent=st.catalogo.length;$('#sV').textContent=st.verifs;
   $('#pAtos').innerHTML=st.book.slice(-6).reverse().map(e=>atoRow(e)).join('');
   const c=await checkBook();
   $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo serviço.`)
@@ -1479,48 +1492,93 @@ function renderSrv(){
   $('#sDid').textContent=ses.did;$('#sLeg').hidden=!!ses.dom;
   $('#sGovN').textContent=st.gov?st.gov.name:'Governança não informada';
   $('#sGovD').textContent=st.gov?shortDid(govDid()):'Toque para informar o DID';
+  $('#sApps').innerHTML=st.catalogo.length?st.catalogo.map(a=>`<button class="tx" data-app="${esc(a.nome)}"><span class="dot">${ic('badge')}</span><span class="t"><b>${esc(a.nome)}</b><small>${esc(resumoApp(a))}</small></span>${ic('chev')}</button>`).join('')
+    :'<div class="empty">Nenhum app ainda. Toque em Novo app.</div>';
   const list=st.issued.slice().reverse();
   $('#sIssN').textContent=list.length?`${list.length} no total`:'';
   $('#sIssued').innerHTML=list.length?list.slice(0,40).map(i=>{const[c,l]=issStatus(i);return `<button class="tx" data-iss="${i.n}"><span class="dot">${ic('badge')}</span><span class="t"><b>${esc(i.claims.app)}</b><small>${esc(i.holderName||shortDid(i.sub))}, ${fmtDate(i.iat*1000)}</small></span><span class="pill ${c}">${l}</span></button>`}).join('')
     :'<div class="empty">Nenhum crachá emitido ainda.</div>';
 }
 $('#sIssued').onclick=e=>{const b=e.target.closest('[data-iss]');if(b)showIssued(+b.dataset.iss,renderSrv)};
-$('#sDidC').onclick=()=>copy(ses.did,'DID copiado');
-$('#sGov').onclick=()=>{
-  openSheet(`<h3>Governança</h3><p class="sub">O DID da Governança que credencia este serviço e aprova as Identidades que ele aceita.</p>
-    <label class="f" id="gvNF"><span>Nome</span><input id="gvN" autocomplete="off" value="${esc(st.gov?st.gov.name:GOVERNANCA_PADRAO.name)}"></label>
-    <label class="f" id="gvDF"><span>DID da Governança</span><input id="gvD" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…" value="${esc(st.gov?govDid():'')}"></label><p class="hint" id="gvH"></p>
-    <button class="btn" id="gvGo">Salvar</button>`);
-  $('#gvGo').onclick=async()=>{
-    const name=$('#gvN').value.trim(),did=$('#gvD').value.trim(),H=$('#gvH');
-    const fail=(m,f)=>{H.textContent=m;H.classList.add('bad');shake($(f))};
-    if(!name)return fail('Informe o nome.','#gvNF');
-    try{await didToEdKey(did)}catch(e){return fail(e.message,'#gvDF')}
-    if(minhas().includes(did))return fail('Este é o DID do próprio serviço.','#gvDF');
-    if(st.gov&&govDid()===did&&st.gov.name===name){closeSheet();return}
-    const troca=st.gov&&!daGov(did);
-    if(troca&&st.aprovacoes.length&&!await confirmSheet('Trocar de Governança','As aprovações de emissão atuais foram dadas pela outra Governança e deixam de valer aqui. Será preciso pedir de novo.','Trocar',true))return;
-    st.gov=troca||!st.gov?{name,dids:[did]}:{...st.gov,name};
-    if(troca){st.aprovacoes=[];st.pendentes=[]}
-    await ato('confianca',`${name} definida como Governança do serviço`,did);await save();
-    closeSheet();renderSrv();toast('Governança salva');
+$('#sApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)gerenciarApp(b.dataset.app)};
+$('#sAppNovo').onclick=novoApp;
+function novoApp(){
+  openSheet(`<h3>Novo app</h3><p class="sub">O app (aplicativo, serviço ou ferramenta) é do serviço: a Governança não precisa aprovar. Depois de criar, cadastre as funcionalidades dele.</p>
+    <label class="f" id="naF"><span>Nome do app</span><input id="naN" autocomplete="off" placeholder="Ex.: Gestão Financeira"></label><p class="hint" id="naH"></p>
+    <button class="btn" id="naGo">Criar app</button>`);
+  $('#naN').focus();
+  $('#naGo').onclick=async()=>{
+    const nome=$('#naN').value.trim(),H=$('#naH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#naF'))};
+    if(!nome)return fail('Informe o nome do app.');
+    if(st.catalogo.some(a=>fold(a.nome)===fold(nome)))return fail(`${nome} já existe.`);
+    const pii=piiProblem({app:nome});if(pii)return fail(pii);
+    st.catalogo.push({nome,funcoes:[],grupos:[]});
+    await ato('catalogo',`App ${nome} criado`,null);await save();
+    toast('App criado');renderSrv();gerenciarApp(nome);
   };
-};
-$('#sGovRot').onclick=()=>{
-  openSheet(`<h3>Importar troca de chave</h3><p class="sub">Cole o aviso de troca de chave da Governança. Identidades e credenciamentos da chave antiga continuam valendo.</p>
-    <label class="f" id="irF"><span>Aviso de troca</span><textarea class="mono" id="irT" rows="5" spellcheck="false" placeholder="SYSTEKNA:ROTACAO:…"></textarea></label><p class="hint" id="irH"></p>
-    <button class="btn" id="irGo">Conferir e importar</button>`);
-  $('#irGo').onclick=async()=>{
-    const H=$('#irH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#irF'))};
-    let r;try{r=await avisoValido($('#irT').value)}catch(e){return fail(e.message)}
-    const p=r.payload;
-    if(daGov(p.novo))return fail('Esta troca já foi importada.');
-    if(!daGov(p.iss))return fail('O aviso não é da Governança deste serviço.');
-    st.gov.dids.push(p.novo);
-    await ato('confianca',`${st.gov.name} trocou de chave: ${shortDid(p.iss)} → ${shortDid(p.novo)}`,p.novo);await save();
-    closeSheet();renderSrv();toast('Troca de chave importada');
+}
+// Funcionalidades e grupos de um app. O código da funcionalidade é o que vai no crachá e não muda.
+function gerenciarApp(nome){
+  const a=appDe(nome);if(!a)return;
+  openSheet(`<h3>App ${esc(a.nome)}</h3><p class="sub">Cada funcionalidade é liberada no crachá pelo código dela. Os grupos juntam funcionalidades para liberar de uma vez. Ao aprovar um acesso, você escolhe o que a pessoa pode usar.</p>
+    <div class="sec-h">Funcionalidades</div><div class="list glass flat" id="fnL"></div>
+    <label class="f" id="fnNF"><span>Funcionalidade</span><input id="fnN" autocomplete="off" placeholder="Ex.: Lançar despesas"></label>
+    <label class="f" id="fnCF"><span>Código</span><input id="fnC" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="Ex.: despesas"></label>
+    <label class="f"><span>Tipo</span><select id="fnT">${TIPOS_FN.map(t=>`<option>${t}</option>`).join('')}</select></label>
+    <button class="btn ghost" id="fnAdd">Adicionar funcionalidade</button><p class="hint" id="fnH"></p>
+    <div class="sec-h">Grupos</div><div class="list glass flat" id="grL"></div>
+    <label class="f" id="grNF"><span>Grupo</span><input id="grN" autocomplete="off" placeholder="Ex.: Básico"></label>
+    <div class="list glass flat" id="grF"></div>
+    <button class="btn ghost" id="grAdd">Criar grupo</button><p class="hint" id="grH"></p>`);
+  const msg=(id,m,bad)=>{$(id).textContent=m;$(id).classList.toggle('bad',!!bad)},aviso=(m,bad)=>msg('#fnH',m,bad);
+  const desenhar=()=>{
+    $('#fnL').innerHTML=a.funcoes.length?a.funcoes.map(f=>`<div class="tx" data-fn="${esc(f.id)}"><span class="t"><b>${esc(f.nome)}</b><small><span class="mono">${esc(f.id)}</span> · ${esc(f.tipo)}</small></span><button class="mini sm" data-rmfn="${esc(f.id)}" aria-label="Tirar ${esc(f.nome)}">${ic('x')}</button></div>`).join('')
+      :'<div class="empty">Nenhuma funcionalidade ainda.</div>';
+    $('#grL').innerHTML=a.grupos.length?a.grupos.map(g=>`<div class="tx" data-gr="${esc(g.id)}"><span class="t"><b>${esc(g.nome)}</b><small>${esc(nomesFn(a,g.funcoes).join(' · ')||'Nenhuma funcionalidade')}</small></span><button class="mini sm" data-rmgr="${esc(g.id)}" aria-label="Tirar ${esc(g.nome)}">${ic('x')}</button></div>`).join('')
+      :'<div class="empty">Nenhum grupo ainda.</div>';
+    $('#grF').innerHTML=a.funcoes.length?a.funcoes.map(f=>`<button class="choice" data-fn="${esc(f.id)}" aria-pressed="false"><span class="rd"></span><span class="t"><b>${esc(f.nome)}</b></span></button>`).join('')
+      :'<div class="empty">Cadastre funcionalidades para montar grupos.</div>';
   };
-};
+  desenhar();
+  $('#fnN').oninput=()=>{if(!$('#fnC').dataset.mexido)$('#fnC').value=codigo($('#fnN').value)};
+  $('#fnC').oninput=()=>{$('#fnC').dataset.mexido='1'};
+  $('#fnAdd').onclick=async()=>{
+    const fn=$('#fnN').value.trim(),id=codigo($('#fnC').value||fn),tipo=$('#fnT').value;
+    if(!fn){shake($('#fnNF'));return aviso('Informe a funcionalidade.',true)}
+    if(!id){shake($('#fnCF'));return aviso('O código usa letras, números e hífen.',true)}
+    if(a.funcoes.some(f=>f.id===id))return aviso(`O código ${id} já existe neste app.`,true);
+    if(a.funcoes.some(f=>fold(f.nome)===fold(fn)))return aviso(`${fn} já existe neste app.`,true);
+    const pii=piiProblem({funcionalidade:fn,codigo:id});if(pii)return aviso(pii,true);
+    a.funcoes.push({id,nome:fn,tipo});
+    await ato('catalogo',`Funcionalidade ${fn} (${id}) criada no app ${a.nome}`,null);await save();
+    $('#fnN').value='';$('#fnC').value='';delete $('#fnC').dataset.mexido;aviso('');desenhar();renderSrv();toast('Funcionalidade criada');
+  };
+  $('#fnL').onclick=async e=>{
+    const b=e.target.closest('[data-rmfn]');if(!b)return;
+    const f=a.funcoes.find(x=>x.id===b.dataset.rmfn);
+    if(!await confirmSheet('Tirar funcionalidade',`${f.nome} sai do app e dos grupos. Os crachás já emitidos continuam com ela até vencerem ou serem trocados.`,'Tirar',true))return gerenciarApp(nome);
+    a.funcoes=a.funcoes.filter(x=>x!==f);a.grupos.forEach(g=>g.funcoes=g.funcoes.filter(id=>id!==f.id));
+    await ato('catalogo',`Funcionalidade ${f.nome} (${f.id}) tirada do app ${a.nome}`,null);await save();renderSrv();gerenciarApp(nome);
+  };
+  $('#grF').onclick=e=>{const b=e.target.closest('[data-fn]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
+  $('#grAdd').onclick=async()=>{
+    const gn=$('#grN').value.trim(),fns=[...$('#grF').querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.fn),id=codigo(gn);
+    if(!gn||!id){shake($('#grNF'));return msg('#grH','Informe o nome do grupo.',true)}
+    if(a.grupos.some(g=>g.id===id))return msg('#grH',`O grupo ${gn} já existe.`,true);
+    if(!fns.length)return msg('#grH','Marque ao menos uma funcionalidade.',true);
+    const pii=piiProblem({grupo:gn});if(pii)return msg('#grH',pii,true);
+    a.grupos.push({id,nome:gn,funcoes:fns});
+    await ato('catalogo',`Grupo ${gn} criado no app ${a.nome}: ${nomesFn(a,fns).join(', ')}`,null);await save();
+    $('#grN').value='';msg('#grH','');desenhar();renderSrv();toast('Grupo criado');
+  };
+  $('#grL').onclick=async e=>{
+    const b=e.target.closest('[data-rmgr]');if(!b)return;
+    const g=a.grupos.find(x=>x.id===b.dataset.rmgr);
+    if(!await confirmSheet('Tirar grupo',`O grupo ${g.nome} sai do app. As funcionalidades continuam, e os crachás já emitidos não mudam.`,'Tirar',true))return gerenciarApp(nome);
+    a.grupos=a.grupos.filter(x=>x!==g);
+    await ato('catalogo',`Grupo ${g.nome} tirado do app ${a.nome}`,null);await save();renderSrv();gerenciarApp(nome);
+  };
+}
 /* ================= menu +: solicitar e receber aprovação de emissão, cartão do serviço ================= */
 $('#dockAdd').onclick=()=>{
   const row=(k,icn,t,d)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${d}</small></span>${ic('chev')}</button>`;
@@ -1530,38 +1588,22 @@ $('#dockAdd').onclick=()=>{
     ${row('card','badge','Cartão do serviço','Mostra o cartão público para as carteiras')}</div>`);
   $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(b)({ask:solicitarEmissao,get:receberEmissao,card:cartaoServico})[b.dataset.act]()};
 };
-// Solicitar: nome do serviço e os apps novos. Os apps já aprovados aparecem só para consulta; o pedido leva
-// apenas os novos, e cada aprovação recebida soma os apps dela às anteriores.
+// Solicitar: a Governança aprova o serviço, não os apps. O pedido leva só o nome do serviço.
 function solicitarEmissao(){
-  const aprovados=credApps();let novos=[];
-  openSheet(`<h3>Solicitar aprovação de emissão</h3><p class="sub">A Governança aprova a emissão de crachás de cada app. Peça só os apps novos: as aprovações anteriores continuam valendo.</p>
+  const ap=aprovServico();
+  openSheet(`<h3>Solicitar aprovação de emissão</h3><p class="sub">A Governança aprova o serviço. Os apps e as funcionalidades são seus: cadastre em Serviço › Apps.</p>
     ${st.gov?`<div class="list glass flat"><div class="kr"><div class="h"><small>Governança</small></div><div class="v">${esc(st.gov.name)}</div><div class="v mono" style="margin-top:4px">${esc(shortDid(govDid()))}</div></div></div>`
       :`<label class="f" id="saGF"><span>DID da Governança</span><input id="saG" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint">Informado uma vez, fica guardado.</p>`}
     <label class="f" id="saNF"><span>Nome do serviço</span><input id="saN" autocomplete="off" value="${esc(st.name)}" placeholder="Ex.: Academia Boa Forma"></label>
-    ${aprovados.length?`<div class="sec-h">Apps já aprovados</div><div class="list glass flat" id="saOk">${aprovados.map(a=>{const x=aprovDoApp(a);return `<div class="kr"><div class="h"><small>${esc(a)}</small><span class="pill ok">${x.exp?'Até '+fmtDate(x.exp*1000):'Sem validade'}</span></div></div>`}).join('')}</div>`:''}
-    <div class="sec-h">Apps para aprovar</div>
-    <div class="list glass flat" id="saL"></div>
-    <label class="f" id="saAF"><span>App</span><div class="inrow"><input id="saA" autocomplete="off" placeholder="Ex.: Portaria"><button class="mini" id="saAdd" type="button">Adicionar</button></div></label>
+    ${ap?`<p class="note" id="saOk">O serviço já está aprovado${ap.exp?' até '+fmtDate(ap.exp*1000):', sem validade'}. Pedir de novo serve para renovar.</p>`:''}
     <p class="hint" id="saH"></p>
     <button class="btn" id="saGo">Assinar pedido</button>
     <div id="saOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="saJ" rows="6" readonly></textarea></label><button class="btn ghost" id="saC">Copiar pedido</button></div>`);
   const H=$('#saH'),aviso=(m,bad)=>{H.textContent=m;H.classList.toggle('bad',!!bad)};
-  const desenhar=()=>{$('#saL').innerHTML=novos.length?novos.map((a,i)=>`<div class="tx"><span class="t"><b>${esc(a)}</b></span><button class="mini sm" data-rm="${i}" aria-label="Tirar ${esc(a)}">${ic('x')}</button></div>`).join(''):'<div class="empty">Nenhum app ainda. Adicione abaixo.</div>'};
-  desenhar();
-  const adicionar=()=>{
-    const a=$('#saA').value.trim();if(!a)return $('#saA').focus();
-    if(aprovados.some(x=>fold(x)===fold(a)))return aviso(`${a} já está aprovado.`,true);
-    if(novos.some(x=>fold(x)===fold(a)))return aviso(`${a} já está na lista.`,true);
-    novos.push(a);$('#saA').value='';aviso('');desenhar();$('#saA').focus();
-  };
-  $('#saAdd').onclick=adicionar;
-  $('#saA').onkeydown=e=>{if(e.key==='Enter'){e.preventDefault();adicionar()}};
-  $('#saL').onclick=e=>{const b=e.target.closest('[data-rm]');if(b){novos.splice(+b.dataset.rm,1);desenhar()}};
   $('#saGo').onclick=async()=>{
     const name=$('#saN').value.trim();
     if(!name){shake($('#saNF'));return $('#saN').focus()}
-    if(!novos.length)return aviso('Adicione ao menos um app.',true);
-    const pii=piiProblem({nome:name,...Object.fromEntries(novos.map((a,i)=>[`app ${i+1}`,a]))});if(pii)return aviso(pii,true);
+    const pii=piiProblem({nome:name});if(pii)return aviso(pii,true);
     if(!st.gov){
       const did=$('#saG').value.trim();
       try{await didToEdKey(did)}catch(e){shake($('#saGF'));return aviso(e.message,true)}
@@ -1570,17 +1612,17 @@ function solicitarEmissao(){
       await ato('confianca',`${st.gov.name} definida como Governança do serviço`,did);
     }
     const iat=now(),nonce=b64u.enc(rnd(16));
-    const tok=embrulhar(await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:govDid(),name,wanted:'ServiceAccreditationCredential',apps:novos,note:'',nonce,iat,exp:iat+7*86400}));
-    st.name=name;st.apps=[...new Set([...st.apps,...novos])];
-    st.pendentes.push({nonce,at:Date.now(),apps:[...novos]});
-    await ato('pedido',`Aprovação de emissão pedida para ${novos.join(', ')}`,nonce);await save();
+    const tok=embrulhar(await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:govDid(),name,wanted:'ServiceAccreditationCredential',note:'',nonce,iat,exp:iat+7*86400}));
+    st.name=name;
+    st.pendentes.push({nonce,at:Date.now()});
+    await ato('pedido',`Aprovação de emissão pedida para o serviço ${name}`,nonce);await save();
     $('#whoLabel').textContent=name;aviso('');
-    $('#saJ').value=tok;$('#saOut').hidden=false;$('#saGo').hidden=true;$('#saAF').hidden=true;
+    $('#saJ').value=tok;$('#saOut').hidden=false;$('#saGo').hidden=true;
     $('#saC').onclick=()=>copy(tok,'Pedido copiado');toast('Pedido assinado');renderPanel();
   };
 }
 function receberEmissao(){
-  openSheet(`<h3>Receber aprovação de emissão</h3><p class="sub">Cole a aprovação que a Governança emitiu para este serviço. Os apps dela se somam aos já aprovados.</p>
+  openSheet(`<h3>Receber aprovação de emissão</h3><p class="sub">Cole a aprovação que a Governança emitiu para este serviço.</p>
     <label class="f" id="srF"><span>Aprovação de emissão</span><textarea class="mono" id="srT" rows="6" spellcheck="false" placeholder="SYSTEKNA:CREDENCIAMENTO:…"></textarea></label><p class="hint" id="srH"></p>
     <button class="btn" id="srGo">Conferir e guardar</button>`);
   $('#srGo').onclick=async()=>{
@@ -1596,32 +1638,34 @@ function receberEmissao(){
     const t0=now();
     if(p.exp&&p.exp<=t0)return fail(`Esta aprovação venceu em ${fmtDate(p.exp*1000)}.`);
     if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Esta aprovação só vale a partir de ${fmtDate(p.nbf*1000)}.`);
-    const cs=p.vc.credentialSubject||{},apps=Array.isArray(cs.apps)?cs.apps:[];
-    if(!apps.length)return fail('A aprovação não lista nenhum app.');
-    st.aprovacoes.push({jwt:r.tok,jti:p.jti,iat:p.iat,exp:p.exp||0,apps,servico:cs.servico||''});
-    // O pedido atendido sai de "aguardando": os apps não aprovados podem ser pedidos de novo.
-    st.pendentes=st.pendentes.filter(x=>!x.apps.some(a=>apps.includes(a)));
-    await ato('credenciamento',`Aprovação de emissão recebida da ${st.gov.name}: ${apps.join(', ')}${p.exp?' até '+fmtDate(p.exp*1000):', sem validade'}`,p.jti);await save();
+    const cs=p.vc.credentialSubject||{};
+    st.aprovacoes.push({jwt:r.tok,jti:p.jti,iat:p.iat,exp:p.exp||0,servico:cs.servico||''});
+    // A aprovação atende os pedidos em aberto: o serviço inteiro está aprovado.
+    st.pendentes=[];
+    await ato('credenciamento',`Aprovação de emissão recebida da ${st.gov.name}${p.exp?', até '+fmtDate(p.exp*1000):', sem validade'}`,p.jti);await save();
     closeSheet();setView('vPanel');toast('Aprovação de emissão guardada');
   };
 }
+// Cartão do serviço: os apps com as funcionalidades e a aprovação do serviço pela Governança.
 async function cartaoServico(){
-  if(!credOk())return toast('Sem aprovação de emissão válida, o serviço não tem cartão.',true);
-  const validas=aprovValidas(),iat=now(),pl={iss:ses.did,name:nomeServico(),apps:credApps(),aprovacoes:validas.map(a=>a.jwt),iat};
-  if(validas.every(a=>a.exp))pl.exp=Math.max(...validas.map(a=>a.exp));
+  const ap=aprovServico();
+  if(!ap)return toast('Sem aprovação de emissão válida, o serviço não tem cartão.',true);
+  if(!st.catalogo.length)return toast('O serviço ainda não tem apps. Crie em Serviço › Apps.',true);
+  const pl={iss:ses.did,name:nomeServico(),apps:appNomes(),catalogo:st.catalogo.map(catalogoPublico),aprovacoes:[ap.jwt],iat:now()};
+  if(ap.exp)pl.exp=ap.exp;
   mostrarCartao('Cartão do serviço',await signJWT('cartao+jwt',pl));
 }
-// Cartão de um app só: leva o app e apenas a aprovação que o cobre. A carteira já abre com ele marcado.
+// Cartão de um app só: o app e o catálogo dele. A carteira já abre com ele marcado.
 async function cartaoDoApp(app){
-  const a=aprovDoApp(app);
-  if(!a)return toast('A aprovação de emissão deste app venceu.',true);
-  const pl={iss:ses.did,name:nomeServico(),app,apps:[app],aprovacoes:[a.jwt],iat:now()};
-  if(a.exp)pl.exp=a.exp;
+  const ap=aprovServico(),a=appDe(app);
+  if(!ap)return toast('O serviço está sem aprovação de emissão válida.',true);
+  const pl={iss:ses.did,name:nomeServico(),app,apps:[app],catalogo:[catalogoPublico(a)],aprovacoes:[ap.jwt],iat:now()};
+  if(ap.exp)pl.exp=ap.exp;
   mostrarCartao(`Cartão do app ${esc(app)}`,await signJWT('cartao+jwt',pl));
 }
 function mostrarCartao(titulo,jwt){
   const tok=embrulhar(jwt);
-  openSheet(`<h3>${titulo}</h3><p class="sub">É público: a carteira lê o cartão e confere que a Governança aprovou a emissão dos apps antes de pedir o crachá.</p>
+  openSheet(`<h3>${titulo}</h3><p class="sub">É público: a carteira lê o cartão, mostra os apps e as funcionalidades e confere que a Governança aprovou o serviço antes de pedir o crachá.</p>
     <label class="f"><span>Cartão assinado</span><textarea class="mono" id="scJ" rows="6" readonly>${tok}</textarea></label><button class="btn" id="scC">Copiar cartão</button>`);
   $('#scC').onclick=()=>copy(tok,'Cartão copiado');
 }
@@ -1653,9 +1697,12 @@ $('#cqGo').onclick=async()=>{
   if(q.nbf&&q.nbf>t0+CLOCK_SKEW)return fail('A Identidade ainda não está em vigor.');
   const nome=String((vcClaims(q).find(c=>c[0]==='nome')||[])[1]||'');
   pedido={r,nome};
-  const pedidos=Array.isArray(p.apps)?p.apps.map(String):[],aprovados=credApps(),fora=pedidos.filter(a=>!aprovados.includes(a));
-  $('#cWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(nome)} tem a Identidade aprovada pela ${esc(st.gov.name)} e controla ${esc(shortDid(r.did))}.${fora.length?' Sem aprovação de emissão: '+esc(fora.join(', '))+'.':''}`);
-  $('#cApps').innerHTML=aprovados.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${!pedidos.length||pedidos.includes(a)}"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('');
+  const pedidos=Array.isArray(p.apps)?p.apps.map(String):[],fora=pedidos.filter(a=>!appDe(a));
+  $('#cWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(nome)} tem a Identidade aprovada pela ${esc(st.gov.name)} e controla ${esc(shortDid(r.did))}.${fora.length?' O serviço não tem: '+esc(fora.join(', '))+'.':''}`);
+  // Um app por linha e, embaixo, os grupos (atalhos) e as funcionalidades, todas liberadas; desmarque o que a
+  // pessoa não vai usar. Tocar num grupo marca ou desmarca as funcionalidades dele.
+  $('#cApps').innerHTML=st.catalogo.map(a=>`<div class="appFn" data-appfn="${esc(a.nome)}"><button class="choice" data-app="${esc(a.nome)}" aria-pressed="${!pedidos.length||pedidos.includes(a.nome)}"><span class="rd"></span><span class="t"><b>${esc(a.nome)}</b><small>${esc(a.funcoes.length?'Funcionalidades liberadas abaixo':'Acesso ao app')}</small></span></button>${a.grupos.map(g=>`<button class="choice" data-gr="${esc(g.id)}" aria-pressed="true" style="padding-left:48px"><span class="rd"></span><span class="t"><b>Grupo ${esc(g.nome)}</b><small>${esc(nomesFn(a,g.funcoes).join(', '))}</small></span></button>`).join('')}${a.funcoes.map(f=>`<button class="choice sub-fn" data-fn="${esc(f.id)}" aria-pressed="true" style="padding-left:48px"><span class="rd"></span><span class="t"><b>${esc(f.nome)}</b></span></button>`).join('')}</div>`).join('')
+    ||'<div class="empty">O serviço ainda não tem apps.</div>';
   // Cartão de análise: quem pede (nome e perfil da identidade aprovada) e o DID.
   $('#cPessoa').innerHTML=`<div class="list glass flat mt">
     <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="cNome">${esc(nome)}</div></div>
@@ -1682,18 +1729,29 @@ $('#cRec').onclick=()=>{
     $('#cOut').hidden=false;toast('Pedido recusado');
   };
 };
-$('#cApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true')};
-async function emitirCracha(sub,app,iat,exp,nome,nonce){
-  const n=++st.seq,jti='urn:uuid:'+crypto.randomUUID(),claims={servico:nomeServico(),app};
+$('#cApps').onclick=e=>{
+  const b=e.target.closest('[data-app],[data-fn],[data-gr]');if(!b)return;
+  const box=b.closest('[data-appfn]'),a=appDe(box.dataset.appfn),fnBtn=id=>box.querySelector(`[data-fn="${CSS.escape(id)}"]`);
+  if(b.dataset.gr){
+    const g=a.grupos.find(x=>x.id===b.dataset.gr),liga=b.getAttribute('aria-pressed')!=='true';
+    g.funcoes.forEach(id=>{const f=fnBtn(id);if(f)f.setAttribute('aria-pressed',liga)});
+  }else b.setAttribute('aria-pressed',b.getAttribute('aria-pressed')!=='true');
+  // O grupo aparece marcado quando todas as funcionalidades dele estão liberadas.
+  a.grupos.forEach(g=>{const gb=box.querySelector(`[data-gr="${CSS.escape(g.id)}"]`);if(gb)gb.setAttribute('aria-pressed',g.funcoes.every(id=>{const f=fnBtn(id);return f&&f.getAttribute('aria-pressed')==='true'}))});
+};
+// O crachá leva as funcionalidades liberadas (os códigos): cada funcionalidade confere o crachá sozinha, sem
+// perguntar ao serviço. App sem funcionalidades: o crachá dá só a entrada no app.
+async function emitirCracha(sub,app,iat,exp,nome,nonce,funcionalidades){
+  const n=++st.seq,jti='urn:uuid:'+crypto.randomUUID(),claims={servico:nomeServico(),app,...(funcionalidades.length?{funcionalidades}:{})};
   const payload={iss:ses.did,sub,iat,nbf:iat,jti,vc:{'@context':VC_CONTEXT,type:['VerifiableCredential','BadgeCredential'],issuer:{id:ses.did,name:nomeServico()},issuanceDate:new Date(iat*1000).toISOString(),
     credentialSubject:{id:sub,...claims},credentialStatus:{id:`${ses.did}#status-${n}`,type:'SysteknaStatusRegistry',statusListIndex:n},
-    // A aprovação de emissão do app vai junto, como prova de que a Governança autorizou o serviço.
-    evidence:[{type:['CredenciamentoSystekna'],credenciamento:aprovDoApp(app).jwt}]}};
+    // A aprovação de emissão do serviço vai junto, como prova de que a Governança autorizou o serviço.
+    evidence:[{type:['CredenciamentoSystekna'],credenciamento:aprovServico().jwt}]}};
   if(exp)payload.exp=exp;
   const jwt=await signJWT('vc+jwt',payload);
   const antigos=st.issued.filter(i=>i.sub===sub&&i.type==='BadgeCredential'&&i.claims.app===app&&!i.revoked&&!(i.exp&&i.exp<iat));
   st.issued.push({n,jti,sub,type:'BadgeCredential',claims,iat,exp,holderName:nome,nonce,revoked:false});
-  await ato('emissao',`Crachá ${app} emitido para ${nome||shortDid(sub)}`,jti);
+  await ato('emissao',`Crachá ${app}${funcionalidades.length?' ('+nomesFn(appDe(app),funcionalidades).join(', ')+')':''} emitido para ${nome||shortDid(sub)}`,jti);
   for(const a of antigos){
     a.revoked=true;a.revokedAt=Date.now();a.reason='Substituído por novo crachá';
     await ato('revogacao',`Crachá ${app} nº ${a.n} de ${a.holderName||shortDid(a.sub)} revogado: substituído por novo crachá`,a.jti);
@@ -1702,15 +1760,18 @@ async function emitirCracha(sub,app,iat,exp,nome,nonce){
 }
 $('#cGo').onclick=async()=>{
   if(!pedido)return;
-  const apps=[...$('#cApps').querySelectorAll('[aria-pressed="true"]')].map(b=>b.dataset.app);
+  const apps=[...$('#cApps').querySelectorAll('[data-app][aria-pressed="true"]')].map(b=>b.dataset.app);
   if(!apps.length)return toast('Escolha ao menos um app',true);
-  if(apps.some(a=>!aprovDoApp(a)))return toast('A aprovação de emissão de um dos apps venceu. Peça de novo à Governança.',true);
+  const ap=aprovServico();
+  if(!ap)return toast('A aprovação de emissão do serviço venceu. Peça de novo à Governança.',true);
+  const fnsDe=app=>[...$('#cApps').querySelectorAll(`[data-appfn="${CSS.escape(app)}"] [data-fn][aria-pressed="true"]`)].map(b=>b.dataset.fn);
+  const vazio=apps.find(app=>appDe(app).funcoes.length&&!fnsDe(app).length);
+  if(vazio)return toast(`Libere ao menos uma funcionalidade de ${vazio}`,true);
   const days=+$('#cDays').value,iat=now(),pedido_=days?iat+days*86400:0;
-  // A validade escolhida nunca passa a da aprovação de emissão do app (DP-07).
-  const ate=app=>{const a=aprovDoApp(app);return a.exp?(pedido_?Math.min(pedido_,a.exp):a.exp):pedido_};
+  // A validade escolhida nunca passa a da aprovação de emissão do serviço (DP-07).
+  const exp=ap.exp?(pedido_?Math.min(pedido_,ap.exp):ap.exp):pedido_;
   const toks=[];
-  for(const app of apps)toks.push([app,embrulhar(await emitirCracha(pedido.r.did,app,iat,ate(app),pedido.nome,pedido.r.payload.nonce))]);
-  const exp=Math.max(...apps.map(ate))||0;
+  for(const app of apps)toks.push([app,embrulhar(await emitirCracha(pedido.r.did,app,iat,exp,pedido.nome,pedido.r.payload.nonce,fnsDe(app)))]);
   await save();
   $('#cOk').innerHTML=verdictHtml(true,apps.length>1?'Crachás emitidos':'Crachá emitido',`${esc(apps.join(', '))} para ${esc(pedido.nome||shortDid(pedido.r.did))}${exp?', até '+fmtDate(exp*1000):', sem validade'}. Entregue cada crachá à pessoa.`);
   $('#cList').innerHTML=toks.map(([app,t],i)=>`<label class="f"><span>Crachá ${esc(app)}</span><textarea class="mono" rows="4" readonly data-cracha="${i}">${t}</textarea></label><button class="btn ghost" data-cp="${i}">Copiar crachá ${esc(app)}</button>`).join('');
@@ -1720,18 +1781,27 @@ $('#cGo').onclick=async()=>{
 $('#cNew').onclick=()=>{$('#cqT').value='';$('#cOut').hidden=true;$('#cqH').textContent='';$('#cqT').focus()};
 
 /* ================= portaria ================= */
+// A portaria confere a entrada no app ou uma funcionalidade dele (ela tem de estar liberada no crachá).
 function fillGateApps(){
   if(!st)return;
-  const apps=credApps();
-  $('#gaApp').innerHTML=apps.length?apps.map(a=>`<option>${esc(a)}</option>`).join(''):'<option value="">Sem credenciamento</option>';
+  const apps=appNomes();
+  $('#gaApp').innerHTML=apps.length?apps.map(a=>`<option>${esc(a)}</option>`).join(''):'<option value="">Nenhum app</option>';
+  fillGateFns();
 }
+function fillGateFns(){
+  const a=appDe($('#gaApp').value);
+  $('#gaFn').innerHTML=`<option value="">Só a entrada no app</option>`+(a?a.funcoes.map(f=>`<option value="${esc(f.id)}">${esc(f.nome)}</option>`).join(''):'');
+}
+$('#gaApp').onchange=fillGateFns;
 $('#gaGen').onclick=async()=>{
-  const app=$('#gaApp').value;
-  if(!app||!credApps().includes(app))return toast('Sem aprovação de emissão válida para este app',true);
-  const nonce=b64u.enc(rnd(18)),iat=now(),purpose=`Acesso a ${app}`;
-  $('#gaChalT').value=embrulhar(await signJWT('desafio+jwt',{iss:ses.did,name:nomeServico(),nonce,purpose,accept:'BadgeCredential',app,iat,exp:iat+600}));
+  const app=$('#gaApp').value,a=appDe(app);
+  if(!a)return toast('Crie um app em Serviço › Apps',true);
+  if(!credOk())return toast('Sem aprovação de emissão válida para o serviço',true);
+  const f=a.funcoes.find(x=>x.id===$('#gaFn').value);
+  const nonce=b64u.enc(rnd(18)),iat=now(),purpose=f?`${f.nome} em ${app}`:`Acesso a ${app}`;
+  $('#gaChalT').value=embrulhar(await signJWT('desafio+jwt',{iss:ses.did,name:nomeServico(),nonce,purpose,accept:'BadgeCredential',app,...(f?{funcao:f.id}:{}),iat,exp:iat+600}));
   st.challenges=st.challenges.filter(c=>c.exp>iat-86400);
-  st.challenges.push({nonce,type:'BadgeCredential',app,purpose,iat,exp:iat+600,used:false});await save();
+  st.challenges.push({nonce,type:'BadgeCredential',app,...(f?{funcao:f.id,funcaoNome:f.nome}:{}),purpose,iat,exp:iat+600,used:false});await save();
   $('#gaChal').hidden=false;toast('Desafio gerado');
 };
 $('#gaChalC').onclick=()=>copy($('#gaChalT').value,'Desafio copiado');
@@ -1758,23 +1828,27 @@ async function checkProva(tok){
   add(vc.ok&&meu,'Emitido por este serviço',!vc.ok?'O crachá foi alterado depois de emitido.':meu?`Assinado por ${esc(nomeServico())}.`:'O crachá foi emitido por outro serviço.');
   add(q.sub===vp.did,'Crachá é do titular',q.sub===vp.did?'O DID do crachá é o mesmo de quem respondeu.':'O crachá é de outra pessoa.');
   if(ch)add(cs.app===ch.app,'App certo',cs.app===ch.app?`Crachá de ${esc(cs.app)}.`:`O desafio é para ${esc(ch.app)} e o crachá é de ${esc(cs.app||'nenhum app')}.`);
+  if(ch&&ch.funcao){
+    const tem=Array.isArray(cs.funcionalidades)&&cs.funcionalidades.includes(ch.funcao);
+    add(tem,'Funcionalidade liberada',`O crachá ${tem?'libera':'não libera'} ${esc(ch.funcaoNome||ch.funcao)}.`);
+  }
   const rec=meu?st.issued.find(i=>i.jti===q.jti):null;
   add(!!rec&&!rec.revoked,'Não revogado',!rec?'Não consta nos crachás emitidos aqui.':rec.revoked?`Revogado em ${fmtDate(rec.revokedAt)}: ${esc(rec.reason)}.`:'Ativo nos crachás emitidos.');
   const t0=now(),early=q.nbf&&q.nbf>t0+CLOCK_SKEW,late=q.exp&&q.exp<=t0;
   add(!early&&!late,'Dentro da validade',early?`Só vale a partir de ${fmtDate(q.nbf*1000)}.`:q.exp?(late?`Venceu em ${fmtDate(q.exp*1000)}.`:`Válido até ${fmtDate(q.exp*1000)}.`):'Sem data de validade.');
-  const apps=credApps();
-  add(apps.includes(cs.app),'Aprovação de emissão vigente',!credOk()?'O serviço não tem aprovação de emissão válida.':apps.includes(cs.app)?`A Governança aprovou a emissão de ${esc(cs.app)}.`:`A emissão de ${esc(cs.app||'')} não está aprovada ou venceu.`);
-  return{checks,ch,chOk,holder:vp.did,app:cs.app,nome:rec&&rec.holderName};
+  const ap=aprovServico();
+  add(!!ap,'Aprovação de emissão vigente',ap?`A Governança aprovou o serviço${ap.exp?' até '+fmtDate(ap.exp*1000):''}.`:'O serviço não tem aprovação de emissão válida.');
+  return{checks,ch,chOk,holder:vp.did,app:cs.app,fn:ch&&ch.funcao?ch.funcaoNome||ch.funcao:'',nome:rec&&rec.holderName};
 }
 const chkRow=c=>`<div class="chk ${c.ok===true?'ok':c.ok===false?'no':'na'}"><span class="ci">${ic(c.ok===true?'check':c.ok===false?'x':'minus')}</span><div><b>${c.label}</b><small>${c.detail}</small></div></div>`;
 $('#gaGo').onclick=async()=>{
   if(!$('#gaPT').value.trim()){shake($('#gaF'));return}
   const r=await checkProva($('#gaPT').value),ok=r.checks.every(c=>c.ok===true);
   if(r.chOk)r.ch.used=true;
-  $('#gaOut').innerHTML=verdictHtml(ok,ok?'Acesso liberado':'Acesso negado',ok?`${esc(r.nome||shortDid(r.holder))} pode entrar em ${esc(r.app)}. Conferido em ${r.checks.length} pontos.`:'Veja abaixo o que não passou.')
+  $('#gaOut').innerHTML=verdictHtml(ok,ok?'Acesso liberado':'Acesso negado',ok?`${esc(r.nome||shortDid(r.holder))} pode ${r.fn?'usar '+esc(r.fn)+' em':'entrar em'} ${esc(r.app)}. Conferido em ${r.checks.length} pontos.`:'Veja abaixo o que não passou.')
     +`<div class="list glass flat mt">${r.checks.map(chkRow).join('')}</div>`;
   st.verifs++;
-  await ato('verificacao',`Acesso ${ok?'liberado':'negado'}${r.app?' a '+r.app:''}${r.nome?' para '+r.nome:''}`,r.holder||null);await save();
+  await ato('verificacao',`Acesso ${ok?'liberado':'negado'}${r.fn?' a '+r.fn+' em':''}${r.app?(r.fn?' ':' a ')+r.app:''}${r.nome?' para '+r.nome:''}`,r.holder||null);await save();
 };
 
 boot();
