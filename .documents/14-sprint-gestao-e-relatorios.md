@@ -1,7 +1,7 @@
 # 14 · Planejamento e Scrum — Gestão, relatórios e cofre
 
 > **Versão de referência:** 0.23.0 · 08/10/2026 · Responsável (Product Owner): Celso de Almeida Leite Filho (Systekna)
-> **Situação:** Sprint 2 **entregue**: US-20.1 a 20.4 na 0.24.0 e US-21.1 a 21.3 na 0.25.0 (aguardando homologação). Próximo: Sprint 3 (cofre), depois das decisões D-7 e D-8.
+> **Situação:** Sprint 2 **entregue** (0.24.0 e 0.25.0). Sprint 3: **US-22.1, 22.2, 22.3, 22.6 e 22.7 entregues na 0.26.0** (aguardando homologação). Próximo: documentos com anexo (US-22.4) e backup com anexos (US-22.5) na 0.27.0.
 > **Finalidade:** os 3 apps continuam sendo de **teste** (prova de conceito), como na [13](13-sprint-primeira-entrega.md).
 
 ## 1. Objetivo
@@ -132,5 +132,5 @@ Pontos de história em Fibonacci (1, 2, 3, 5, 8, 13). Referência: a recuperaç�
 | D-4 | O cofre aceita **anexos** (foto/PDF)? | ✅ **Decidido:** sim, até 2 MB por documento |
 | D-5 | O cofre fica **só na Carteira** ou também na Governança e no Serviços? | ✅ **Decidido:** só na Carteira |
 | D-6 | Senhas: só guardar ou também **gerar**? | ✅ **Decidido:** só **guardar** (sem gerador). Tipos: senhas, anotações, documentos, cartões e outros |
-| D-7 | **Cartões** são de pagamento (crédito/débito)? A decisão de 01/10/2026 foi "cofre sem cartão de pagamento" | ⬜ Aguarda o PO |
-| D-8 | Quais são os **outros** tipos ("…")? | ⬜ Aguarda o PO. Sugestões: conta bancária e chave Pix, Wi-Fi, plano de saúde, licença de software, item livre com campos próprios |
+| D-7 | **Cartões** são de pagamento (crédito/débito)? A decisão de 01/10/2026 foi "cofre sem cartão de pagamento" | ✅ **Decidido:** sim, crédito e débito, e também outros cartões |
+| D-8 | Quais são os **outros** tipos ("…")? | ✅ **Decidido:** conta bancária e textos ou anotações |

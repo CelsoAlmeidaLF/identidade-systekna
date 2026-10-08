@@ -105,6 +105,15 @@
 | RN-68 | O **PDF de recuperação** traz o QR code do código, o código, as 12 palavras, o DID e o aviso "quem tiver este arquivo controla esta conta". Nos Ajustes, só sai depois do PIN ou da biometria; na criação, sai da tela das 12 palavras |
 | RN-69 | A orientação é imprimir o PDF, guardar em lugar seguro e apagar o arquivo do aparelho, do e-mail e da nuvem |
 
+## 8B. Cofre da carteira (0.26)
+
+| ID | Regra |
+|---|---|
+| RN-75 | O cofre é só da Carteira e só **guarda** (não gera senhas, não envia nada); cada item é cifrado no aparelho com a chave da carteira |
+| RN-76 | **Cartões de crédito e débito podem ser guardados** (decisão de 08/10/2026, que substitui a de 01/10/2026). O tipo antigo `cartao` da 0.6 continua sendo apagado ao abrir |
+| RN-77 | Número de cartão de pagamento precisa passar na conferência de dígitos; cartões "Outro" (plano de saúde, fidelidade) não passam por ela |
+| RN-78 | Dados pessoais (CPF, RG, conta, cartão) podem ficar no cofre, que é privado da pessoa; continuam proibidos em credenciais (RN-70) |
+
 ## 9. Dados pessoais
 
 | ID | Regra |

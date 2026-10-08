@@ -38,7 +38,7 @@ compartilhado/
 │  ├─ telas.html  confirmação, recuperação (12 palavras ou código), PIN
 │  └─ folha.html  folha deslizante e aviso (toast)
 └─ tests/      testes que valem para os 3 apps, helpers.js e fixtures/ (vetores oficiais)
-stk-carteira/      src/ (pagina.html + app.js: identidades, credenciais, crachás, pedidos, apresentação) · tests/
+stk-carteira/      src/ (pagina.html + app.js: identidades, credenciais, crachás, pedidos, apresentação; cofre.js: cofre) · tests/
                    (pagina.html de cada app traz a tela das 12 palavras, com o botão do PDF)
 stk-governanca/    src/ (aprovar identidade e emissão, verificar, governança) · tests/
 stk-servicos/      src/ (aprovação de emissão, apps e funcionalidades, cartões, crachás, portaria, serviço) · tests/
@@ -121,6 +121,7 @@ Ajustes › Salvar PDF de recuperação (PIN ou biometria) ──▶ PDF: QR + c
 | `cred` | Credencial: `vtype`, `jwt`, `jti`, `sub`, emissor, `iat`, `exp` (aprovações de identidade e crachás) |
 | `perfil` | Identidade nº n: `nome`, `perfil` (identidade/profissional/personalizada), `rotulo`, pedido em andamento |
 | `acesso` | Pedido de acesso: serviço, DID do serviço, apps, identidade, situação (aguardando/recusado), motivo |
+| `cofre` | Item do cofre (0.26): `kind` (senha, anotacao, cartao, conta), `titulo`, `campos`, `created`, `updated` |
 
 **Governança (`systekna-cartorio`, um `state` cifrado):** nome, emissões (`issued`), emissores confiáveis, livro, desafios, recusas, chaves ao longo do tempo (`keys`), avisos de troca (`rotations`), política, contadores.
 

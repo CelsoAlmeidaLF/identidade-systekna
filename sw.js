@@ -3,7 +3,7 @@
 // usa a última cópia guardada. Nada é buscado fora do site.
 // O nome do cache acompanha a versão do package.json (o build atualiza esta linha):
 // cada versão publicada troca o cache e apaga o anterior.
-const VERSAO = 'systekna-0.25.0';
+const VERSAO = 'systekna-0.26.0';
 const ESSENCIAIS = [
   './',
   'index.html',

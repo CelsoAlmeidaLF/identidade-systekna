@@ -7,7 +7,7 @@
 | 01/10/2026 | "Cartório Digital" passa a "Emissor de Credenciais" (sem vocabulário de fé pública) |
 | 01/10/2026 | Domínio próprio adiado: GitHub Pages só como demonstração |
 | 01/10/2026 | Sem recuperação por guardiões: só as 12 palavras, anotadas em papel (ampliado em 08/10: código e PDF) |
-| 01/10/2026 | Cofre sem cartão de pagamento |
+| 01/10/2026 | Cofre sem cartão de pagamento (substituída em 08/10/2026) |
 | 02/10/2026 | "A identidade define o usuário"; toda publicação sobe a versão |
 | 03/10/2026 | Main volta à versão básica (0.13.0); acesso/crachá antigos guardados em `bkp/cracha` |
 | 03/10/2026 | **DP-01** Registro de emissões guardado, com nome |
@@ -34,6 +34,8 @@
 | 08/10/2026 | **Cartão do app**: tocar no cartão de um app no Painel gera o cartão só dele; a carteira oferece só os apps do cartão (0.21) |
 | 08/10/2026 | **A Governança aprova o serviço, não os apps.** Serviço (organização ou desenvolvedor) › Apps (aplicativo, serviço ou ferramenta) › Funcionalidades (módulo, micro-serviço ou ferramenta). Grupos são só atalho para liberar. **Sem plano no crachá**: ele leva só os códigos das funcionalidades liberadas (0.22) |
 | 08/10/2026 | Pastas por projeto (`stk-carteira`, `stk-governanca`, `stk-servicos`, `compartilhado`), documentação em `.documents/`, site continua na raiz da `main`; saem os redirecionamentos `cartorio-` e `emissor-systekna.html` (0.22.1) |
+| 08/10/2026 | **Cofre na Carteira**, dentro da aba Identidade; só guarda (sem gerador): senhas, anotações, **cartões de crédito e débito** e outros cartões, contas bancárias e, depois, documentos com foto ou PDF (até 2 MB) |
+| 08/10/2026 | Relatório de uso no Serviços com acessos e gestão ("relatório de log"); livro exportado em PDF ou Excel na Governança e no Serviços |
 | 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
 
 ## 2. Versões publicadas
@@ -54,13 +56,14 @@
 | 0.22.1 | Pastas reorganizadas por projeto (`stk-*`, `compartilhado/`, `.documents/`); sem mudança nas telas |
 | 0.23.0 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras (3 apps) |
 | 0.24.0 | Relatório de uso no Painel do Serviços: acessos por dia, app, funcionalidade e motivo; gestão do período |
-| **0.25.0** | **Exportar o livro em PDF ou Excel, por período, na Governança e no Serviços** |
+| 0.25.0 | Exportar o livro em PDF ou Excel, por período, na Governança e no Serviços |
+| **0.26.0** | **Cofre da Carteira: senhas, anotações, cartões e contas bancárias** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.25.0) |
+| `main` | Versão vigente (0.26.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 

@@ -15,6 +15,7 @@
 | **Catálogo** | Os apps do serviço, cada um com as funcionalidades e os grupos dele |
 | **Código de recuperação** | `STK1-XXXX-…`: as 12 palavras escritas de forma curta, com o idioma e uma conferência. Recupera a mesma conta |
 | **Carteira de Identidades Soberanas** | App da pessoa: identidades, crachás, pedidos e apresentação |
+| **Cofre** | Parte da aba Identidade da Carteira que guarda senhas, anotações, cartões e contas bancárias, cifrados no aparelho |
 | **Crachá (CV:KEY)** | Credencial de acesso a um app, emitida pelo serviço para uma identidade aprovada. Leva o serviço, o app, os códigos das funcionalidades liberadas e a aprovação de emissão do serviço |
 | **cv:key** | Identificador do crachá: `cv:key:z…`, o número único do crachá em base58 |
 | **Desafio** | Número aleatório de uso único (10 minutos) que quem verifica pede para a carteira assinar |

@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-e3Gbie9GzgRQup7jffEqUDRA6ZztJbQs+KzVw2JQFEI='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-DSbiC3vCSy59VNbbIhylhmHpSKsqxnc89lsvD9X8Dok='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -383,7 +383,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.25.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.26.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -395,7 +395,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.25.0</p>
+    <p class="ver">Versão 0.26.0</p>
   </div>
 </section>
 
@@ -445,7 +445,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.25.0</p>
+    <p class="ver">Versão 0.26.0</p>
   </div>
 </section>
 
@@ -471,6 +471,9 @@ body[data-screen="sApp"] .dock{display:grid}
         <div class="did" id="idDid"></div>
         <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
       </div>
+      <div class="sec-h">Cofre <small id="cfN"></small> <button class="link" id="cfNovo" style="margin:0;padding:0;font-size:13px">Novo item</button></div>
+      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="cfBusca" type="search" placeholder="Buscar no cofre" autocomplete="off" aria-label="Buscar no cofre"></label>
+      <div class="list glass flat" id="cfL"></div>
       <div class="sec-h">Chaves públicas <small>pode compartilhar</small></div>
       <div class="list glass flat">
         <div class="kr"><div class="h"><small>DID, para pedir credenciais</small><span><button class="mini sm" data-copyid="did" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="idDid2"></div></div>
@@ -567,7 +570,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.25.0';
+const APP_VERSION='0.26.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1521,11 +1524,109 @@ async function scanQr(){
     tick();
   });
 }
+/* ================= cofre (aba Identidade) ================= */
+// Itens do tipo "cofre", cada um cifrado com a chave da carteira (AAD = id), como as credenciais. Só guarda: nada é
+// gerado nem enviado. Tipos (kind): senha, anotação, cartão (crédito, débito ou outros) e conta bancária.
+// Os campos marcados como segredo ficam velados na tela e são copiados sem aparecer.
+const COFRE={
+  senha:{nome:'Senha',ic:'key',campos:[['site','Site ou app'],['usuario','Usuário ou e-mail'],['senha','Senha',{seg:1}],['nota','Anotação',{area:1}]]},
+  anotacao:{nome:'Anotação',ic:'note',campos:[['texto','Texto',{area:1,linhas:8}]]},
+  cartao:{nome:'Cartão',ic:'wallet',campos:[['tipo','Tipo',{opcoes:['Crédito','Débito','Crédito e débito','Outro (plano de saúde, fidelidade…)']}],
+    ['nomeCartao','Nome no cartão'],['numero','Número',{seg:1,num:1}],['validade','Validade (MM/AA)'],['cvv','Código de segurança (CVV)',{seg:1,num:1}],['nota','Anotação',{area:1}]]},
+  conta:{nome:'Conta bancária',ic:'home',campos:[['banco','Banco'],['agencia','Agência',{num:1}],['conta','Conta',{num:1}],
+    ['tipoConta','Tipo',{opcoes:['Corrente','Poupança','Pagamento','Salário']}],['titular','Titular'],['pix','Chave Pix'],['nota','Anotação',{area:1}]]},
+};
+const cofreItens=()=>ses.items.filter(i=>i.data.type==='cofre');
+const soDig=s=>String(s||'').replace(/\D/g,'');
+// Elo vem antes porque alguns cartões Elo começam com 4 ou 5.
+const ELO=/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/;
+const bandeiraDe=n=>{const d=soDig(n);return ELO.test(d)?'Elo':/^(606282|3841)/.test(d)?'Hipercard':/^4/.test(d)?'Visa':/^(5[1-5]|2[2-7])/.test(d)?'Mastercard':/^3[47]/.test(d)?'American Express':''};
+const luhn=n=>{const d=soDig(n);if(d.length<12||d.length>19)return false;let s=0;for(let i=0;i<d.length;i++){let x=+d[d.length-1-i];if(i%2){x*=2;if(x>9)x-=9}s+=x}return s%10===0};
+const finalCartao=n=>{const d=soDig(n);return d?'•••• '+d.slice(-4):''};
+function resumoCofre(d){
+  const c=d.campos||{};
+  if(d.kind==='senha')return c.usuario||c.site||'Senha';
+  if(d.kind==='anotacao')return(c.texto||'').split('\n')[0].slice(0,60)||'Anotação';
+  if(d.kind==='cartao')return[c.tipo&&c.tipo.split(' (')[0],bandeiraDe(c.numero),finalCartao(c.numero)].filter(Boolean).join(' · ')||'Cartão';
+  if(d.kind==='conta')return[c.banco,c.agencia&&`ag. ${c.agencia}`,c.conta&&`conta ${c.conta}`].filter(Boolean).join(' · ')||'Conta bancária';
+  return '';
+}
+let cofreBusca='';
+function renderCofre(){
+  const box=$('#cfL');if(!box||!ses)return;
+  const q=fold(cofreBusca),todos=cofreItens().sort((a,b)=>fold(a.data.titulo).localeCompare(fold(b.data.titulo)));
+  // A busca olha o título e os campos que não são segredo.
+  const casa=it=>{const t=COFRE[it.data.kind];return fold([it.data.titulo,t?t.nome:'',...(t?t.campos:[]).filter(c=>!(c[2]&&c[2].seg)).map(c=>(it.data.campos||{})[c[0]])].join(' ')).includes(q)};
+  const lista=q?todos.filter(casa):todos;
+  $('#cfN').textContent=todos.length?`${todos.length} ${todos.length===1?'item':'itens'}`:'';
+  box.innerHTML=lista.length?lista.map(it=>{const t=COFRE[it.data.kind]||{nome:'Item',ic:'vault'};
+    return `<button class="tx" data-cf="${esc(it.rec.id)}"><span class="dot">${ic(t.ic)}</span><span class="t"><b>${esc(it.data.titulo||t.nome)}</b><small>${esc(t.nome)} · ${esc(resumoCofre(it.data))}</small></span>${ic('chev')}</button>`}).join('')
+    :`<div class="empty">${todos.length?'Nada encontrado.':'Cofre vazio. Toque em Novo item para guardar senhas, anotações, cartões e contas.'}</div>`;
+}
+$('#cfBusca').oninput=()=>{cofreBusca=$('#cfBusca').value;renderCofre()};
+$('#cfNovo').onclick=()=>editarCofre();
+$('#cfL').onclick=e=>{const b=e.target.closest('[data-cf]');if(b)verCofre(b.dataset.cf)};
+// Copia um segredo sem mostrar e tenta limpar a área de transferência depois de 30 s.
+async function copiarSegredo(v,rotulo){
+  await copy(v,`${rotulo} copiado. Sai da área de transferência em 30 s`);
+  setTimeout(()=>{try{navigator.clipboard.writeText('').catch(()=>{})}catch{}},30000);
+}
+function verCofre(id){
+  const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
+  const d=it.data,t=COFRE[d.kind],c=d.campos||{};
+  const linhas=t.campos.filter(([k])=>c[k]).map(([k,rot,o={}])=>{
+    const v=String(c[k]),mostra=o.seg?(k==='numero'?finalCartao(v):'••••••'):v;
+    return `<div class="kr"><div class="h"><small>${esc(rot)}</small><span>${o.seg?`<button class="mini sm" data-ver="${k}" aria-label="Mostrar ${esc(rot)}" data-ic="eye"></button> `:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar ${esc(rot)}" data-ic="copy"></button></span></div><div class="v${o.seg||o.num?' mono':''}" id="cfv-${k}" style="white-space:pre-wrap">${esc(mostra)}</div></div>`}).join('');
+  const extra=d.kind==='cartao'&&bandeiraDe(c.numero)?`<div class="kr"><div class="h"><small>Bandeira</small></div><div class="v">${esc(bandeiraDe(c.numero))}</div></div>`:'';
+  openSheet(`<div class="dhead"><span class="dot">${ic(t.ic)}</span><div><h3>${esc(d.titulo||t.nome)}</h3><small>${esc(t.nome)} · atualizado em ${fmtDate(d.updated||d.created)}</small></div></div>
+    <div class="list glass flat">${linhas+extra||'<div class="empty">Sem campos preenchidos.</div>'}</div>
+    <div class="pair mt"><button class="btn ghost" id="cfEd">Editar</button><button class="btn ghost" id="cfDel" style="color:var(--out)">Apagar</button></div>`);
+  $('#sheetBody').onclick=async e=>{
+    const cp=e.target.closest('[data-cp]'),vr=e.target.closest('[data-ver]');
+    if(cp){const k=cp.dataset.cp,o=(t.campos.find(x=>x[0]===k)||[])[2]||{},rot=t.campos.find(x=>x[0]===k)[1];o.seg?copiarSegredo(String(c[k]),rot):copy(String(c[k]),`${rot} copiado`)}
+    if(vr){const k=vr.dataset.ver,el=$('#cfv-'+k),aberto=el.dataset.aberto==='1';
+      el.textContent=aberto?(k==='numero'?finalCartao(c[k]):'••••••'):(k==='numero'?soDig(c[k]).replace(/(\d{4})(?=\d)/g,'$1 '):String(c[k]));el.dataset.aberto=aberto?'':'1'}
+  };
+  $('#cfEd').onclick=()=>editarCofre(id);
+  $('#cfDel').onclick=async()=>{
+    if(!await confirmSheet('Apagar do cofre',`${esc(d.titulo||t.nome)} sai deste aparelho. Se estiver num backup antigo, volta ao restaurar.`,'Apagar',true))return verCofre(id);
+    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCofre();toast('Item apagado');
+  };
+}
+function editarCofre(id){
+  const it=id&&ses.items.find(i=>i.rec.id===id),d=it?it.data:null;
+  let kind=d?d.kind:'senha';
+  const campo=([k,rot,o={}],v='')=>o.opcoes?`<label class="f"><span>${esc(rot)}</span><select data-k="${k}">${o.opcoes.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('')}</select></label>`
+    :o.area?`<label class="f"><span>${esc(rot)}</span><textarea data-k="${k}" rows="${o.linhas||3}" autocomplete="off">${esc(v)}</textarea></label>`
+    :`<label class="f" data-f="${k}"><span>${esc(rot)}</span><input data-k="${k}" value="${esc(v)}" autocomplete="off" autocapitalize="none" spellcheck="false"${o.seg?' type="password"':''}${o.num?' inputmode="numeric"':''}${o.seg?' class="mono"':''}></label>`;
+  const desenha=()=>{$('#cfCampos').innerHTML=COFRE[kind].campos.map(c=>campo(c,d&&d.kind===kind?(d.campos||{})[c[0]]||'':'')).join('')};
+  const kinds=Object.keys(COFRE);
+  openSheet(`<h3>${d?'Editar item':'Novo item no cofre'}</h3><p class="sub">Fica cifrado neste aparelho e volta pelo backup. Ninguém mais vê.</p>
+    ${d?'':`<div class="seg" id="cfKind" style="--n:${kinds.length}"><span class="ind"></span>${kinds.map((k,i)=>`<button aria-pressed="${i===0}" data-kind="${k}">${k==='conta'?'Conta':COFRE[k].nome}</button>`).join('')}</div>`}
+    <label class="f" id="cfTF" style="margin-top:0"><span>Título</span><input id="cfT" value="${esc(d?d.titulo:'')}" autocomplete="off" placeholder="Ex.: E-mail pessoal, Cartão Nubank, Conta do Itaú"></label>
+    <div id="cfCampos"></div><p class="hint" id="cfH"></p>
+    <button class="btn" id="cfSalvar">Salvar</button>`);
+  desenha();
+  if(!d)wireSeg($('#cfKind'),b=>{kind=b.dataset.kind;desenha()});
+  $('#cfSalvar').onclick=async()=>{
+    const H=$('#cfH'),fail=(m,el)=>{H.textContent=m;H.classList.add('bad');if(el)shake(el)};
+    const titulo=$('#cfT').value.trim();
+    if(!titulo)return fail('Dê um título ao item.',$('#cfTF'));
+    const campos={};document.querySelectorAll('#cfCampos [data-k]').forEach(el=>{const v=el.value.trim();if(v)campos[el.dataset.k]=v});
+    if(kind==='cartao'&&campos.numero&&!/^Outro/.test(campos.tipo||'')&&!luhn(campos.numero))return fail('O número do cartão não confere. Confira os dígitos.',document.querySelector('[data-f="numero"]'));
+    if(kind==='cartao'&&campos.validade&&!/^(0[1-9]|1[0-2])\/\d{2}$/.test(campos.validade))return fail('Validade no formato MM/AA, por exemplo 08/29.',document.querySelector('[data-f="validade"]'));
+    if(!Object.keys(campos).length)return fail('Preencha ao menos um campo.');
+    const ts=Date.now();
+    await saveItem({type:'cofre',kind,titulo,campos,created:d?d.created:ts,updated:ts},id);
+    closeSheet();renderCofre();toast(d?'Item atualizado':'Guardado no cofre');
+  };
+}
 /* ================= serviço ================= */
 // A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
 // completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
-const KEPT_TYPES=['cred','perfil','acesso'];
-// Cartões de pagamento não são guardados (RN10): são apagados ao abrir e ignorados ao restaurar backup.
+const KEPT_TYPES=['cred','perfil','acesso','cofre'];
+// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup. Os cartões de
+// crédito e débito de hoje ficam no cofre (tipo "cofre", 0.26).
 const REMOVED_TYPES=['cartao'];
 
 const APP={
@@ -1547,20 +1648,20 @@ const APP={
     ses.ids={};
     for(const it of perfilItens())if(it.data.n>0)ses.ids[it.data.n]=await derivarPerfil(it.data.n);
   },
-  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();renderCofre();mountCommonSettings($('#commonSet'));setView('vCreds')},
   onView(v){if(v==='vCreds')renderCreds()},
   onLock(){
-    ['#cList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
-    ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
+    ['#cList','#mOpenOut','#cfL'].forEach(s=>$(s).innerHTML='');
+    ['#mSealed','#mText','#mIn','#mTo','#cfBusca'].forEach(s=>$(s).value='');cofreBusca='';
     $('#mSealOut').hidden=true;
   },
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
-    let n=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(KEPT_TYPES.includes(d.type))n++}catch{}}
+    let n=0,k=0;
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre')k++;else if(KEPT_TYPES.includes(d.type))n++}catch{}}
     for(const it of perfilItens())if(it.data.n>0&&!ses.ids[it.data.n])ses.ids[it.data.n]=await derivarPerfil(it.data.n);
-    await persistItems();renderCreds();
-    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}`;
+    await persistItems();renderCreds();renderCofre();
+    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'item':'itens'} do cofre`:''}`;
   }
 };
 async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
