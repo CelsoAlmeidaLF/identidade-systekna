@@ -83,11 +83,38 @@ function identidades(){
   return out.sort((a,b)=>a.n-b.n);
 }
 const idDoDid=did=>identidades().find(x=>x.id.did===did);
+// Pedido em aberto: enviado pela fila, sem resposta e dentro dos 7 dias. Pedidos de antes da 1.2 (sem número)
+// nunca terão resposta pela fila: contam como vencidos.
+const pedidoAberto=ped=>!!ped&&!!ped.nonce&&!ped.recusa&&Date.now()-ped.at<PEDIDO_VALE;
 function estadoId(x){
-  const c=aprovacaoDe(x.id.did);
-  if(c)return credState(c.data)[0]==='no'?'aprovação vencida':'aprovada';
-  const p=perfilDe(x.n);
-  return p&&p.pedido?(p.pedido.recusa?'reprovada: '+p.pedido.recusa:'aguardando'):'sem aprovação';
+  const c=aprovacaoDe(x.id.did),cs=c&&credState(c.data)[0],ped=(perfilDe(x.n)||{}).pedido;
+  if(c&&cs==='ok')return 'aprovada';
+  if(pedidoAberto(ped))return 'aguardando';
+  if(c&&cs==='warn')return 'aprovação perto de vencer';
+  if(ped&&ped.recusa)return 'reprovada: '+ped.recusa;
+  if(c)return 'aprovação vencida';
+  if(ped&&!ped.respondido)return 'pedido vencido';
+  return 'sem aprovação';
+}
+// Só vai para a lista do Solicitar quem ainda não foi validado: aprovadas (mesmo vencidas), reprovadas e aguardando
+// ficam de fora. Entram as sem aprovação e as de pedido vencido (sem resposta em 7 dias).
+const podePedir=x=>['sem aprovação','pedido vencido'].includes(estadoId(x));
+// Cartão pontilhado em Credenciais: identidade aguardando, reprovada ou com pedido vencido.
+const pedidosId=()=>identidades().filter(x=>{const ped=(perfilDe(x.n)||{}).pedido,e=estadoId(x);return ped&&!ped.respondido&&!ped.dispensado&&(e==='aguardando'||e==='pedido vencido'||e.startsWith('reprovada'))});
+const idPendCard=x=>{
+  const ped=perfilDe(x.n).pedido,e=estadoId(x),ab=e==='aguardando';
+  const pill=ab?['warn','Aguardando']:ped.recusa?['no','Reprovada: '+ped.recusa]:['no','Pedido vencido: peça de novo'];
+  return `<div class="glass flat card pend idpend" data-idpend="${x.n}"><div class="kr" style="padding:0"><div class="h"><small>Identidade · ${esc(perfilTxt(x))}</small><span class="pill ${pill[0]}">${esc(pill[1])}</span></div><div class="v">${esc(x.nome||ped.nome||'Sem nome')}</div><div class="v sub" style="margin-top:4px">${esc(shortDid(x.id.did))} · pedido em ${fmtDate(ped.at)}</div><button class="link" data-idcancel="${x.n}" style="margin:6px 0 0;padding:0;font-size:13px">${ab?'Cancelar pedido':'Dispensar'}</button></div></div>`;
+};
+// Cancelar (aguardando) apaga o pedido da fila remota; dispensar só limpa o aviso: a reprovada continua reprovada
+// (fora da lista do Solicitar) e a de pedido vencido pode ser enviada de novo.
+async function cancelarPedidoId(n){
+  const ped=(perfilDe(n)||{}).pedido;if(!ped)return;
+  const ab=pedidoAberto(ped);
+  if(ab&&!await confirmSheet('Cancelar pedido','O pedido sai da fila da Governança. Se ela já tiver aberto o pedido, a resposta não chega mais aqui. Depois você pode pedir de novo.','Cancelar pedido',true))return;
+  if(ab&&ped.nonce)await fsApagar('fila-solicitacao',ped.nonce);
+  await guardarPerfil(n,{pedido:ped.recusa?{...ped,dispensado:true}:null});
+  renderCreds();toast(ab?'Pedido cancelado':'Aviso dispensado');
 }
 async function guardarPerfil(n,mudar){
   const it=perfilItens().find(i=>i.data.n===n),ts=Date.now();
@@ -137,15 +164,15 @@ const acessos=()=>ses.items.filter(i=>i.data.type==='acesso').sort((a,b)=>b.data
 const acessoCard=it=>{const d=it.data,rec=d.status==='recusado';return `<div class="glass flat card pend acesso" data-acesso="${esc(d.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Acesso a ${esc(d.apps.join(', '))}</small><span class="pill ${rec?'no':'warn'}">${rec?'Recusado: '+esc(d.motivo||''):'Aguardando'}</span></div><div class="v">${esc(d.servico)}</div><div class="v sub" style="margin-top:4px">${esc(d.perfil)} · pedido em ${fmtDate(d.at)}</div></div></div>`};
 function renderCreds(){
   if(!ses)return;
-  const list=creds(),peds=acessos();
+  const list=creds(),peds=acessos(),pids=pedidosId();
   $('#cNote').hidden=!list.length;
-  $('#cList').innerHTML=list.length||peds.length?`<div class="creds">${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
+  $('#cList').innerHTML=list.length||peds.length||pids.length?`<div class="creds">${pids.map(idPendCard).join('')}${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>O pedido vai pela fila para a <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
       <li><span>A aprovação volta sozinha pela fila e fica cifrada aqui.</span></li></ol></div>`;
 }
-$('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
+$('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const x=e.target.closest('[data-idcancel]');if(x)return cancelarPedidoId(+x.dataset.idcancel);const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 $('#cList').addEventListener('keydown',e=>{if(e.target.closest('[data-copydid]'))copiarDidDoCartao(e)});
 
 function actionMenu(){
@@ -162,10 +189,10 @@ function actionMenu(){
 // (nome, perfil e, na Personalizada, o nome do perfil). Passo 2: o pedido sai assinado pelo DID dela, com o nome
 // e o perfil. A aprovação assinada pela STK leva só o nome (DP-03).
 function askCred(){
-  const ids=identidades();let sel=0;
+  const ids=identidades().filter(podePedir);let sel=ids.length?ids[0].n:'novo';
   const opcao=x=>`<button class="choice" data-n="${x.n}" aria-pressed="${x.n===sel}"><span class="rd"></span><span class="t"><b>${esc(x.nome||'Sem nome')} · ${esc(perfilTxt(x))}</b><small>${estadoId(x)} · ${esc(shortDid(x.id.did))}</small></span></button>`;
-  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">Escolha a identidade ou crie uma nova. Todas saem das suas 12 palavras, cada uma com um DID próprio.</p>
-    <div class="list glass flat" id="aqL">${ids.map(opcao).join('')}<button class="choice" data-n="novo" aria-pressed="false"><span class="rd"></span><span class="t"><b>+ Nova identidade</b><small>Nome e perfil novos, com um DID novo</small></span></button></div>
+  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">Escolha a identidade ou crie uma nova. Todas saem das suas 12 palavras, cada uma com um DID próprio. As já aprovadas, reprovadas ou aguardando não aparecem aqui.</p>
+    <div class="list glass flat" id="aqL">${ids.map(opcao).join('')}<button class="choice" data-n="novo" aria-pressed="${sel==='novo'}"><span class="rd"></span><span class="t"><b>+ Nova identidade</b><small>Nome e perfil novos, com um DID novo</small></span></button></div>
     <label class="f" id="aqNF"><span>Nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na identidade"></label>
     <label class="f"><span>Perfil</span><select id="aqP">${Object.entries(PERFIS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
     <label class="f" id="aqRF" hidden><span>Nome do perfil</span><input id="aqR" autocomplete="off" placeholder="Ex.: Clube, Associação, Igreja"></label>
@@ -175,7 +202,7 @@ function askCred(){
   let govs=[];
   lerDiretorio('governanca').then(l=>{
     govs=l;if(!$('#aqE'))return;
-    $('#aqE').innerHTML=l.length?l.map(g=>`<option value="${esc(g.did)}">${esc(g.name||'Governança')} · ${esc(shortDid(g.did))}</option>`).join(''):'<option value="">Nenhuma Governança publicada</option>';
+    $('#aqE').innerHTML=l.length?l.map(g=>`<option value="${esc(g.did)}">${esc(g.name||'Governança')} · ${esc(shortDid(g.did))} · ${fmtDate(g.iat*1000)}</option>`).join(''):'<option value="">Nenhuma Governança publicada</option>';
     const pad=GOVERNANCA_PADRAO.did&&l.find(g=>g.did===GOVERNANCA_PADRAO.did);if(pad)$('#aqE').value=pad.did;
   }).catch(e=>{if($('#aqE'))$('#aqE').innerHTML=`<option value="">${esc(e.message)}</option>`});
   const preencher=()=>{
@@ -309,7 +336,7 @@ async function sincronizar(){
   let n=0;
   for(const x of identidades()){
     const p=perfilDe(x.n),ped=p&&p.pedido;
-    if(!ped||!ped.nonce||ped.recusa)continue;
+    if(!pedidoAberto(ped))continue;
     const toks=await buscarEmissao(ped.nonce,x.id);if(!toks)continue;
     for(const t of toks){try{await receberResposta(t,x);n++}catch{}}
     const atual=perfilDe(x.n);if(atual&&atual.pedido&&atual.pedido.nonce===ped.nonce&&!atual.pedido.recusa)await guardarPerfil(x.n,{pedido:{...atual.pedido,nonce:null,respondido:Date.now()}});

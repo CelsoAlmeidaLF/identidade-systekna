@@ -115,6 +115,10 @@
 | CA-122 | Reprovar envia a recusa assinada; a carteira mostra "reprovada: motivo" |
 | CA-123 | O serviço escolhe a Governança no diretório, recebe a aprovação pela fila e publica o cartão no diretório ao ter um app |
 | CA-124 | A carteira escolhe o serviço no diretório, pede o crachá pela fila, recebe o crachá (ou a recusa) sozinha |
+| CA-126 | Enviada, a identidade sai da lista do Solicitar e aparece em Credenciais "Aguardando"; aprovada, o cartão pontilhado some e ela não volta à lista |
+| CA-127 | Reprovada, aparece "Reprovada: motivo" e não volta à lista; Dispensar só tira o aviso. Cancelar tira o pedido da fila remota |
+| CA-128 | Pedido com mais de 7 dias, ou sem número, aparece "Pedido vencido: peça de novo" e volta à lista |
+| CA-129 | Governança desativada some da lista; a mais recente vem primeiro |
 | CA-125 | Pedido repetido, de crachá na STK ou sem a chave de resposta não entra, com o motivo; cartão alterado no diretório é recusado |
 
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)

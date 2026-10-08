@@ -777,6 +777,8 @@ const CS={
   how(){openSheet(`<h3>Como funciona</h3><div class="prose">${APP.howHtml}</div><button class="btn ghost" id="howClose">Entendi</button>`);$('#howClose').onclick=closeSheet},
   async wipe(){
     if(!await confirmSheet('Apagar tudo deste aparelho','A identidade, as chaves e todos os dados somem daqui. Para voltar, você precisará das 12 palavras e de um backup.','Apagar tudo',true))return;
+    // Quem está no diretório (Governança, serviço) se marca como desativado antes de sumir: sai da lista dos outros.
+    if(ses&&APP.antesDeApagar)try{await APP.antesDeApagar()}catch{}
     if(ses&&ses.ent)ses.ent.fill(0);ses=null;APP.onLock();await DB.clear();show('sWelcome');toast('Tudo apagado');
   }
 };

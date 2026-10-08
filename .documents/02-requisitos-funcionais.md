@@ -2,7 +2,7 @@
 
 > Convenção: **RF-XX-nn** — `CM` comum aos 3 apps, `CT` Carteira, `GV` Governança, `SV` Serviços, `F` futuro.
 > Situação: ✅ homologado pelo responsável (pré-aprovado na 1.0.0) · 🟢 com teste automatizado, ainda não homologado · 🟡 sem teste automatizado · ⬜ planejado · ⏸ adiado.
-> Versão de referência: **1.2.0**.
+> Versão de referência: **1.2.1**.
 
 ## 1. Comuns aos 3 apps
 
@@ -32,6 +32,7 @@
 | RF-FL-02 | Respostas (aprovação, crachás, recusa) voltam pela **fila-emissao**, cifradas para a chave que veio no pedido; quem recebe apaga o item depois de ler | 🟢 (1.2) |
 | RF-FL-03 | **Diretório**: a Governança e cada serviço publicam, assinados pela própria chave, o nome e a chave de cifragem (o serviço, também o cartão); a carteira e o serviço escolhem por ele | 🟢 (1.2) |
 | RF-FL-04 | Busca ao abrir o app e a cada 30 segundos, enquanto desbloqueado; e pelo menu, na hora | 🟢 (1.2) |
+| RF-FL-06 | Lista de Governanças com nome, DID curto e data; a publicada mais recentemente vem marcada. Governança que troca a chave ou apaga tudo se marca desativada (assinado pela chave que sai) e some da lista (1.2.1) | 🟢 (1.2.1) |
 | RF-FL-05 | O copiar e colar sai dos três fluxos (identidade, aprovação de emissão, crachá); o Cartão do app colado dá lugar ao diretório | 🟢 (1.2) |
 
 ## 2. Carteira de Identidades Soberanas
@@ -52,6 +53,8 @@
 | RF-CT-11 | Cada identidade tem **nome** e **perfil**: Identidade, Profissional ou Personalizada (com o nome do perfil editável, ex.: Clube) | ✅ |
 | RF-CT-12 | Quantas quiser, inclusive várias do mesmo perfil | ✅ |
 | RF-CT-13 | **Solicitar aprovação de identidade**: escolher uma identidade ou criar nova; o pedido sai assinado pelo DID dela, com nome e perfil | ✅ |
+| RF-CT-17 | A lista do **Solicitar aprovação de identidade** mostra só quem ainda não foi validado: sem aprovação e pedido vencido, e + Nova identidade. Aprovadas (mesmo vencidas), reprovadas e aguardando ficam de fora (1.2.1) | 🟢 (1.2.1) |
+| RF-CT-18 | Em Credenciais, cartão pontilhado da identidade **Aguardando** (com **Cancelar pedido**, que tira o pedido da fila), **Reprovada: motivo** ou **Pedido vencido** (com **Dispensar**, que só tira o aviso) (1.2.1) | 🟢 (1.2.1) |
 | RF-CT-14 | **Receber aprovação de identidade** pela fila (1.2: sem colar): guarda na identidade certa pelo DID; só aceita da Governança a quem a identidade pediu; a recusa aparece como "reprovada: motivo" | 🟢 (1.2) |
 | RF-CT-15 | Situação de cada identidade na lista: aprovada, aguardando, sem aprovação, aprovação vencida | ✅ |
 | RF-CT-16 | Identidades criadas na 0.17.0 viram nome + perfil, com o mesmo DID | ✅ |
