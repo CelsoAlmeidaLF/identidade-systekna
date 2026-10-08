@@ -35,13 +35,15 @@ async function pedirIdentidade(nome, novo) {
   await carteira.click('#aqGo');
   await expect(toast(carteira)).toHaveText('Pedido enviado à Governança Systekna');
 }
-/** O estado de cada identidade aparece na lista do + › Solicitar aprovação de identidade. */
-async function estadoNaCarteira(texto) {
+/** Nomes que a lista do + › Solicitar aprovação de identidade oferece (só quem pode ser enviado). */
+async function listaDoSolicitar() {
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
-  await expect(carteira.locator('#aqL')).toContainText(texto);
+  const l = await carteira.locator('#aqL [data-n] b').allTextContents();
   await fecharSheet(carteira);
+  return l.join(' | ');
 }
+const pendente = nome => carteira.locator('#cList .idpend').filter({ hasText: nome });
 async function abrirNaGov(texto) {
   await aba(gov, 'vIssue');
   if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
@@ -58,7 +60,10 @@ test('identidade: a carteira envia pela fila, a Governança aprova e a carteira 
   expect(d.para).toBe(govDid);
   expect(d.env).toMatch(/^smsg1\./);
   expect(d.env).not.toContain('Maria');
-  await estadoNaCarteira('aguardando');
+  // Enviada, a identidade sai da lista do Solicitar e aparece em Credenciais como "Aguardando".
+  expect(await listaDoSolicitar()).not.toContain('Maria Fila');
+  await aba(carteira, 'vCreds');
+  await expect(pendente('Maria Fila').locator('.pill')).toHaveText('Aguardando');
 
   await abrirNaGov('Maria Fila');
   await gov.click('#iGo');
@@ -71,6 +76,9 @@ test('identidade: a carteira envia pela fila, a Governança aprova e a carteira 
   expect(naFila('fila-emissao')).toHaveLength(0);
   await aba(carteira, 'vCreds');
   await expect(carteira.locator('#cList .cred').first()).toContainText('Maria Fila');
+  // Aprovada: o cartão pontilhado some e ela continua fora da lista do Solicitar.
+  await expect(pendente('Maria Fila')).toHaveCount(0);
+  expect(await listaDoSolicitar()).not.toContain('Maria Fila');
 });
 
 test('identidade reprovada: a recusa assinada volta pela fila e a carteira mostra o motivo', async () => {
@@ -82,7 +90,52 @@ test('identidade reprovada: a recusa assinada volta pela fila e a carteira mostr
   await expect(toast(gov)).toHaveText('Pedido recusado');
   await buscarRespostas(carteira);
   await expect(toast(carteira)).toHaveText('Chegou 1 resposta');
-  await estadoNaCarteira('reprovada: Dados não conferem');
+  await aba(carteira, 'vCreds');
+  await expect(pendente('Joana Recusada').locator('.pill')).toHaveText('Reprovada: Dados não conferem');
+  // Reprovada, ela volta para a lista do Solicitar; Dispensar tira o aviso.
+  expect(await listaDoSolicitar()).toContain('Joana Recusada');
+  await pendente('Joana Recusada').locator('[data-idcancel]').click();
+  await expect(toast(carteira)).toHaveText('Aviso dispensado');
+  await expect(pendente('Joana Recusada')).toHaveCount(0);
+});
+
+test('cancelar um pedido aguardando tira o pedido da fila da Governança', async () => {
+  await pedirIdentidade('Paulo Cancela', true);
+  expect(naFila('fila-solicitacao')).toHaveLength(1);
+  await aba(carteira, 'vCreds');
+  await pendente('Paulo Cancela').locator('[data-idcancel]').click();
+  await carteira.click('#cfOk');
+  await expect(toast(carteira)).toHaveText('Pedido cancelado');
+  expect(naFila('fila-solicitacao')).toHaveLength(0);
+  await expect(pendente('Paulo Cancela')).toHaveCount(0);
+  expect(await listaDoSolicitar()).toContain('Paulo Cancela');
+});
+
+test('pedido sem resposta depois de 7 dias (ou de antes da 1.2, sem número) vence e volta para a lista', async () => {
+  const n = await carteira.evaluate(async () => {
+    const x = identidades().find(i => i.nome === 'Paulo Cancela');
+    await guardarPerfil(x.n, { pedido: { at: Date.now() - 8 * 86400 * 1000, nome: x.nome, nonce: 'antigo-0000000000000', gov: 'did:key:z6Mkx' } });
+    renderCreds();
+    return x.n;
+  });
+  await expect(carteira.locator(`#cList [data-idpend="${n}"] .pill`)).toHaveText('Pedido vencido: peça de novo');
+  expect(await listaDoSolicitar()).toContain('Paulo Cancela');
+  await carteira.evaluate(async n => { await guardarPerfil(n, { pedido: { at: Date.now(), nome: 'Paulo Cancela' } }); renderCreds(); }, n);
+  await expect(carteira.locator(`#cList [data-idpend="${n}"] .pill`)).toHaveText('Pedido vencido: peça de novo');
+  await carteira.evaluate(async n => { await guardarPerfil(n, { pedido: null }); renderCreds(); }, n);
+});
+
+test('Governança desativada (troca de chave ou apagar tudo) sai da lista; a mais recente vem primeiro', async ({ browser }) => {
+  const velha = await (await browser.newContext()).newPage();
+  vigiarCsp(velha, violacoesCsp);
+  await preparar(velha, 'governanca-systekna.html', WORDS.outroEmissor);
+  const didVelha = await velha.evaluate(() => ses.did);
+  let l = await carteira.evaluate(() => lerDiretorio('governanca'));
+  expect(l.map(g => g.did)).toEqual([didVelha, govDid]);
+  await velha.evaluate(() => desativarDiretorio('governanca', st.name));
+  l = await carteira.evaluate(() => lerDiretorio('governanca'));
+  expect(l.map(g => g.did)).toEqual([govDid]);
+  await velha.context().close();
 });
 
 test('aprovação de emissão: o serviço escolhe a Governança no diretório e recebe a aprovação pela fila', async () => {

@@ -63,11 +63,17 @@ async function lerDiretorio(tipo){
   for(const d of await fsOnde('diretorio','tipo',tipo)){
     try{
       const r=await verifyJWT(d.jwt,'diretorio+jwt'),p=r.payload;
-      if(r.ok&&r.did===d.id&&p.tipo===tipo&&typeof p.x==='string'){parseXKey(p.x);out.push({did:r.did,name:String(p.name||''),x:p.x,payload:p})}
+      if(r.ok&&r.did===d.id&&p.tipo===tipo&&p.ativo!==false&&typeof p.x==='string'){parseXKey(p.x);out.push({did:r.did,name:String(p.name||''),x:p.x,iat:+p.iat||0,payload:p})}
     }catch{}
   }
-  return out.sort((a,b)=>a.name.localeCompare(b.name));
+  // A publicada mais recentemente vem primeiro (é a escolha padrão).
+  return out.sort((a,b)=>b.iat-a.iat);
 }
+
+// Registro desativado (troca de chave, apagar tudo): assinado pela chave que sai, some da lista de quem lê.
+const desativarDiretorio=(tipo,name,extra={})=>publicarDiretorio(tipo,name,{ativo:false,...extra});
+// O pedido vale 7 dias: depois disso ninguém mais atende, e quem pediu pode pedir de novo.
+const PEDIDO_VALE=7*86400*1000;
 
 // Busca periódica enquanto o app está aberto e desbloqueado.
 let filasTimer=null;

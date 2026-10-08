@@ -25,6 +25,7 @@ const APP={
     ['#iForm','#iOut','#vChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Governança Systekna';
   },
+  antesDeApagar:()=>st?desativarDiretorio('governanca',st.name):null,
   exportData:async()=>st,
   async importData(d){
     if(!d||!Array.isArray(d.book)||!d.book.length)return 'Backup sem livro de registros';
@@ -378,6 +379,8 @@ $('#gRot').onclick=async()=>{
 async function trocarChave(pin){
   const velho=ses.did,seed=await wordsToSeed(rot.words),novo=await deriveIdentity(seed,APP.dominio);seed.fill(0);
   const aceite=b64u.enc(await S.sign({name:'Ed25519'},novo.edPriv,te.encode(`${velho}>${novo.did}`)));
+  // A chave antiga sai do diretório (assinado por ela, antes de ser trocada): a carteira não pede mais a ela.
+  await desativarDiretorio('governanca',st.name,{novo:novo.did}).catch(()=>{});
   const iat=now(),aviso=await signJWT('rotacao+jwt',{iss:velho,novo:novo.did,name:st.name,aceite,iat});
   if(!st.keys)st.keys=[{did:velho,from:1}];
   await ato('rotacao',`Chave trocada: ${shortDid(velho)} → ${shortDid(novo.did)}`,novo.did);

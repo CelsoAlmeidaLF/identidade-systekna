@@ -42,6 +42,7 @@ const APP={
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
   },
+  antesDeApagar:()=>st?desativarDiretorio('servico',nomeServico()):null,
   exportData:async()=>st,
   async importData(d){
     if(!d||!Array.isArray(d.book)||!d.book.length)return 'Backup sem livro de registros';
@@ -282,7 +283,7 @@ function solicitarEmissao(){
   let govs=[];
   lerDiretorio('governanca').then(l=>{
     govs=l;if(!$('#saG'))return;
-    $('#saG').innerHTML=l.length?l.map(g=>`<option value="${esc(g.did)}">${esc(g.name||'Governança')} · ${esc(shortDid(g.did))}</option>`).join(''):'<option value="">Nenhuma Governança publicada</option>';
+    $('#saG').innerHTML=l.length?l.map(g=>`<option value="${esc(g.did)}">${esc(g.name||'Governança')} · ${esc(shortDid(g.did))} · ${fmtDate(g.iat*1000)}</option>`).join(''):'<option value="">Nenhuma Governança publicada</option>';
   }).catch(e=>aviso(e.message,true));
   $('#saGo').onclick=async()=>{
     const name=$('#saN').value.trim();

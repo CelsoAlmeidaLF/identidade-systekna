@@ -41,6 +41,7 @@
 | 08/10/2026 | **Versão 1.0.0**: os 3 apps homologados (pré-aprovados) pelo responsável: carteira de did:key e cv:key, mensagens cifradas, cofre de anotações, emissão de credenciais e de crachás pelos serviços |
 | 08/10/2026 | **Fila de pedidos na Governança** (cenário do gestor da STK): uma fila **única** para identidades (did:key) e serviços, com etiqueta em cada cartão (opção B); aprovar ou reprovar cada pedido (1.1) |
 | 08/10/2026 | **Fim do copiar e colar: filas no Firebase** (`fila-solicitacao` e `fila-emissao`) nos três fluxos (identidade, aprovação de emissão, crachá). Projeto novo `systekna-identidade`. O responsável queria login pelo DID, mas sem faturamento ("é só prova de conceito, não é para PRD"): plano gratuito, sem login, Firestore pela API REST; segurança pelas assinaturas e pela cifra do conteúdo (1.2) |
+| 08/10/2026 | **Lista do Solicitar só com o que pode ser enviado** (falha relatada pelo responsável: identidades aprovadas e aguardando não saíam da lista). Aguardando vira cartão em Credenciais, com Cancelar; pedido vence em 7 dias; Governança antiga sai do diretório (1.2.1). Limpeza: apagados o registro da Governança `z6MkqFzUDb…`, que não era mais usada, e um pedido parado para ela |
 
 ## 2. Versões publicadas
 
@@ -67,13 +68,14 @@
 | 0.28.1 | Mensagens cifradas: o texto original sai da caixa ao cifrar |
 | 1.0.0 | Primeira versão homologada dos 3 apps (sem mudança nas telas desde a 0.28.1) |
 | 1.1.0 | Governança: fila de pedidos (Aguardando · Aprovados · Reprovados), receber vários pedidos de uma vez |
-| **1.2.0** | **Filas no Firebase: pedidos e respostas sem copiar e colar, cifrados para quem recebe; diretório de Governanças e serviços** |
+| 1.2.0 | Filas no Firebase: pedidos e respostas sem copiar e colar, cifrados para quem recebe; diretório de Governanças e serviços |
+| **1.2.1** | **Carteira: identidade enviada sai da lista do Solicitar; cartão Aguardando com Cancelar; pedido vence em 7 dias; Governança antiga sai do diretório** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (1.2.0) |
+| `main` | Versão vigente (1.2.1) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 
