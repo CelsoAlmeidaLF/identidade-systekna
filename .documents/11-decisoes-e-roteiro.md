@@ -38,6 +38,7 @@
 | 08/10/2026 | Relatório de uso no Serviços com acessos e gestão ("relatório de log"); livro exportado em PDF ou Excel na Governança e no Serviços |
 | 08/10/2026 | **Cofre da Carteira só com anotações ("por enquanto")**: o PO não gostou do modelo com senhas, cartões, contas e documentos; ficam só texto e anotações (0.28). O backup em arquivo continua |
 | 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
+| 08/10/2026 | **Versão 1.0.0**: os 3 apps homologados (pré-aprovados) pelo responsável: carteira de did:key e cv:key, mensagens cifradas, cofre de anotações, emissão de credenciais e de crachás pelos serviços |
 
 ## 2. Versões publicadas
 
@@ -61,13 +62,14 @@
 | 0.26.0 | Cofre da Carteira: senhas, anotações, cartões e contas bancárias |
 | 0.27.0 | Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo |
 | 0.28.0 | Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados) |
-| **0.28.1** | **Mensagens cifradas: o texto original sai da caixa ao cifrar** |
+| 0.28.1 | Mensagens cifradas: o texto original sai da caixa ao cifrar |
+| **1.0.0** | **Primeira versão homologada dos 3 apps** (sem mudança nas telas desde a 0.28.1) |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.28.1) |
+| `main` | Versão vigente (1.0.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 
@@ -75,7 +77,7 @@
 
 | Prioridade | Item |
 |---|---|
-| 1 | **Homologação** dos 3 apps pelo responsável ([12](12-homologacao.md)) |
+| 1 | Revisão de criptografia (08/10/2026): fixar o DID da Governança na carteira e conferir o emissor do crachá; centralizar `exp`/`nbf`/`aud` no `verifyJWT` e criar testes negativos de JWT |
 | 2 | Atualizar os testes antigos que ainda usam telas substituídas ([07](07-testes.md) §4) |
 | 2a | Vários serviços por organização (combinado na 0.22) |
 | 3 | Criar a Governança Systekna de produção e pré-carregar o DID dela nos apps (DP-08) |
