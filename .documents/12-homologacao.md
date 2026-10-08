@@ -1,6 +1,6 @@
 # 12 · Homologação
 
-> Versão em homologação: **0.28.0**. Marque cada item ao homologar.
+> Versão em homologação: **0.28.1**. Marque cada item ao homologar.
 > "Aprovado nos primeiros testes" = o responsável aprovou na versão indicada; a homologação final continua.
 
 ## 1. Aprovado nos primeiros testes

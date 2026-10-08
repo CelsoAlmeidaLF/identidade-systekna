@@ -255,6 +255,7 @@ test('P05 · mensagem cifrada: abre para a própria chave e falha adulterada ou 
     await carteira.click('#mSeal');
     await expect(carteira.locator('#mSealOut')).toBeVisible();
     await expect(carteira.locator('#mSealed')).not.toHaveValue(anterior);
+    await expect(carteira.locator('#mText')).toHaveValue(''); // o texto original sai da caixa ao cifrar
     return carteira.inputValue('#mSealed');
   };
   const abrir = async pacote => {
