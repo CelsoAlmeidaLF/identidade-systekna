@@ -21,6 +21,7 @@
 | RF-CM-11 | Cada app gera o **próprio DID** a partir das mesmas 12 palavras (separação de domínio) | ✅ |
 | RF-CM-12 | **Código de recuperação** `STK1-XXXX-…` equivalente às 12 palavras: recupera a mesma conta, com o mesmo DID | ✅ (0.23) |
 | RF-CM-13 | **PDF de recuperação**: QR code do código, o código, as 12 palavras numeradas, o DID, a data e o aviso de segurança. Em Ajustes (pede PIN ou biometria) e na tela das 12 palavras ao criar | ✅ (0.23) |
+| RF-CM-15 | **Exportar o livro** (Governança e Serviços, 0.25): Ajustes → Exportar livro, pede o PIN; **PDF** (várias páginas, capa com DID, período, total e conferência de integridade) ou **Excel .xlsx** (planilhas Livro e Resumo); período: todo o livro, últimos 30 dias, este mês, mês passado ou intervalo de datas | 🟢 |
 | RF-CM-14 | **Ler QR code** na tela Recuperar, pela câmera, onde o navegador lê QR (Chrome do Android); nos outros, a câmera do aparelho lê e a pessoa cola o texto | ✅ (0.23) |
 
 ## 2. Carteira de Identidades Soberanas

@@ -1,6 +1,6 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **0.24.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Passo a passo nas telas, versão **0.25.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
 > Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
 
 ## Links
@@ -91,6 +91,7 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | Trocar a chave da STK | STK → aba Governança → **Trocar a chave**; depois **Copiar aviso de troca** e envie a quem confia |
 | Importar a troca de chave da STK | Serviços → aba Serviço → Importar troca de chave · STK de terceiros → Emissores confiáveis → Importar troca de chave |
 | Backup | Ajustes → Copiar backup cifrado / Restaurar backup |
+| Exportar o livro (0.25) | Governança ou Serviços → Ajustes → **Exportar livro** → PIN → escolha **PDF** ou **Excel** e o **período** → **Baixar** |
 | Conferir o livro | Painel → Ver livro completo → Conferir integridade |
 
 ## 8. Se algo der errado

@@ -38,7 +38,8 @@
 | RNF-34 | W3C Verifiable Credentials 1.1 em JWT EdDSA | Inspeção |
 | RNF-35 | WebAuthn Level 3 com PRF | `biometria.spec.js` |
 | RNF-36 | QR code ISO/IEC 18004 (modo byte, correção M, versões 1 a 9), lido por leitor independente | `recuperacao.spec.js` (jsQR) |
-| RNF-37 | PDF 1.4 com fontes padrão (Helvetica e Courier, WinAnsi) | `recuperacao.spec.js` |
+| RNF-37 | PDF 1.4 com fontes padrão (Helvetica e Courier, WinAnsi), uma ou várias páginas | `recuperacao.spec.js`, `exportar-livro.spec.js` |
+| RNF-38 | Excel Office Open XML (.xlsx) em ZIP sem compressão, conferido pelo `zipfile` do Python e cada XML pelo navegador | `exportar-livro.spec.js` |
 
 ## 4. Desempenho e portabilidade
 

@@ -82,6 +82,7 @@
 | RN-50 | O livro é somente acréscimo: cada ato referencia o hash do anterior e é assinado |
 | RN-51 | Aprovação, recusa, revogação, mudança de confiança, de nome, de política e troca de chave são atos do livro |
 | RN-52 | A revogação é irreversível e tem motivo; só quem revogou a enxerga |
+| RN-54 | O livro exportado traz só os atos do período escolhido, mas a conferência de integridade é sempre do livro inteiro; livro adulterado sai marcado "NÃO CONFERE" com o ato onde a corrente se rompe |
 | RN-53 | A troca de chave da STK gera um aviso assinado pela chave antiga e aceito pela nova; quem confia na antiga importa o aviso. Identidades e aprovações da chave antiga continuam valendo |
 
 ## 8. Acesso local

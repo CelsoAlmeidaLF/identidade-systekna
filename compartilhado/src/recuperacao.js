@@ -114,56 +114,67 @@ function qrMatrix(text){
   return M;
 }
 
+/* ================= PDF ================= */
+// PDF 1.4 escrito à mão, páginas A4: fontes padrão (F1 Helvetica, F2 Helvetica-Bold, F3 Courier, F4 Courier-Bold,
+// com WinAnsi) e desenhos em retângulos. Usado pelo PDF de recuperação e pela exportação do livro.
+const pdfEsc=s=>s.replace(/[\\()]/g,m=>'\\'+m);
+// Texto fora do Latin-1 vira o equivalente mais próximo, ou "?": o WinAnsi coincide com o Latin-1 nos acentos do português.
+const latin1=s=>String(s).replace(/[›»]/g,'>').replace(/[‹«]/g,'<').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/…/g,'...').replace(/[^\x00-\xff]/g,'?');
+const pdfTxt=(font,size,x,y,s)=>`BT /F${font} ${size} Tf ${x} ${y} Td (${pdfEsc(latin1(s))}) Tj ET\n`;
+function pdfDoc(paginas,titulo){
+  const fonts=['Helvetica','Helvetica-Bold','Courier','Courier-Bold'],P=7;
+  const objs=['<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${paginas.map((_,i)=>`${P+1+i*2} 0 R`).join(' ')}] /Count ${paginas.length} >>`,
+    ...fonts.map(f=>`<< /Type /Font /Subtype /Type1 /BaseFont /${f} /Encoding /WinAnsiEncoding >>`),
+    `<< /Title (${pdfEsc(latin1(titulo))}) /Producer (Systekna) >>`];
+  paginas.forEach((c,i)=>objs.push(
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << ${fonts.map((_,k)=>`/F${k+1} ${3+k} 0 R`).join(' ')} >> >> /Contents ${P+2+i*2} 0 R >>`,
+    `<< /Length ${c.length} >>\nstream\n${c}endstream`));
+  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const off=[];
+  objs.forEach((o,i)=>{off.push(pdf.length);pdf+=`${i+1} 0 obj\n${o}\nendobj\n`});
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')}`;
+  pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info ${P} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const out=new Uint8Array(pdf.length);
+  for(let i=0;i<pdf.length;i++){const k=pdf.charCodeAt(i);if(k>255)throw new Error('Caractere fora do Latin-1 no PDF');out[i]=k}
+  return out;
+}
+function baixar(bytes,tipo,nome){
+  const url=URL.createObjectURL(new Blob([bytes],{type:tipo}));
+  const a=document.createElement('a');a.href=url;a.download=nome;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 /* ================= PDF de recuperação ================= */
-// PDF 1.4 de uma página A4, escrito à mão: fontes padrão (Helvetica e Courier, WinAnsi) e o QR em retângulos.
 function recoveryPdf({app,did,code,words,date}){
-  const esc=s=>s.replace(/[\\()]/g,m=>'\\'+m);
-  const txt=(font,size,x,y,s)=>`BT /${font} ${size} Tf ${x} ${y} Td (${esc(s)}) Tj ET\n`;
   let c='';
-  c+=txt('F2',20,56,780,`Recuperação · ${app}`);
-  c+=txt('F1',10,56,762,`Gerado em ${date}. Sistema de Identidade Soberana Systekna.`);
-  c+=txt('F1',9,56,746,'DID:');c+=txt('F3',8,78,746,did);
+  c+=pdfTxt(2,20,56,780,`Recuperação · ${app}`);
+  c+=pdfTxt(1,10,56,762,`Gerado em ${date}. Sistema de Identidade Soberana Systekna.`);
+  c+=pdfTxt(1,9,56,746,'DID:');c+=pdfTxt(3,8,78,746,did);
   // QR com margem de 4 módulos, centralizado.
   const M=qrMatrix(code),n=M.length,side=200,mod=side/(n+8),x0=(595-side)/2,yTop=725;
   c+='0 0 0 rg\n';
   M.forEach((row,y)=>row.forEach((on,x)=>{if(on)c+=`${(x0+(x+4)*mod).toFixed(3)} ${(yTop-(y+5)*mod).toFixed(3)} ${mod.toFixed(3)} ${mod.toFixed(3)} re f\n`}));
   let y=yTop-side-26;
-  c+=txt('F2',12,56,y,'Código de recuperação');
-  c+=txt('F4',15,56,y-22,code);
+  c+=pdfTxt(2,12,56,y,'Código de recuperação');
+  c+=pdfTxt(4,15,56,y-22,code);
   y-=62;
-  c+=txt('F2',12,56,y,'As 12 palavras');
-  words.forEach((w,i)=>{c+=txt('F3',13,i<6?72:310,y-24-(i%6)*20,`${String(i+1).padStart(2,' ')}. ${w}`)});
+  c+=pdfTxt(2,12,56,y,'As 12 palavras');
+  words.forEach((w,i)=>{c+=pdfTxt(3,13,i<6?72:310,y-24-(i%6)*20,`${String(i+1).padStart(2,' ')}. ${w}`)});
   y-=24+6*20+16;
   ['Atenção: quem tiver este papel ou este arquivo controla esta conta.',
    'O código e as 12 palavras são equivalentes: qualquer um dos dois recupera a conta.',
    'Imprima, guarde em lugar seguro e apague o arquivo do aparelho, do e-mail e da nuvem.',
    'Para recuperar: abra o app, toque em Recuperar e digite o código ou as 12 palavras,',
    'ou leia o QR code com a câmera.']
-    .forEach((l,i)=>{c+=txt(i?'F1':'F2',10,56,y-i*15,l)});
-  const fonts=['Helvetica','Helvetica-Bold','Courier','Courier-Bold'];
-  const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << ${fonts.map((_,i)=>`/F${i+1} ${5+i} 0 R`).join(' ')} >> >> /Contents 4 0 R >>`,
-    `<< /Length ${c.length} >>\nstream\n${c}endstream`,
-    ...fonts.map(f=>`<< /Type /Font /Subtype /Type1 /BaseFont /${f} /Encoding /WinAnsiEncoding >>`),
-    `<< /Title (${esc(`Recuperação · ${app}`)}) /Producer (Systekna) >>`];
-  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const off=[];
-  objs.forEach((o,i)=>{off.push(pdf.length);pdf+=`${i+1} 0 obj\n${o}\nendobj\n`});
-  const xref=pdf.length;
-  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')}`;
-  pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info ${objs.length} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  // Cada caractere vira um byte (Latin-1, que coincide com o WinAnsi nos acentos do português).
-  const out=new Uint8Array(pdf.length);
-  for(let i=0;i<pdf.length;i++){const k=pdf.charCodeAt(i);if(k>255)throw new Error('Caractere fora do Latin-1 no PDF');out[i]=k}
-  return out;
+    .forEach((l,i)=>{c+=pdfTxt(i?1:2,10,56,y-i*15,l)});
+  return pdfDoc([c],`Recuperação · ${app}`);
 }
 async function saveRecoveryPdf(ent,lang,did){
   const words=await entropyToWords(ent,lang),code=await entropyToCode(ent,lang);
   const d=new Date(),date=d.toLocaleDateString('pt-BR'),iso=d.toISOString().slice(0,10);
-  const bytes=recoveryPdf({app:APP.label,did,code,words,date});
-  const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-  const a=document.createElement('a');a.href=url;a.download=`recuperacao-${fold(APP.label)}-${iso}.pdf`;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  baixar(recoveryPdf({app:APP.label,did,code,words,date}),'application/pdf',`recuperacao-${fold(APP.label)}-${iso}.pdf`);
   words.fill('');
 }
 
