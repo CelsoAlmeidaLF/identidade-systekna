@@ -112,6 +112,9 @@
 | RN-75 | O cofre é só da Carteira e só **guarda** (não gera senhas, não envia nada); cada item é cifrado no aparelho com a chave da carteira |
 | RN-76 | **Cartões de crédito e débito podem ser guardados** (decisão de 08/10/2026, que substitui a de 01/10/2026). O tipo antigo `cartao` da 0.6 continua sendo apagado ao abrir |
 | RN-77 | Número de cartão de pagamento precisa passar na conferência de dígitos; cartões "Outro" (plano de saúde, fidelidade) não passam por ela |
+| RN-79 | Anexo do documento: só foto ou PDF, até 2 MB, guardado cifrado dentro do item; a foto aparece na tela, o PDF é baixado para abrir |
+| RN-80 | A validade não pode vir antes da emissão; documento que vence em até 30 dias ou já venceu gera aviso em Credenciais |
+| RN-81 | Backup com mais de 200 mil caracteres (anexos) não aparece para copiar: é baixado como arquivo, e a restauração aceita o arquivo |
 | RN-78 | Dados pessoais (CPF, RG, conta, cartão) podem ficar no cofre, que é privado da pessoa; continuam proibidos em credenciais (RN-70) |
 
 ## 9. Dados pessoais

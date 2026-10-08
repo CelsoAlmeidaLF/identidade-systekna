@@ -121,7 +121,7 @@ Ajustes › Salvar PDF de recuperação (PIN ou biometria) ──▶ PDF: QR + c
 | `cred` | Credencial: `vtype`, `jwt`, `jti`, `sub`, emissor, `iat`, `exp` (aprovações de identidade e crachás) |
 | `perfil` | Identidade nº n: `nome`, `perfil` (identidade/profissional/personalizada), `rotulo`, pedido em andamento |
 | `acesso` | Pedido de acesso: serviço, DID do serviço, apps, identidade, situação (aguardando/recusado), motivo |
-| `cofre` | Item do cofre (0.26): `kind` (senha, anotacao, cartao, conta), `titulo`, `campos`, `created`, `updated` |
+| `cofre` | Item do cofre (0.26): `kind` (senha, anotacao, cartao, conta, documento), `titulo`, `campos`, `anexo` {nome, tipo, tam, b64} no documento (0.27), `created`, `updated` |
 
 **Governança (`systekna-cartorio`, um `state` cifrado):** nome, emissões (`issued`), emissores confiáveis, livro, desafios, recusas, chaves ao longo do tempo (`keys`), avisos de troca (`rotations`), política, contadores.
 

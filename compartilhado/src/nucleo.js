@@ -750,14 +750,22 @@ const CS={
   },
   async export(){
     const b=await seal(ses.vaultKey,{v:1,app:APP.db,did:ses.did,at:Date.now(),data:await APP.exportData()},'backup');
-    const txt=['scb1',b.iv,b.ct].join('.');
-    openSheet(`<h3>Backup cifrado</h3><p class="sub">Guarde este texto onde quiser, como e-mail ou nuvem. Ele só abre com as 12 palavras desta identidade.</p><label class="f"><span>Backup</span><textarea class="mono" rows="6" readonly id="bkT">${txt}</textarea></label><button class="btn" id="bkC">Copiar backup</button>`);
-    $('#bkC').onclick=()=>copy(txt,'Backup copiado');
+    const txt=['scb1',b.iv,b.ct].join('.'),grande=txt.length>200000;
+    // Backup grande (anexos do cofre) não cabe bem em copiar e colar: sai só como arquivo.
+    openSheet(`<h3>Backup cifrado</h3><p class="sub">Guarde onde quiser, como e-mail ou nuvem. Ele só abre com as 12 palavras desta identidade.</p>${grande
+      ?`<p class="note" id="bkG">O backup tem ${tamTxt(txt.length)} por causa dos anexos. Baixe o arquivo para guardar.</p>`
+      :`<label class="f"><span>Backup</span><textarea class="mono" rows="6" readonly id="bkT">${txt}</textarea></label><button class="btn" id="bkC">Copiar backup</button>`}
+      <button class="btn ${grande?'':'ghost'}" id="bkA">Baixar arquivo</button>`);
+    if($('#bkC'))$('#bkC').onclick=()=>copy(txt,'Backup copiado');
+    $('#bkA').onclick=()=>{baixar(te.encode(txt),'text/plain',`backup-${fold(APP.label)}-${new Date().toISOString().slice(0,10)}.txt`);toast('Backup baixado')};
   },
   import(){
-    openSheet(`<h3>Restaurar backup</h3><p class="sub">${APP.importHint}.</p><label class="f" id="riF"><span>Backup</span><textarea class="mono" rows="6" id="riT" spellcheck="false" placeholder="scb1.…"></textarea></label><p class="hint" id="riH"></p><button class="btn" id="riGo">Restaurar</button>`);
+    openSheet(`<h3>Restaurar backup</h3><p class="sub">${APP.importHint}.</p><label class="f" id="riF"><span>Backup</span><textarea class="mono" rows="6" id="riT" spellcheck="false" placeholder="scb1.…"></textarea></label>
+      <label class="f"><span>Ou escolha o arquivo do backup</span><input type="file" id="riA" accept=".txt,text/plain"></label><p class="hint" id="riH"></p><button class="btn" id="riGo">Restaurar</button>`);
+    let arquivo='';
+    $('#riA').onchange=async()=>{const f=$('#riA').files[0];arquivo=f?(await f.text()).trim():'';$('#riH').classList.remove('bad');$('#riH').textContent=f?`Arquivo escolhido: ${f.name}`:''};
     $('#riGo').onclick=async()=>{
-      const p=$('#riT').value.trim().split('.'),H=$('#riH');
+      const p=(arquivo||$('#riT').value).trim().split('.'),H=$('#riH');
       const fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#riF'))};
       if(p.length!==3||p[0]!=='scb1')return fail('Isso não parece um backup. Ele começa com scb1.');
       let d;try{d=await unseal(ses.vaultKey,{iv:p[1],ct:p[2]},'backup')}catch{return fail('Este backup pertence a outra identidade ou foi alterado.')}

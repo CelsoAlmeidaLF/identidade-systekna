@@ -57,13 +57,14 @@
 | 0.23.0 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras (3 apps) |
 | 0.24.0 | Relatório de uso no Painel do Serviços: acessos por dia, app, funcionalidade e motivo; gestão do período |
 | 0.25.0 | Exportar o livro em PDF ou Excel, por período, na Governança e no Serviços |
-| **0.26.0** | **Cofre da Carteira: senhas, anotações, cartões e contas bancárias** |
+| 0.26.0 | Cofre da Carteira: senhas, anotações, cartões e contas bancárias |
+| **0.27.0** | **Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.26.0) |
+| `main` | Versão vigente (0.27.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 
