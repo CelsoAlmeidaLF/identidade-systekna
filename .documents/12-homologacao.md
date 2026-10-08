@@ -1,6 +1,6 @@
 # 12 · Homologação
 
-> Versão em homologação: **0.28.1**. Marque cada item ao homologar.
+> Versão homologada: **1.0.0** (08/10/2026). Os 3 apps foram pré-aprovados pelo responsável nesta versão.
 > "Aprovado nos primeiros testes" = o responsável aprovou na versão indicada; a homologação final continua.
 
 ## 1. Aprovado nos primeiros testes
@@ -15,14 +15,16 @@
 | H-06 | Solicitar e aprovar emissão de crachás (aprovação parcial, várias aprovações) | Serviços + STK | 0.19.0 | ✅ Aprovado |
 | H-07 | Painel do Serviços com um cartão por app sob a organização | Serviços | 0.19.1 | ✅ Aprovado |
 | H-08 | Pedir acesso a um app, aprovar ou recusar, cartão do crachá com cv:key | Carteira + Serviços | 0.20.0 | ✅ Aprovado ("todas as funcionalidades dos 3 apps aparentemente aprovadas") |
-| H-09 | Cartão do app (um app só, já marcado na carteira) | Serviços + Carteira | 0.21.0 | ⬜ Falta homologar |
-| H-10 | Governança aprova só o serviço; Serviço › Apps › Funcionalidades e grupos; crachá com funcionalidades; portaria por funcionalidade | STK + Serviços + Carteira | 0.22.0 | ⬜ Falta homologar |
+| H-09 | Cartão do app (um app só, já marcado na carteira) | Serviços + Carteira | 0.21.0 | ✅ Pré-aprovado na 1.0.0 |
+| H-10 | Governança aprova só o serviço; Serviço › Apps › Funcionalidades e grupos; crachá com funcionalidades; portaria por funcionalidade | STK + Serviços + Carteira | 0.22.0 | ✅ Pré-aprovado na 1.0.0 |
 | H-11 | Pastas reorganizadas, sem mudança nas telas | Todos | 0.22.1 | ✅ Publicado e conferido no Pages |
-| H-13 | Relatório de uso no Painel do Serviços (acessos e gestão do período) | Serviços | 0.24.0 | ⬜ Falta homologar |
-| H-14 | Exportar o livro em PDF ou Excel, por período | STK + Serviços | 0.25.0 | ⬜ Falta homologar |
+| H-13 | Relatório de uso no Painel do Serviços (acessos e gestão do período) | Serviços | 0.24.0 | ✅ Pré-aprovado na 1.0.0 |
+| H-14 | Exportar o livro em PDF ou Excel, por período | STK + Serviços | 0.25.0 | ✅ Pré-aprovado na 1.0.0 |
 | H-15 | Cofre: senhas, anotações, cartões e contas bancárias | Carteira | 0.26.0 | ❌ Reprovado: "não gostei do modelo"; substituído pela 0.28 |
 | H-16 | Documentos com foto ou PDF, aviso de vencimento; backup como arquivo | Carteira (backup: todos) | 0.27.0 | ❌ Documentos retirados na 0.28; backup como arquivo segue para homologar |
 | H-17 | Cofre só com anotações; backup como arquivo | Carteira (backup: todos) | 0.28.0 | ✅ Aprovado ("testei, está funcionando!") |
+| H-18 | Mensagens cifradas (cifrar e abrir); cofre de anotações guarda as mensagens cifradas | Carteira | 0.28.1 | ✅ Pré-aprovado na 1.0.0 |
+| H-19 | Emissão de credenciais (Governança) e de crachás pelos serviços; os 3 apps completos | Todos | 1.0.0 | ✅ Pré-aprovado ("os 3 apps foram homologados") |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (0.23.0)
@@ -60,4 +62,5 @@ Siga o [Manual de uso](10-manual-de-uso.md). Para cada passo, anote ✔ ou o pro
 | Os apps das organizações (Câmbio etc.) não leem o crachá; a conferência é na Portaria | Esperado (próximo passo) |
 | DID da STK informado à mão no Serviços | Esperado até existir a STK de produção |
 | STK ou Serviços criados antes da 0.16.0 mostram aviso de derivação antiga | Esperado; para testar do zero, "Apagar tudo deste aparelho" |
+| Revisão de criptografia (08/10/2026): a carteira ainda não fixa o DID da Governança nem confere o emissor do crachá; PIN de 6 dígitos protegido só por JavaScript; mensagens cifradas sem remetente | Conhecido; próximos passos em [11](11-decisoes-e-roteiro.md) §4 |
 | Testes automatizados antigos ainda usam telas substituídas | Ver [07](07-testes.md) §4 |
