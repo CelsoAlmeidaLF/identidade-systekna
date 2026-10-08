@@ -77,9 +77,9 @@
 
 | ID | Requisito | Sit. |
 |---|---|---|
-| RF-CT-50 | **Cofre** na aba Identidade (o rodapé não muda): lista de anotações com contagem, busca e **Nova anotação** | 🟢 |
-| RF-CT-51 | **Só anotações** (título e texto), cifradas no aparelho; ver, copiar o texto, editar e apagar com confirmação; a busca olha título e texto (0.28) | 🟢 |
-| RF-CT-55 | O cofre vai no **backup cifrado** e volta ao restaurar | 🟢 |
+| RF-CT-50 | **Cofre** na aba Identidade (o rodapé não muda): lista de anotações com contagem, busca e **Nova anotação** | ✅ (0.28) |
+| RF-CT-51 | **Só anotações** (título e texto), cifradas no aparelho; ver, copiar o texto, editar e apagar com confirmação; a busca olha título e texto (0.28) | ✅ (0.28) |
+| RF-CT-55 | O cofre vai no **backup cifrado** e volta ao restaurar | ✅ (0.28) |
 | RF-CT-58 | ⏸ Senhas, cartões, contas bancárias e documentos com anexo (0.26 e 0.27) foram **retirados na 0.28** por decisão do PO; os itens já guardados ficam ocultos, sem ser apagados | ⏸ |
 
 ## 3. Governança Systekna (STK)
