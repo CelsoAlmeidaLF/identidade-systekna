@@ -2,8 +2,8 @@
 
 ## 1. Princípios
 
-- **A identidade define o usuário.** A Governança aprova identidades; os serviços dão acesso aos apps deles.
-- **As 12 palavras são a chave mestra** e ficam só com o dono, anotadas em papel. Ninguém recupera — nem a Systekna.
+- **A identidade define o usuário.** A Governança aprova identidades e serviços; cada serviço tem os seus apps e funcionalidades e dá acesso a eles.
+- **As 12 palavras são a chave mestra** e ficam só com o dono. O código de recuperação STK1-… e o PDF de recuperação são outras formas de guardar a mesma chave. Ninguém recupera pelo dono, nem a Systekna.
 - **Sem fé pública:** nenhum texto usa "cartório", "autenticar", "reconhecer firma" ou "lavrar".
 - **Cada papel com a própria chave:** pessoa, Governança e cada serviço têm 12 palavras próprias.
 
@@ -32,24 +32,34 @@
 
 | ID | Regra |
 |---|---|
-| RN-20 | O serviço só emite crachás de um app com **aprovação de emissão válida** daquele app |
-| RN-21 | O pedido leva o nome da organização e os apps; o serviço pede **só os apps novos** |
-| RN-22 | A STK pode **desmarcar apps** e aprovar só parte; sem nenhum app marcado, não aprova |
-| RN-23 | **Várias aprovações ficam ativas** ao mesmo tempo, cada uma com os apps dela; uma não revoga a outra |
+| RN-20 | O serviço só emite crachás com **aprovação de emissão válida do serviço** (0.22: a Governança aprova o serviço, não os apps) |
+| RN-21 | O pedido leva só o nome do serviço; se o serviço já está aprovado, pedir de novo renova |
+| RN-22 | ~~A STK pode desmarcar apps~~: deixou de existir na 0.22. Aprovações antigas que trazem apps valem para o serviço todo |
+| RN-23 | **Várias aprovações podem ficar ativas** ao mesmo tempo; uma não revoga a outra; vale a de validade mais longa |
 | RN-24 | A STK não aprova emissão para o próprio DID |
 | RN-25 | A recusa tem motivo e fica no livro da STK; o serviço continua "aguardando" |
 | RN-26 | A Governança é informada uma vez pelo serviço; trocar de Governança apaga as aprovações (com confirmação) |
+
+## 4A. Apps e funcionalidades do serviço (0.22)
+
+| ID | Regra |
+|---|---|
+| RN-27 | **Serviço › Apps › Funcionalidades**: o serviço (a organização ou o desenvolvedor) cadastra os apps (aplicativo, serviço ou ferramenta) e, em cada um, as funcionalidades (módulo, micro-serviço ou ferramenta). A Governança não aprova apps nem funcionalidades |
+| RN-28 | Cada funcionalidade tem nome e **código**; o código é único no app, é o que vai no crachá e não muda |
+| RN-29 | **Grupo** é só um atalho para marcar várias funcionalidades de uma vez ao aprovar um acesso. Grupo e plano **não** vão no crachá |
+| RN-29a | Tirar uma funcionalidade a tira do app e dos grupos; crachás já emitidos continuam com ela até vencer ou ser trocados |
+| RN-29b | O Cartão do serviço e o Cartão do app levam o catálogo (funcionalidades e grupos), assinado pelo serviço |
 
 ## 5. Acesso a apps e crachás (Serviço → Carteira)
 
 | ID | Regra |
 |---|---|
-| RN-30 | A pessoa só pede acesso com **identidade aprovada**, e só a apps aprovados pela **mesma Governança** que aprovou a identidade |
+| RN-30 | A pessoa só pede acesso com **identidade aprovada**, e só a serviços aprovados pela **mesma Governança** que aprovou a identidade. Só aparecem os apps que o serviço pôs no cartão (o Cartão do app traz um só, já marcado) |
 | RN-31 | O pedido sai assinado pela identidade escolhida e leva a aprovação dela; vale 7 dias e uso único |
 | RN-32 | O serviço confere sozinho, sem consultar a STK: a identidade foi aprovada pela Governança dele, é da mesma pessoa, está válida |
-| RN-33 | **Aprovar acesso:** um crachá (CV:KEY) por app marcado, só entre os apps aprovados ao serviço |
-| RN-34 | A validade do crachá é escolhida pelo serviço e **nunca passa a da aprovação de emissão do app** |
-| RN-35 | O crachá leva dentro a aprovação de emissão do app, como prova |
+| RN-33 | **Aprovar acesso:** um crachá (CV:KEY) por app marcado. As funcionalidades vêm **todas liberadas**; o serviço desmarca o que a pessoa não pode usar. App com funcionalidades precisa de ao menos uma marcada; app sem funcionalidades dá só a entrada no app |
+| RN-34 | A validade do crachá é escolhida pelo serviço e **nunca passa a da aprovação de emissão do serviço** |
+| RN-35 | O crachá leva dentro a aprovação de emissão do serviço, como prova, e os **códigos das funcionalidades liberadas** |
 | RN-36 | Um crachá ativo por pessoa e app: o novo revoga o anterior |
 | RN-37 | **Recusar pedido:** recusa **assinada** para o cliente, com motivo (Não é cliente, Dados não conferem, App não disponível, Outro), e registrada no livro; o pedido recusado não volta |
 | RN-38 | O serviço pode revogar um crachá emitido, com motivo |
@@ -60,7 +70,8 @@
 |---|---|
 | RN-40 | Credencial sozinha não é prova: só vale a resposta assinada a um desafio novo |
 | RN-41 | O desafio vale 10 minutos e uma única vez; a prova vale 5 minutos e é dirigida a quem desafiou |
-| RN-42 | A portaria só libera se **todos** os pontos passarem: dono do crachá, desafio desta portaria, prazos, emitido por este serviço, app certo, não revogado, validade, aprovação de emissão do app vigente |
+| RN-42 | A portaria só libera se **todos** os pontos passarem: dono do crachá, desafio desta portaria, prazos, emitido por este serviço, app certo, funcionalidade liberada (quando o desafio é de uma funcionalidade), não revogado, validade, aprovação de emissão do serviço vigente |
+| RN-44 | O desafio pode ser para **só a entrada no app** ou para **uma funcionalidade** do app (0.22) |
 | RN-43 | Toda conferência (liberada ou negada) vai para o livro do serviço |
 
 ## 7. Livro, revogação e confiança
@@ -82,10 +93,20 @@
 | RN-63 | Recarregar sempre bloqueia; bloqueio automático configurável |
 | RN-64 | O backup só abre com as 12 palavras da mesma identidade e no mesmo app |
 
+## 8A. Recuperação (0.23)
+
+| ID | Regra |
+|---|---|
+| RN-65 | A conta de cada app se recupera pelas **12 palavras** ou pelo **código de recuperação** `STK1-…`; os dois levam à mesma conta e ao mesmo DID |
+| RN-66 | O código leva o idioma das palavras e uma conferência: com um caractere errado, é recusado e nada é aberto |
+| RN-67 | Cada app tem as próprias 12 palavras, logo o próprio código e o próprio PDF |
+| RN-68 | O **PDF de recuperação** traz o QR code do código, o código, as 12 palavras, o DID e o aviso "quem tiver este arquivo controla esta conta". Nos Ajustes, só sai depois do PIN ou da biometria; na criação, sai da tela das 12 palavras |
+| RN-69 | A orientação é imprimir o PDF, guardar em lugar seguro e apagar o arquivo do aparelho, do e-mail e da nuvem |
+
 ## 9. Dados pessoais
 
 | ID | Regra |
 |---|---|
 | RN-70 | Nenhuma credencial, livro ou registro leva CPF, RG, CNH, foto, endereço, filiação e afins |
-| RN-71 | A identidade leva só o nome; o crachá, só serviço e app |
+| RN-71 | A identidade leva só o nome; o crachá, só serviço, app e os códigos das funcionalidades liberadas |
 | RN-72 | O ambiente publicado é só para demonstração: sem identidades reais nem dados de clientes |

@@ -15,28 +15,30 @@
 | CA-07 | Cartão de identidade: perfil, nome, did:key (copiar sem abrir), emissora + validade; uma cor por perfil |
 | CA-08 | Identidades continuam após bloquear e voltam pelo backup; as da 0.17.0 viram nome + perfil |
 
-## 2. Aprovação de emissão (`emissao.spec.js`)
+## 2. Aprovação de emissão e catálogo do serviço (`emissao.spec.js`, reescrito na 0.22)
 
 | CA | Critério |
 |---|---|
 | CA-20 | Rodapé do Serviços com o + no centro; menu com 3 ações |
-| CA-21 | **Dado** um serviço sem Governança, **quando** solicita, **então** informa o DID da STK uma vez (o próprio DID é recusado), nome e apps (repetido recusado) e fica "Aguardando" |
-| CA-22 | **Dado** o pedido, **quando** a STK confere, **então** vê o cartão com apps marcados; **quando** desmarca um e aprova, **então** a aprovação leva só os marcados |
-| CA-23 | Sem nenhum app marcado a STK não aprova |
-| CA-24 | O Painel mostra a organização e um cartão por app (App, did:key com copiar, aprovador + validade) |
-| CA-25 | **Dado** um app aprovado, **quando** o serviço pede outro, **então** pede só o novo e as duas aprovações ficam ativas |
-| CA-26 | A STK avisa quando um app do pedido já tem aprovação ativa |
-| CA-27 | Recusa da STK fica no livro com o motivo; o serviço continua aguardando |
-| CA-28 | O crachá de cada app leva a aprovação dele e nunca passa da validade dela; a portaria confere a aprovação do app |
-| CA-29 | O Cartão do serviço leva todas as aprovações válidas; serviço da 0.18 vira uma aprovação |
+| CA-21 | **Dado** um serviço sem Governança, **quando** solicita, **então** informa o DID da STK uma vez (o próprio DID é recusado) e o nome do serviço; o pedido leva **só o serviço, sem apps**, e fica "Aguardando" |
+| CA-22 | **Dado** o pedido, **quando** a STK confere, **então** vê o cartão do serviço **sem lista de apps**; **quando** aprova, **então** a aprovação leva só o serviço |
+| CA-23 | ~~Sem nenhum app marcado a STK não aprova~~ (retirado na 0.22: a STK não vê apps) |
+| CA-24 | O Painel mostra a organização e um cartão por app do catálogo (App, did:key com copiar, aprovador + validade) |
+| CA-25 | **Dado** o serviço aprovado, **quando** cadastra em Serviço › Apps um app, funcionalidades (nome, código, tipo) e um grupo, **então** tudo aparece no app e vai para o livro |
+| CA-26 | O **Cartão do app** leva só aquele app, com as funcionalidades, os grupos e a aprovação do serviço |
+| CA-27 | Recusa da STK fica no livro com o motivo, que fala do serviço; o serviço continua aguardando |
+| CA-28 | **Dado** um pedido de acesso, **quando** o serviço toca num grupo, **então** marca ou desmarca as funcionalidades dele; o crachá leva **só os códigos liberados**, sem grupo nem plano, e nunca passa da validade da aprovação do serviço |
+| CA-29 | Portaria: desafio para uma funcionalidade liberada passa; para uma que não está no crachá é negado ("Funcionalidade liberada" falha) |
+| CA-30 | Um serviço da 0.21 (apps aprovados pela Governança) vira catálogo sozinho, sem perder aprovações nem crachás |
 
 ## 3. Acesso a apps (`acesso.spec.js`)
 
 | CA | Critério |
 |---|---|
 | CA-40 | O menu + da carteira tem as 5 ações |
-| CA-41 | **Dado** o Cartão do serviço, **quando** a carteira lê, **então** mostra a organização, os apps aprovados e só as identidades aprovadas |
-| CA-42 | Cartão alterado é recusado; cartão com apps de outra Governança é recusado; carteira sem identidade aprovada é avisada |
+| CA-41 | **Dado** o Cartão do serviço, **quando** a carteira lê, **então** mostra a organização, os apps do cartão com as funcionalidades e grupos, e só as identidades aprovadas |
+| CA-41a | **Dado** o Cartão do app, **quando** a carteira lê, **então** mostra só aquele app, já marcado; Cartão do app alterado ou sem o app na lista é recusado |
+| CA-42 | Cartão alterado é recusado; serviço aprovado por outra Governança é recusado; carteira sem identidade aprovada é avisada |
 | CA-43 | O pedido sai assinado pela identidade escolhida, leva a aprovação dela e fica "Aguardando" |
 | CA-44 | **Dado** o pedido, **quando** o Serviço confere, **então** vê o cartão de análise; **quando** aprova, **então** emite o crachá para o DID da identidade |
 | CA-45 | A carteira recebe o crachá: cartão CRACHÁ: APP, organização, cv:key (copiar), identidade, validade; o pedido sai de "aguardando" |
@@ -64,4 +66,17 @@
 | CA-85 | As mesmas 12 palavras geram DIDs diferentes em cada app; apps antigos mantêm o DID |
 | CA-86 | CPF, RG e afins são recusados em qualquer credencial |
 | CA-87 | Backups: recusados em outra identidade; livro adulterado recusado |
-| CA-88 | Nenhuma tela mostra "cartório"; o banco antigo (`systekna-cartorio`) é mantido. Os redirecionamentos dos endereços antigos foram retirados em 03/10/2026 |
+| CA-88 | Nenhuma tela mostra "cartório"; o banco antigo (`systekna-cartorio`) é mantido. Os redirecionamentos dos endereços antigos foram retirados em 03/10/2026 (publicado na 0.22.1) |
+
+## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
+
+| CA | Critério |
+|---|---|
+| CA-90 | Entropia → código → entropia volta igual, em português e em inglês; o código tem o formato `STK1-` + 8 blocos de 4 |
+| CA-91 | O código é aceito em minúsculas, com espaços e sem o `STK1`; um caractere trocado é recusado ("não confere"), código curto é recusado (tamanho) e letra fora do alfabeto é recusada |
+| CA-92 | O QR code gerado (versões 1 a 9) é lido de volta por um leitor independente (jsQR) |
+| CA-93 | **Dado** um app aberto, **quando** salva o PDF em Ajustes (com PIN), **então** o PDF traz o QR (lido de volta = o código), o código, as 12 palavras numeradas, o DID e o título com o nome do app — nos 3 apps |
+| CA-94 | **Dado** o código do PDF, **quando** outro aparelho recupera com ele, **então** abre a mesma conta, com o mesmo DID e as mesmas 12 palavras — nos 3 apps |
+| CA-95 | **Na criação**, o PDF sai com as palavras da tela e o DID que a conta vai ter |
+| CA-96 | Código errado na tela Recuperar mostra o motivo; sem leitor de QR no navegador, o botão Ler QR code não aparece |
+| CA-97 | Com leitor de QR no navegador, Ler QR code lê o código e segue para criar o PIN, abrindo a conta certa |

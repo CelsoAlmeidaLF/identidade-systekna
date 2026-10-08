@@ -1,17 +1,19 @@
 # Documentação — Identidade Soberana Systekna
 
-> **Versão da documentação:** v3 · 03/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
-> **Código de referência:** branch `main`, versão **0.22.1**, publicada no GitHub Pages.
-> **Situação:** as funcionalidades dos 3 aplicativos foram **aprovadas nos primeiros testes** do responsável e seguem em **homologação**.
-> **Substitui:** `docs/` (v0), `docs_v1/` (v1) e `docs_v2/` (v2), que ficam como histórico.
+> **Versão da documentação:** v3.1 · 08/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
+> **Código de referência:** branch `main`, versão **0.23.0**, publicada no GitHub Pages.
+> **Situação:** as funcionalidades até a 0.20.0 e a recuperação com PDF (0.23.0) foram **aprovadas nos testes** do responsável; cartão do app (0.21) e Serviço › Apps › Funcionalidades (0.22) seguem em **homologação**.
+> **Substitui:** `docs/` (v0), `docs_v1/` (v1) e `docs_v2/` (v2), que ficam no histórico do git.
 
 ## O ecossistema
 
 | App | Arquivo | Quem usa | Para quê |
 |---|---|---|---|
 | **Carteira de Identidades Soberanas** | `carteira-systekna.html` | Qualquer pessoa | Guarda as identidades (DID:KEY) e os crachás (CV:KEY); pede aprovação e acesso; apresenta |
-| **Governança Systekna (STK)** | `governanca-systekna.html` | Equipe Systekna | Aprova identidades e aprova a emissão de crachás dos serviços |
-| **Serviços Systekna (SRV)** | `servicos-systekna.html` | Cada organização | Pede aprovação de emissão, analisa pedidos de acesso, emite crachás e confere na portaria |
+| **Governança Systekna (STK)** | `governanca-systekna.html` | Equipe Systekna | Aprova identidades e aprova os serviços que emitem crachás |
+| **Serviços Systekna (SRV)** | `servicos-systekna.html` | Cada organização | Pede aprovação de emissão, cadastra apps e funcionalidades, analisa pedidos de acesso, emite crachás e confere na portaria |
+
+Nos 3 apps, a conta se recupera pelas 12 palavras ou pelo código de recuperação STK1-…, e há um PDF de recuperação com QR code.
 
 Site: <https://celsoalmeidalf.github.io/identidade-systekna/> · Repositório: <https://github.com/CelsoAlmeidaLF/identidade-systekna>
 
@@ -32,7 +34,8 @@ Site: <https://celsoalmeidalf.github.io/identidade-systekna/> · Repositório: <
 | 10 | [Manual de uso](10-manual-de-uso.md) | Passo a passo de cada cenário nas telas, para uso e homologação |
 | 11 | [Decisões e roteiro](11-decisoes-e-roteiro.md) | Todas as decisões tomadas, histórico de versões e próximos passos |
 | 12 | [Homologação](12-homologacao.md) | Checklist do que foi aprovado e do que falta homologar |
-| 13 | [Sprint da primeira entrega](13-sprint-primeira-entrega.md) | Papéis dos 3 apps, entregas E-01 a E-07, limites aceitos e o que fica para a F5 |
+| 13 | [Sprint da primeira entrega](13-sprint-primeira-entrega.md) | Papéis dos 3 apps, entregas E-01 a E-08, limites aceitos e o que fica para a F5 |
+| — | [`plan.md`](plan.md) e [`identidade-soberana-systekna-arquitetura.md`](identidade-soberana-systekna-arquitetura.md) | **Históricos** (plano em fases e arquitetura da época da carteira + emissor); não descrevem a versão atual |
 
 ### Ordem de leitura sugerida
 
@@ -62,7 +65,8 @@ Site: <https://celsoalmeidalf.github.io/identidade-systekna/> · Repositório: <
 
 | Versão | Pasta | Data | Base |
 |---|---|---|---|
-| v0 | `docs/` | 01–02/10/2026 | Código 0.6.0 |
+| v0 | `docs/` (só no histórico do git desde a 0.22.1) | 01–02/10/2026 | Código 0.6.0 |
 | v1 | `docs_v1/` | 03/10/2026 | Alvo de 3 apps (protótipo) |
-| v2 | `docs_v2/` | 03/10/2026 | Código 0.13.0 (atual + alvo) |
-| **v3** | **`.documents/`** | **03/10/2026** | **Código 0.20.0: os 3 apps construídos e aprovados nos primeiros testes** |
+| v2 | `docs_v2/` (só no histórico do git desde a 0.22.1) | 03/10/2026 | Código 0.13.0 (atual + alvo) |
+| v3 | `.documents/` | 03/10/2026 | Código 0.20.0: os 3 apps construídos e aprovados nos primeiros testes |
+| **v3.1** | **`.documents/`** | **08/10/2026** | **Código 0.23.0: cartão do app, Serviço › Apps › Funcionalidades, pastas por projeto, recuperação com código e PDF** |

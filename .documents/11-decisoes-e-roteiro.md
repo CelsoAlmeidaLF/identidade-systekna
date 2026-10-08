@@ -6,14 +6,14 @@
 |---|---|
 | 01/10/2026 | "Cartório Digital" passa a "Emissor de Credenciais" (sem vocabulário de fé pública) |
 | 01/10/2026 | Domínio próprio adiado: GitHub Pages só como demonstração |
-| 01/10/2026 | Sem recuperação por guardiões: só as 12 palavras, anotadas em papel |
+| 01/10/2026 | Sem recuperação por guardiões: só as 12 palavras, anotadas em papel (ampliado em 08/10: código e PDF) |
 | 01/10/2026 | Cofre sem cartão de pagamento |
 | 02/10/2026 | "A identidade define o usuário"; toda publicação sobe a versão |
 | 03/10/2026 | Main volta à versão básica (0.13.0); acesso/crachá antigos guardados em `bkp/cracha` |
 | 03/10/2026 | **DP-01** Registro de emissões guardado, com nome |
 | 03/10/2026 | **DP-02** Livro e revogação mantidos; validade opcional |
 | 03/10/2026 | **DP-03** Identidade aprovada leva só o nome |
-| 03/10/2026 | **DP-04** Só copiar e colar; QR adiado |
+| 03/10/2026 | **DP-04** Só copiar e colar; QR adiado (o QR entrou só no PDF de recuperação, 0.23) |
 | 03/10/2026 | **DP-05** Envelope `SYSTEKNA:<TIPO>:<JWT>` em todo pacote |
 | 03/10/2026 | **DP-06** Três apps separados |
 | 03/10/2026 | **DP-07** Validade do crachá escolhida pelo serviço, limitada à aprovação |
@@ -28,9 +28,13 @@
 | 03/10/2026 | Pedido de identidade leva nome e perfil; aprovação só o nome; recusa da STK só no livro; validade escolhida pela STK (padrão 1 ano) |
 | 03/10/2026 | Cartão de identidade: perfil · nome · did:key com copiar · emissora + validade; cor por perfil |
 | 03/10/2026 | Rodapé com o + no centro (Carteira: Credenciais · Identidade · + · Apresentar · Ajustes) |
-| 03/10/2026 | Aprovação de emissão: STK pode aprovar parte dos apps; app novo pede só ele (várias aprovações ativas); pedido só com nome e apps |
+| 03/10/2026 | Aprovação de emissão: STK pode aprovar parte dos apps; app novo pede só ele (várias aprovações ativas); pedido só com nome e apps (substituída em 08/10) |
 | 03/10/2026 | Serviços: um cartão por app, agrupados sob a organização aprovada pela Governança |
 | 03/10/2026 | Acesso a apps: pedido pela carteira a partir do Cartão do serviço, com a identidade aprovada escolhida; recusa **assinada** para o cliente; itens próprios no menu +; cartão próprio do crachá com **cv:key** |
+| 08/10/2026 | **Cartão do app**: tocar no cartão de um app no Painel gera o cartão só dele; a carteira oferece só os apps do cartão (0.21) |
+| 08/10/2026 | **A Governança aprova o serviço, não os apps.** Serviço (organização ou desenvolvedor) › Apps (aplicativo, serviço ou ferramenta) › Funcionalidades (módulo, micro-serviço ou ferramenta). Grupos são só atalho para liberar. **Sem plano no crachá**: ele leva só os códigos das funcionalidades liberadas (0.22) |
+| 08/10/2026 | Pastas por projeto (`stk-carteira`, `stk-governanca`, `stk-servicos`, `compartilhado`), documentação em `.documents/`, site continua na raiz da `main`; saem os redirecionamentos `cartorio-` e `emissor-systekna.html` (0.22.1) |
+| 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
 
 ## 2. Versões publicadas
 
@@ -64,7 +68,8 @@
 |---|---|
 | 1 | **Homologação** dos 3 apps pelo responsável ([12](12-homologacao.md)) |
 | 2 | Atualizar os testes antigos que ainda usam telas substituídas ([07](07-testes.md) §4) |
+| 2a | Vários serviços por organização (combinado na 0.22) |
 | 3 | Criar a Governança Systekna de produção e pré-carregar o DID dela nos apps (DP-08) |
 | 4 | "Entrar com a carteira": os apps das organizações aceitarem o crachá direto |
 | 5 | Lista pública de revogação |
-| — | Adiados: QR Code, cofre, divulgação seletiva (SD-JWT), domínio próprio |
+| — | Adiados: QR Code para os pacotes entre os apps, senha no PDF de recuperação, cofre, divulgação seletiva (SD-JWT), domínio próprio |

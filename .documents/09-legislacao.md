@@ -72,7 +72,7 @@
 - **Lei 15.211/2025**, em vigor desde **17/03/2026**, regulamentada pelo **Decreto 12.880/2026** (18/03/2026).
 - Exige **verificação de idade confiável** em plataformas com conteúdo impróprio a menores; **autodeclaração é proibida**; os dados só servem a essa finalidade.
 - ANPD: orientações preliminares (20/03/2026), proposta de guia em consulta (maio a 09/07/2026), Perguntas e Respostas (30/07/2026). O **guia definitivo não estava publicado** na página da ANPD em 01/10/2026 (fontes secundárias divergem). Fiscalização com multa a partir de **jan/2027**.
-- **Impacto:** a 0.20.0 **não tem** credencial de maioridade (saiu em 02/10/2026). Se voltar, só vale como mecanismo confiável se o emissor **conferiu documento**, e até sair o guia definitivo deve ficar em **uso privado**. ⚖️
+- **Impacto:** a 0.23.0 **não tem** credencial de maioridade (saiu em 02/10/2026). Se voltar, só vale como mecanismo confiável se o emissor **conferiu documento**, e até sair o guia definitivo deve ficar em **uso privado**. ⚖️
 
 ### 2.6 O que **não** podemos fazer: atividade notarial
 
@@ -165,7 +165,7 @@ O padrão do projeto (W3C VC + DID) é o mesmo que o governo brasileiro está te
 
 ### 3.6 Comparativo
 
-| Característica | Suíça | Utah | Buenos Aires | Butão | UE | **Systekna 0.20.0** |
+| Característica | Suíça | Utah | Buenos Aires | Butão | UE | **Systekna 0.23.0** |
 |---|---|---|---|---|---|---|
 | Carteira no aparelho, sem banco central | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | Uso voluntário | ✅ | ✅ | ✅ | — | ✅ | ✅ |
