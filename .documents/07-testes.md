@@ -24,6 +24,7 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | `stk-carteira/tests/acesso.spec.js` | Acesso a apps: Cartão do serviço e do app, pedido, análise, crachá com cv:key, recusa assinada, portaria |
 | `stk-governanca/tests/governanca.spec.js` | Envelope, uma identidade ativa por DID, regras da STK |
 | `stk-governanca/tests/rotacao.spec.js` | Troca de chave da STK e importação do aviso |
+| `stk-governanca/tests/fila.spec.js` | Fila de pedidos da STK: receber vários, Aguardando · Aprovados · Reprovados, vencido, bloqueio (1.1) |
 | `stk-servicos/tests/servicos.spec.js` | Crachás e portaria (versão anterior das telas — ver §4) |
 | `compartilhado/tests/dominio.spec.js` | Um DID por app a partir das mesmas 12 palavras |
 | `stk-governanca/tests/criterios-de-aceite.spec.js` | Fluxo base: pedido, emissão, apresentação, revogação, livro |

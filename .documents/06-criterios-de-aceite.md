@@ -95,6 +95,17 @@
 | CA-105b | Bloquear esconde o cofre; desbloquear traz de volta |
 | CA-107 | O backup baixado como arquivo é igual ao texto copiado e, escolhido em outro aparelho, traz as anotações |
 
+## 5D. Fila de pedidos da Governança (`stk-governanca/tests/fila.spec.js`, 1.1)
+
+| CA | Critério |
+|---|---|
+| CA-110 | **Dado** três pedidos (duas identidades e um serviço), **quando** o gestor cola os três de uma vez, **então** os três entram como Aguardando, com a etiqueta certa, o contador no Painel e um ato no livro para cada |
+| CA-111 | Pedido repetido ou inválido não entra; cada motivo aparece. Um pedido só com erro mostra o motivo direto (ex.: pedido de crachá) |
+| CA-112 | A fila continua depois de bloquear e desbloquear |
+| CA-113 | Aprovar emite a credencial; o pedido vai para Aprovados e, tocado, mostra a mesma aprovação |
+| CA-114 | Reprovar pede o motivo, registra no livro e o pedido vai para Reprovados, com o motivo no cartão |
+| CA-115 | Pedido vencido na fila aparece como Vencido: Aprovar fica desligado e Reprovar continua |
+
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
 
 | CA | Critério |

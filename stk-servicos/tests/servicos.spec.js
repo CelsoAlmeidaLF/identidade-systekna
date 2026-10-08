@@ -3,7 +3,7 @@
 // crachás (CV:KEY) para quem tem a Identidade aprovada e confere o acesso na portaria.
 // A carteira ainda não tem a tela de pedir crachá: o pedido é assinado direto na página da carteira.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -113,9 +113,7 @@ test.beforeAll(async ({ browser }) => {
   await carteira.click('#aqGo');
   const pedido = await carteira.inputValue('#aqJ');
   await fecharSheet(carteira);
-  await aba(gov, 'vIssue');
-  await gov.fill('#iqT', pedido);
-  await gov.click('#iqGo');
+  await receberPedido(gov, pedido);
   await gov.click('#iGo');
   await expect(gov.locator('#iOk')).toContainText('Credencial emitida');
   await receberNaCarteira(await gov.inputValue('#iJwt'));
@@ -173,10 +171,7 @@ test.describe('credenciamento', () => {
     expect([p.iss, p.aud, p.name, p.apps]).toEqual([didSrv, didGov, 'Academia Boa Forma', ['Portaria', 'Aulas']]);
     await fecharSheet(srv);
 
-    await aba(gov, 'vIssue');
-    await gov.click('#iNew');
-    await gov.fill('#iqT', pedido);
-    await gov.click('#iqGo');
+    await receberPedido(gov, pedido);
     await expect(gov.locator('#iType')).toHaveValue('ServiceAccreditationCredential');
     const anterior = await gov.inputValue('#iJwt');
     await gov.click('#iGo');
@@ -294,10 +289,7 @@ test.describe('crachás', () => {
   });
 
   test('a Governança não atende pedido de crachá', async () => {
-    await aba(gov, 'vIssue');
-    await gov.click('#iNew');
-    await gov.fill('#iqT', await pedidoDeCracha(['Portaria'], { aud: 'emissor' }));
-    await gov.click('#iqGo');
+    await receberPedido(gov, await pedidoDeCracha(['Portaria'], { aud: 'emissor' }));
     await expect(gov.locator('#iqH')).toHaveText('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
   });
 });

@@ -3,7 +3,7 @@
 // o livro continua íntegro com as duas chaves, credenciais antigas continuam sendo desta Governança e quem
 // confiava no DID antigo passa a confiar no novo ao importar o aviso.
 const { test, expect } = require('@playwright/test');
-const { PIN, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, telaDoPin, digitarPin, payloadDe } = require('../../compartilhado/tests/helpers');
+const { receberPedido, PIN, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, telaDoPin, digitarPin, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -30,10 +30,7 @@ async function pedirIdentidade() {
 }
 
 async function emitirIdentidade() {
-  await aba(gov, 'vIssue');
-  if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
-  await gov.fill('#iqT', await pedirIdentidade());
-  await gov.click('#iqGo');
+  await receberPedido(gov, await pedirIdentidade());
   const anterior = await gov.inputValue('#iJwt');
   await gov.click('#iGo');
   await expect(gov.locator('#iJwt')).not.toHaveValue(anterior);

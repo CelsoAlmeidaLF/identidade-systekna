@@ -67,4 +67,22 @@ function vigiarCsp(page, violacoes = []) {
 /** Lê o payload de um JWT sem conferir a assinatura. */
 const payloadDe = tok => JSON.parse(Buffer.from(tok.split('.')[1], 'base64url').toString('utf8'));
 
-module.exports = { PIN, WORDS, telaDoPin, digitarPin, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe, vigiarCsp };
+
+/**
+ * Governança (1.1): cola o pedido em Fila › Receber pedidos e, se ele entrou na fila, abre o cartão dele.
+ * Se o pedido foi recusado na conferência, o motivo fica em #iqH e nada é aberto.
+ */
+async function receberPedido(page, tok) {
+  await aba(page, 'vIssue');
+  if (await page.locator('#iOut').isVisible()) await page.click('#iNew');
+  if (await page.locator('#iForm').isVisible()) await page.click('#iBack');
+  await page.fill('#iqT', tok);
+  await page.click('#iqGo');
+  const h = page.locator('#iqH');
+  await expect(h).not.toHaveText('');
+  if ((await h.getAttribute('class') || '').includes('bad')) return false;
+  await page.locator('#iFila [data-fila]').first().click();
+  await expect(page.locator('#iForm')).toBeVisible();
+  return true;
+}
+module.exports = { receberPedido, PIN, WORDS, telaDoPin, digitarPin, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, payloadDe, vigiarCsp };

@@ -3,7 +3,7 @@
 // e das correções de 03/10/2026: pedido endereçado a um emissor e backup do emissor com livro conferido.
 // Tokens fora do comum (vencidos, perto do vencimento) são assinados na página com signJWT.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, telaDoPin, digitarPin, preparar, aba, toast, fecharSheet, payloadDe } = require('./helpers');
+const { receberPedido, WORDS, vigiarCsp, telaDoPin, digitarPin, preparar, aba, toast, fecharSheet, payloadDe } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -82,10 +82,7 @@ async function pedirPelaTela(didDoEmissor = '') {
 }
 
 async function conferirPedido(page, pedido) {
-  await aba(page, 'vIssue');
-  if (await page.locator('#iOut').isVisible()) await page.click('#iNew');
-  await page.fill('#iqT', pedido);
-  await page.click('#iqGo');
+  await receberPedido(page, pedido);
 }
 
 async function gerarDesafio() {

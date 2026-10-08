@@ -25,6 +25,7 @@
 | H-17 | Cofre só com anotações; backup como arquivo | Carteira (backup: todos) | 0.28.0 | ✅ Aprovado ("testei, está funcionando!") |
 | H-18 | Mensagens cifradas (cifrar e abrir); cofre de anotações guarda as mensagens cifradas | Carteira | 0.28.1 | ✅ Pré-aprovado na 1.0.0 |
 | H-19 | Emissão de credenciais (Governança) e de crachás pelos serviços; os 3 apps completos | Todos | 1.0.0 | ✅ Pré-aprovado ("os 3 apps foram homologados") |
+| H-20 | Fila de pedidos na Governança: receber vários de uma vez; Aguardando · Aprovados · Reprovados; identidades e serviços na mesma fila | STK | 1.1.0 | ⬜ Falta homologar |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (1.0.0)

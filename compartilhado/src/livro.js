@@ -1,7 +1,7 @@
 /* ================= livro e registro de emissões (Governança e Serviços) ================= */
 // Cada app que emite guarda um único estado cifrado (st) com o livro, as emissões e as chaves usadas.
 const save=async()=>DB.set('state',await seal(ses.vaultKey,st,'state'));
-const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield',rotacao:'key',recusa:'x'};
+const ATO_IC={abertura:'gov',emissao:'stamp',revogacao:'x',verificacao:'scan',confianca:'shield',nome:'note',politica:'shield',rotacao:'key',recusa:'x',pedido:'stamp'};
 async function ato(act,text,ref){
   const prev=st.book.length?st.book[st.book.length-1].hash:'0'.repeat(64);
   const e={n:st.book.length+1,at:Date.now(),act,text,ref:ref||null,prev};

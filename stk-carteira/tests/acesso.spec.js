@@ -2,7 +2,7 @@
 // Cenário 3 (aprovado em 03/10/2026): a pessoa solicita acesso a um app aprovado; o Serviço aprova (emite o crachá
 // CV:KEY) ou recusa (recusa assinada para o cliente). O crachá tem cartão próprio na carteira e dá acesso pela portaria.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -19,10 +19,7 @@ async function menuCarteira(acao) {
 
 /** STK aprova o pedido colado (identidade ou emissão) e devolve a aprovação. */
 async function aprovarNaStk(pedido) {
-  await aba(gov, 'vIssue');
-  if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
-  await gov.fill('#iqT', pedido);
-  await gov.click('#iqGo');
+  await receberPedido(gov, pedido);
   const anterior = await gov.inputValue('#iJwt');
   await gov.click('#iGo');
   await expect(gov.locator('#iJwt')).not.toHaveValue(anterior);

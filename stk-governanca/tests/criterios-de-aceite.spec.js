@@ -4,7 +4,7 @@
 // armazenamento compartilhado). Os tokens passam de um para o outro pelo
 // valor das caixas de texto, como no copiar e colar manual.
 const { test, expect } = require('@playwright/test');
-const { WORDS, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, vigiarCsp } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, vigiarCsp } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -83,9 +83,7 @@ test('02 · pedido válido é conferido e o mesmo pedido reenviado é recusado',
   pedido = await carteira.inputValue('#aqJ');
   await fecharSheet(carteira);
 
-  await aba(emissor, 'vIssue');
-  await emissor.fill('#iqT', pedido);
-  await emissor.click('#iqGo');
+  await receberPedido(emissor, pedido);
   await expect(emissor.locator('#iWho')).toContainText('Pedido conferido');
 
   // Emite a credencial para que o pedido conste como atendido.
