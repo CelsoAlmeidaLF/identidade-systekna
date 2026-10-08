@@ -169,6 +169,57 @@ test('cartão alterado ou com apps de outra Governança é recusado; sem identid
   await nova.context().close();
 });
 
+/** Gera no Serviço o Cartão do app, tocando no cartão dele no painel. */
+async function cartaoDoApp(app) {
+  await aba(srv, 'vPanel');
+  await srv.click(`#pAprov [data-app="${app}"]`);
+  await expect(srv.locator('#scJ')).not.toHaveValue('');
+  const tok = await srv.inputValue('#scJ');
+  await fecharSheet(srv);
+  return tok;
+}
+
+test('o Cartão do app mostra só aquele app, já marcado', async () => {
+  const doApp = await cartaoDoApp('Câmbio');
+  expect(doApp).toMatch(/^SYSTEKNA:CARTAO-APP:/);
+  await menuCarteira('access');
+  await carteira.fill('#paC', doApp);
+  await carteira.click('#paLer');
+  await expect(carteira.locator('#paStep')).toContainText('Câmbio · Meus Serviços Financeiros');
+  await expect(carteira.locator('#paApps [data-app]')).toHaveText(['Câmbio']);
+  await expect(carteira.locator('#paApps [data-app="Câmbio"]')).toHaveAttribute('aria-pressed', 'true');
+  await carteira.selectOption('#paI', '0');
+  await carteira.click('#paGo');
+  await expect(carteira.locator('#paJ')).not.toHaveValue('');
+  const p = payloadDe(await carteira.inputValue('#paJ'));
+  expect([p.aud, p.apps]).toEqual([didSrv, ['Câmbio']]);
+  await fecharSheet(carteira);
+  // O pedido de teste sai da lista para não atrapalhar os próximos passos.
+  await carteira.evaluate(async n => { const it = ses.items.find(i => i.data.type === 'acesso' && i.data.nonce === n); ses.items = ses.items.filter(i => i !== it); await persistItems(); }, p.nonce);
+});
+
+test('Cartão do app alterado ou com app fora da aprovação é recusado', async () => {
+  const ler = async texto => {
+    await menuCarteira('access');
+    await carteira.fill('#paC', texto);
+    await carteira.click('#paLer');
+    const h = await carteira.locator('#paH').textContent();
+    await fecharSheet(carteira);
+    return h;
+  };
+  const doApp = await cartaoDoApp('Câmbio');
+  const [pre, h, , sig] = doApp.match(/^(SYSTEKNA:CARTAO-APP:)([^.]+)\.([^.]+)\.(.+)$/).slice(1);
+  const alterado = `${pre}${h}.${Buffer.from(JSON.stringify({ ...payloadDe(doApp), app: 'Taxômetro', apps: ['Taxômetro'] })).toString('base64url')}.${sig}`;
+  expect(await ler(alterado)).toBe('A assinatura do cartão não confere: ele foi alterado.');
+
+  // Assinado pelo serviço, mas com um app que a aprovação da Governança não cobre.
+  const fora = await srv.evaluate(async () => {
+    const a = st.aprovacoes[0];
+    return embrulhar(await signJWT('cartao+jwt', { iss: ses.did, name: nomeServico(), app: 'Piscina', apps: ['Piscina'], aprovacoes: [a.jwt], iat: now() }));
+  });
+  expect(await ler(fora)).toBe('Este app não foi aprovado pela mesma Governança da sua identidade.');
+});
+
 let pedidoCambio = '';
 
 test('o pedido sai assinado pela identidade escolhida, com a aprovação dela, e fica aguardando', async () => {

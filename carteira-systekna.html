@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-YxUxc0MP3JxPPx2iD8NDUZ+fu4aEeGTc07vSDTxcN5o='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Lz5+omffCEBqSMsT3qQgFeMsnl2Es1VlAx/ctq+UXhs='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -373,7 +373,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.20.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.21.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -385,7 +385,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.20.0</p>
+    <p class="ver">Versão 0.21.0</p>
   </div>
 </section>
 
@@ -433,7 +433,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.20.0</p>
+    <p class="ver">Versão 0.21.0</p>
   </div>
 </section>
 
@@ -555,7 +555,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.20.0';
+const APP_VERSION='0.21.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -796,7 +796,7 @@ function tipoPacote(header,payload){
   switch(header.typ){
     case 'pedido+jwt':return qual(payload.wanted,'PEDIDO-APROVACAO','PEDIDO-CREDENCIAMENTO','PEDIDO-CRACHA','PEDIDO-CREDENCIAL');
     case 'vc+jwt':return qual(payload.vc?vcType(payload):'','APROVACAO','CREDENCIAMENTO','CRACHA','CREDENCIAL');
-    case 'cartao+jwt':return 'CARTAO-SERVICO';
+    case 'cartao+jwt':return payload.app?'CARTAO-APP':'CARTAO-SERVICO';
     case 'desafio+jwt':return 'DESAFIO';
     case 'vp+jwt':return 'PROVA';
     case 'rotacao+jwt':return 'ROTACAO';
@@ -1485,8 +1485,8 @@ function askCred(){
 // Identidades com aprovação válida e a Governança que aprovou cada uma.
 const aprovadas=()=>identidades().map(x=>({x,c:aprovacaoDe(x.id.did)})).filter(o=>o.c&&credState(o.c.data)[0]!=='no');
 function pedirAcesso(){
-  openSheet(`<h3>Solicitar acesso a um app</h3><p class="sub">Cole o Cartão do serviço. A carteira confere que os apps foram aprovados pela mesma Governança que aprovou a sua identidade.</p>
-    <label class="f" id="paF"><span>Cartão do serviço</span><textarea class="mono" id="paC" rows="4" spellcheck="false" placeholder="SYSTEKNA:CARTAO-SERVICO:…"></textarea></label><p class="hint" id="paH"></p>
+  openSheet(`<h3>Solicitar acesso a um app</h3><p class="sub">Cole o Cartão do serviço ou do app. A carteira confere que os apps foram aprovados pela mesma Governança que aprovou a sua identidade.</p>
+    <label class="f" id="paF"><span>Cartão do serviço ou do app</span><textarea class="mono" id="paC" rows="4" spellcheck="false" placeholder="SYSTEKNA:CARTAO-…"></textarea></label><p class="hint" id="paH"></p>
     <button class="btn" id="paLer">Ler cartão</button><div id="paStep"></div>`);
   $('#paLer').onclick=async()=>{
     const H=$('#paH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#paF'));$('#paStep').innerHTML=''};
@@ -1495,17 +1495,19 @@ function pedirAcesso(){
     if(!ok.length)return fail('Você ainda não tem identidade aprovada. Use + › Solicitar aprovação de identidade.');
     let r;try{r=await verifyJWT($('#paC').value,'cartao+jwt')}catch(e){return fail(e.message)}
     if(!r.ok)return fail('A assinatura do cartão não confere: ele foi alterado.');
+    // Só valem os apps que o serviço pôs no cartão (o do app traz um só) e que a Governança aprovou.
     const c=r.payload,t0=now(),govs=new Set(ok.map(o=>o.c.data.issuerDid)),apps=new Set();
+    const doCartao=new Set((Array.isArray(c.apps)?c.apps:[]).map(String)),soApp=typeof c.app==='string'?c.app:'';
     for(const tok of Array.isArray(c.aprovacoes)?c.aprovacoes:[]){
       try{
         const a=await verifyJWT(tok,'vc+jwt'),q=a.payload,cs=(q.vc&&q.vc.credentialSubject)||{};
-        if(a.ok&&vcType(q)==='ServiceAccreditationCredential'&&q.sub===r.did&&govs.has(a.did)&&!(q.exp&&q.exp<=t0))(cs.apps||[]).forEach(x=>apps.add(String(x)));
+        if(a.ok&&vcType(q)==='ServiceAccreditationCredential'&&q.sub===r.did&&govs.has(a.did)&&!(q.exp&&q.exp<=t0))(cs.apps||[]).map(String).filter(x=>doCartao.has(x)&&(!soApp||x===soApp)).forEach(x=>apps.add(x));
       }catch{}
     }
-    if(!apps.size)return fail('Este serviço não tem apps aprovados pela mesma Governança da sua identidade.');
-    const lista=[...apps],ids=ok.filter(o=>govs.has(o.c.data.issuerDid));
-    $('#paStep').innerHTML=`${verdictHtml(true,esc(c.name||'Serviço'),`Apps aprovados pela Governança: ${esc(lista.join(', '))}.`)}
-      <div class="sec-h">Apps</div><div class="list glass flat" id="paApps">${lista.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="false"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('')}</div>
+    if(!apps.size)return fail(soApp?'Este app não foi aprovado pela mesma Governança da sua identidade.':'Este serviço não tem apps aprovados pela mesma Governança da sua identidade.');
+    const lista=[...apps],ids=ok.filter(o=>govs.has(o.c.data.issuerDid)),marcado=soApp?'true':'false';
+    $('#paStep').innerHTML=`${verdictHtml(true,esc(soApp?`${soApp} · ${c.name||'Serviço'}`:c.name||'Serviço'),`${soApp?'App aprovado':'Apps aprovados'} pela Governança: ${esc(lista.join(', '))}.`)}
+      <div class="sec-h">Apps</div><div class="list glass flat" id="paApps">${lista.map(a=>`<button class="choice" data-app="${esc(a)}" aria-pressed="${marcado}"><span class="rd"></span><span class="t"><b>${esc(a)}</b></span></button>`).join('')}</div>
       <label class="f"><span>Identidade que vai usar o crachá</span><select id="paI">${ids.map(o=>`<option value="${o.x.n}">${esc(credMain(o.c.data))} · ${esc(perfilTxt(o.x))}</option>`).join('')}</select></label>
       <button class="btn" id="paGo">Assinar pedido</button>
       <div id="paOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="paJ" rows="5" readonly></textarea></label><button class="btn ghost" id="paCp">Copiar pedido</button></div>`;

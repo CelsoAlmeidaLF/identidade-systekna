@@ -277,6 +277,33 @@ test('o Cartão do serviço leva todas as aprovações válidas', async () => {
   expect(p.aprovacoes).toHaveLength(2);
 });
 
+test('tocar no cartão de um app gera o Cartão só daquele app, com a aprovação dele', async () => {
+  await aba(srv, 'vPanel');
+  await srv.click('#pAprov [data-app="Piscina"]');
+  await expect(srv.locator('#sheetBody h3')).toHaveText('Cartão do app Piscina');
+  const cartao = await srv.inputValue('#scJ');
+  await fecharSheet(srv);
+  expect(cartao).toMatch(/^SYSTEKNA:CARTAO-APP:ey/);
+  const p = payloadDe(cartao);
+  const aprov = await srv.evaluate(() => st.aprovacoes.map(a => ({ apps: a.apps, jwt: a.jwt, exp: a.exp })));
+  const piscina = aprov.find(a => a.apps.includes('Piscina'));
+  expect([p.iss, p.app, p.apps, p.aprovacoes, p.exp]).toEqual([didSrv, 'Piscina', ['Piscina'], [piscina.jwt], piscina.exp]);
+  expect(await carteira.evaluate(async t => (await verifyJWT(t, 'cartao+jwt')).ok, cartao)).toBe(true);
+
+  // O copiar do cartão só copia o DID, não abre o Cartão do app.
+  await srv.click('#pAprov [data-app="Piscina"] [data-copydid]');
+  await expect(toast(srv)).toHaveText('DID copiado');
+  await expect(srv.locator('#sheetBody h3')).toBeHidden();
+});
+
+test('app com a aprovação vencida não tem cartão', async () => {
+  const antes = await srv.evaluate(async () => { const a = st.aprovacoes.find(x => x.apps.includes('Piscina')), e = a.exp; a.exp = now() - 60; await save(); renderPanel(); return e; });
+  await srv.click('#pAprov [data-app="Piscina"]');
+  await expect(toast(srv)).toHaveText('A aprovação de emissão deste app venceu.');
+  await expect(srv.locator('#sheetBody h3')).toBeHidden();
+  await srv.evaluate(async e => { st.aprovacoes.find(x => x.apps.includes('Piscina')).exp = e; await save(); renderPanel(); }, antes);
+});
+
 test('um serviço da 0.18 (credenciamento único) vira uma aprovação de emissão', async () => {
   await srv.evaluate(async () => { st.cred = st.aprovacoes[0]; delete st.aprovacoes; await save(); });
   await bloquearEDesbloquear(srv);
