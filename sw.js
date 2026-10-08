@@ -3,14 +3,12 @@
 // usa a última cópia guardada. Nada é buscado fora do site.
 // O nome do cache acompanha a versão do package.json (o build atualiza esta linha):
 // cada versão publicada troca o cache e apaga o anterior.
-const VERSAO = 'systekna-0.22.0';
+const VERSAO = 'systekna-0.22.1';
 const ESSENCIAIS = [
   './',
   'index.html',
   'carteira-systekna.html',
   'governanca-systekna.html',
-  'emissor-systekna.html', // endereço antigo, redireciona para a Governança
-  'cartorio-systekna.html', // endereço antigo, redireciona para a Governança
   'carteira.webmanifest',
   'governanca.webmanifest',
   'servicos-systekna.html',
