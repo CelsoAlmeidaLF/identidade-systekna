@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-CfQAM8dU49m4a22fgCnFXN/s7LzbKCsZL+IcbieKRJI='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-q1mMjkPS+fCFE+ZDtGlgPs9Tn4j1QqVgBO0Jn6pAS9Y='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="servicos.webmanifest">
@@ -383,7 +383,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.24.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.25.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -395,7 +395,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.24.0</p>
+    <p class="ver">Versão 0.25.0</p>
   </div>
 </section>
 
@@ -445,7 +445,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.24.0</p>
+    <p class="ver">Versão 0.25.0</p>
   </div>
 </section>
 
@@ -600,7 +600,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.24.0';
+const APP_VERSION='0.25.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1173,6 +1173,10 @@ function mountCommonSettings(el){
     <button class="tx" data-cs="export"><span class="dot" data-ic="copy"></span><span class="t"><b>Copiar backup cifrado</b><small>Só abre com as 12 palavras</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="import"><span class="dot" data-ic="restore"></span><span class="t"><b>Restaurar backup</b><small>${APP.importHint}</small></span>${ic('chev')}</button>
   </div>
+  ${typeof exportarLivro==='function'?`<div class="sec-h">Livro</div>
+  <div class="list glass flat">
+    <button class="tx" data-cs="livro"><span class="dot" data-ic="book"></span><span class="t"><b>Exportar livro</b><small>PDF ou Excel, por período · pede o PIN</small></span>${ic('chev')}</button>
+  </div>`:''}
   <div class="sec-h" data-install hidden>Aplicativo</div>
   <div class="list glass flat" data-install hidden>
     <button class="tx" data-cs="install"><span class="dot" data-ic="plus"></span><span class="t"><b>Instalar no celular</b><small>Abre como app, inclusive sem internet</small></span>${ic('chev')}</button>
@@ -1239,6 +1243,7 @@ const CS={
     $('#swT').onclick=()=>{const g=$('#swGrid');g.classList.toggle('veil');$('#swT').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
     $('#swClose').onclick=closeSheet;
   },
+  livro(){exportarLivro()},
   async pdf(){
     if(!await reauth('Salvar PDF de recuperação'))return;
     openSheet(`<h3>PDF de recuperação</h3><p class="sub">O PDF traz o QR code, o código de recuperação e as 12 palavras. Quem tiver o arquivo controla esta conta: imprima, guarde em lugar seguro e apague o arquivo do aparelho, do e-mail e da nuvem.</p><button class="btn" id="pdfGo">Baixar PDF</button><button class="btn ghost" id="pdfClose">Fechar</button>`);
@@ -1463,56 +1468,67 @@ function qrMatrix(text){
   return M;
 }
 
+/* ================= PDF ================= */
+// PDF 1.4 escrito à mão, páginas A4: fontes padrão (F1 Helvetica, F2 Helvetica-Bold, F3 Courier, F4 Courier-Bold,
+// com WinAnsi) e desenhos em retângulos. Usado pelo PDF de recuperação e pela exportação do livro.
+const pdfEsc=s=>s.replace(/[\\()]/g,m=>'\\'+m);
+// Texto fora do Latin-1 vira o equivalente mais próximo, ou "?": o WinAnsi coincide com o Latin-1 nos acentos do português.
+const latin1=s=>String(s).replace(/[›»]/g,'>').replace(/[‹«]/g,'<').replace(/[–—]/g,'-').replace(/[“”]/g,'"').replace(/[‘’]/g,"'").replace(/…/g,'...').replace(/[^\x00-\xff]/g,'?');
+const pdfTxt=(font,size,x,y,s)=>`BT /F${font} ${size} Tf ${x} ${y} Td (${pdfEsc(latin1(s))}) Tj ET\n`;
+function pdfDoc(paginas,titulo){
+  const fonts=['Helvetica','Helvetica-Bold','Courier','Courier-Bold'],P=7;
+  const objs=['<< /Type /Catalog /Pages 2 0 R >>',
+    `<< /Type /Pages /Kids [${paginas.map((_,i)=>`${P+1+i*2} 0 R`).join(' ')}] /Count ${paginas.length} >>`,
+    ...fonts.map(f=>`<< /Type /Font /Subtype /Type1 /BaseFont /${f} /Encoding /WinAnsiEncoding >>`),
+    `<< /Title (${pdfEsc(latin1(titulo))}) /Producer (Systekna) >>`];
+  paginas.forEach((c,i)=>objs.push(
+    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << ${fonts.map((_,k)=>`/F${k+1} ${3+k} 0 R`).join(' ')} >> >> /Contents ${P+2+i*2} 0 R >>`,
+    `<< /Length ${c.length} >>\nstream\n${c}endstream`));
+  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const off=[];
+  objs.forEach((o,i)=>{off.push(pdf.length);pdf+=`${i+1} 0 obj\n${o}\nendobj\n`});
+  const xref=pdf.length;
+  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')}`;
+  pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info ${P} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
+  const out=new Uint8Array(pdf.length);
+  for(let i=0;i<pdf.length;i++){const k=pdf.charCodeAt(i);if(k>255)throw new Error('Caractere fora do Latin-1 no PDF');out[i]=k}
+  return out;
+}
+function baixar(bytes,tipo,nome){
+  const url=URL.createObjectURL(new Blob([bytes],{type:tipo}));
+  const a=document.createElement('a');a.href=url;a.download=nome;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+
 /* ================= PDF de recuperação ================= */
-// PDF 1.4 de uma página A4, escrito à mão: fontes padrão (Helvetica e Courier, WinAnsi) e o QR em retângulos.
 function recoveryPdf({app,did,code,words,date}){
-  const esc=s=>s.replace(/[\\()]/g,m=>'\\'+m);
-  const txt=(font,size,x,y,s)=>`BT /${font} ${size} Tf ${x} ${y} Td (${esc(s)}) Tj ET\n`;
   let c='';
-  c+=txt('F2',20,56,780,`Recuperação · ${app}`);
-  c+=txt('F1',10,56,762,`Gerado em ${date}. Sistema de Identidade Soberana Systekna.`);
-  c+=txt('F1',9,56,746,'DID:');c+=txt('F3',8,78,746,did);
+  c+=pdfTxt(2,20,56,780,`Recuperação · ${app}`);
+  c+=pdfTxt(1,10,56,762,`Gerado em ${date}. Sistema de Identidade Soberana Systekna.`);
+  c+=pdfTxt(1,9,56,746,'DID:');c+=pdfTxt(3,8,78,746,did);
   // QR com margem de 4 módulos, centralizado.
   const M=qrMatrix(code),n=M.length,side=200,mod=side/(n+8),x0=(595-side)/2,yTop=725;
   c+='0 0 0 rg\n';
   M.forEach((row,y)=>row.forEach((on,x)=>{if(on)c+=`${(x0+(x+4)*mod).toFixed(3)} ${(yTop-(y+5)*mod).toFixed(3)} ${mod.toFixed(3)} ${mod.toFixed(3)} re f\n`}));
   let y=yTop-side-26;
-  c+=txt('F2',12,56,y,'Código de recuperação');
-  c+=txt('F4',15,56,y-22,code);
+  c+=pdfTxt(2,12,56,y,'Código de recuperação');
+  c+=pdfTxt(4,15,56,y-22,code);
   y-=62;
-  c+=txt('F2',12,56,y,'As 12 palavras');
-  words.forEach((w,i)=>{c+=txt('F3',13,i<6?72:310,y-24-(i%6)*20,`${String(i+1).padStart(2,' ')}. ${w}`)});
+  c+=pdfTxt(2,12,56,y,'As 12 palavras');
+  words.forEach((w,i)=>{c+=pdfTxt(3,13,i<6?72:310,y-24-(i%6)*20,`${String(i+1).padStart(2,' ')}. ${w}`)});
   y-=24+6*20+16;
   ['Atenção: quem tiver este papel ou este arquivo controla esta conta.',
    'O código e as 12 palavras são equivalentes: qualquer um dos dois recupera a conta.',
    'Imprima, guarde em lugar seguro e apague o arquivo do aparelho, do e-mail e da nuvem.',
    'Para recuperar: abra o app, toque em Recuperar e digite o código ou as 12 palavras,',
    'ou leia o QR code com a câmera.']
-    .forEach((l,i)=>{c+=txt(i?'F1':'F2',10,56,y-i*15,l)});
-  const fonts=['Helvetica','Helvetica-Bold','Courier','Courier-Bold'];
-  const objs=['<< /Type /Catalog /Pages 2 0 R >>','<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
-    `<< /Type /Page /Parent 2 0 R /MediaBox [0 0 595 842] /Resources << /Font << ${fonts.map((_,i)=>`/F${i+1} ${5+i} 0 R`).join(' ')} >> >> /Contents 4 0 R >>`,
-    `<< /Length ${c.length} >>\nstream\n${c}endstream`,
-    ...fonts.map(f=>`<< /Type /Font /Subtype /Type1 /BaseFont /${f} /Encoding /WinAnsiEncoding >>`),
-    `<< /Title (${esc(`Recuperação · ${app}`)}) /Producer (Systekna) >>`];
-  let pdf='%PDF-1.4\n%\xE2\xE3\xCF\xD3\n';const off=[];
-  objs.forEach((o,i)=>{off.push(pdf.length);pdf+=`${i+1} 0 obj\n${o}\nendobj\n`});
-  const xref=pdf.length;
-  pdf+=`xref\n0 ${objs.length+1}\n0000000000 65535 f \n${off.map(o=>String(o).padStart(10,'0')+' 00000 n \n').join('')}`;
-  pdf+=`trailer\n<< /Size ${objs.length+1} /Root 1 0 R /Info ${objs.length} 0 R >>\nstartxref\n${xref}\n%%EOF\n`;
-  // Cada caractere vira um byte (Latin-1, que coincide com o WinAnsi nos acentos do português).
-  const out=new Uint8Array(pdf.length);
-  for(let i=0;i<pdf.length;i++){const k=pdf.charCodeAt(i);if(k>255)throw new Error('Caractere fora do Latin-1 no PDF');out[i]=k}
-  return out;
+    .forEach((l,i)=>{c+=pdfTxt(i?1:2,10,56,y-i*15,l)});
+  return pdfDoc([c],`Recuperação · ${app}`);
 }
 async function saveRecoveryPdf(ent,lang,did){
   const words=await entropyToWords(ent,lang),code=await entropyToCode(ent,lang);
   const d=new Date(),date=d.toLocaleDateString('pt-BR'),iso=d.toISOString().slice(0,10);
-  const bytes=recoveryPdf({app:APP.label,did,code,words,date});
-  const url=URL.createObjectURL(new Blob([bytes],{type:'application/pdf'}));
-  const a=document.createElement('a');a.href=url;a.download=`recuperacao-${fold(APP.label)}-${iso}.pdf`;
-  document.body.appendChild(a);a.click();a.remove();
-  setTimeout(()=>URL.revokeObjectURL(url),60000);
+  baixar(recoveryPdf({app:APP.label,did,code,words,date}),'application/pdf',`recuperacao-${fold(APP.label)}-${iso}.pdf`);
   words.fill('');
 }
 
@@ -1597,6 +1613,125 @@ async function avisoValido(texto){
   const ok=await S.verify({name:'Ed25519'},await didToEdKey(p.novo),b64u.dec(p.aceite||''),te.encode(`${p.iss}>${p.novo}`)).catch(()=>false);
   if(!ok)throw new Error('A chave nova não assinou o aceite: o aviso não vale.');
   return r;
+}
+
+/* ================= exportar o livro (PDF ou Excel) ================= */
+// O arquivo traz os atos do período escolhido e o resultado da conferência do livro inteiro. Nada sai do aparelho
+// sem a pessoa baixar: o PDF usa o escritor de recuperacao.js e o Excel (.xlsx) é um ZIP sem compressão montado aqui.
+const ATO_NOME={abertura:'Abertura',emissao:'Emissão',revogacao:'Revogação',verificacao:'Conferência',confianca:'Confiança',nome:'Nome',politica:'Política',
+  rotacao:'Troca de chave',recusa:'Recusa',credenciamento:'Aprovação de emissão',pedido:'Pedido',catalogo:'Catálogo'};
+const atoNome=a=>ATO_NOME[a]||a;
+const dataHora=t=>{const d=new Date(t);return `${d.toLocaleDateString('pt-BR')} ${d.toLocaleTimeString('pt-BR')}`};
+const PERIODOS={tudo:'Todo o livro',d30:'Últimos 30 dias',mes:'Este mês',ant:'Mês passado',int:'Intervalo de datas'};
+function periodoDe(tipo,de,ate){
+  const h=new Date(),y=h.getFullYear(),m=h.getMonth(),dt=t=>new Date(t).toLocaleDateString('pt-BR');
+  const faixa=(ini,fim)=>({ini,fim,txt:`${dt(ini)} a ${dt(fim-1)}`});
+  if(tipo==='d30')return faixa(new Date(y,m,h.getDate()-29).getTime(),new Date(y,m,h.getDate()+1).getTime());
+  if(tipo==='mes')return faixa(new Date(y,m,1).getTime(),new Date(y,m+1,1).getTime());
+  if(tipo==='ant')return faixa(new Date(y,m-1,1).getTime(),new Date(y,m,1).getTime());
+  if(tipo==='int'){
+    const le=s=>{const p=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return p?new Date(+p[1],+p[2]-1,+p[3]).getTime():NaN};
+    const ini=le(de),fim=le(ate);
+    if(isNaN(ini)||isNaN(fim))return{erro:'Escolha as duas datas.'};
+    if(fim<ini)return{erro:'A data final vem antes da inicial.'};
+    const f=new Date(fim);return faixa(ini,new Date(f.getFullYear(),f.getMonth(),f.getDate()+1).getTime());
+  }
+  return{ini:-Infinity,fim:Infinity,txt:'Todo o livro'};
+}
+const integridadeTxt=c=>c.ok?`Livro íntegro: os ${c.n} atos conferem do primeiro ao último.`:`Livro NÃO CONFERE: a corrente se rompe no ato nº ${c.at}.`;
+// Quebra o texto em linhas de até n caracteres, sem cortar palavras (a não ser as maiores que a linha).
+function quebra(t,n){
+  const out=[];let l='';
+  for(let w of String(t).split(/\s+/).filter(Boolean)){
+    while(w.length>n){if(l){out.push(l);l=''}out.push(w.slice(0,n));w=w.slice(n)}
+    if(!l)l=w;else if(l.length+1+w.length<=n)l+=' '+w;else{out.push(l);l=w}
+  }
+  if(l||!out.length)out.push(l);
+  return out;
+}
+// PDF: capa no alto da 1ª página e a tabela em Courier 8 (100 caracteres por linha); cabeçalho e página em todas.
+function livroPdf(o){
+  const pad=(s,n)=>String(s).padEnd(n).slice(0,n),TX=46,rec=' '.repeat(54);
+  const cab=[[2,16,`Livro de registros · ${o.nome}`,24],[1,9,`DID: ${o.did}`,14],[1,9,`Período: ${o.periodo}`,14],
+    [1,9,`Atos exportados: ${o.atos.length} de ${o.total}`,14],[2,10,integridadeTxt(o.conf),16],[1,9,`Gerado em ${o.gerado}.`,24]];
+  const titulo=[4,8,`${pad('Nº',5)} ${pad('Data e hora',19)} ${pad('Tipo',14)} ${pad('Hash',12)} Texto`,14];
+  const linhas=[];
+  for(const e of o.atos){
+    const partes=quebra(latin1(e.text),TX);
+    partes.forEach((p,i)=>linhas.push([3,8,i?rec+p:`${pad(e.n,5)} ${pad(dataHora(e.at),19)} ${pad(atoNome(e.act),14)} ${pad(e.hash.slice(0,12),12)} ${p}`,i===partes.length-1?13:10]));
+  }
+  if(!linhas.length)linhas.push([1,9,'Nenhum ato no período escolhido.',14]);
+  const paginas=[];let c='',y=0;
+  const nova=()=>{if(c)paginas.push(c);c=pdfTxt(1,7,56,818,`${o.nome} · Livro de registros · página @@P@@`);y=790};
+  const poe=([f,s,t,h])=>{c+=pdfTxt(f,s,56,y,t);y-=h};
+  nova();cab.forEach(poe);poe(titulo);
+  for(const l of linhas){if(y<50){nova();poe(titulo)}poe(l)}
+  paginas.push(c);
+  return pdfDoc(paginas.map((p,i)=>p.replace('@@P@@',`${i+1} de ${paginas.length}`)),`Livro de registros · ${o.nome}`);
+}
+// Excel (.xlsx): planilhas "Livro" (um ato por linha) e "Resumo"; cabeçalho em negrito e fixo.
+const crc32=(()=>{const T=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;T[n]=c>>>0}
+  return b=>{let c=~0;for(const x of b)c=T[(c^x)&255]^(c>>>8);return(~c)>>>0}})();
+function zipSemCompressao(arquivos){
+  const partes=[],central=[],d=new Date();let off=0;
+  const tm=(d.getHours()<<11)|(d.getMinutes()<<5)|(d.getSeconds()>>1),dt=((d.getFullYear()-1980)<<9)|((d.getMonth()+1)<<5)|d.getDate();
+  for(const[nomeTxt,texto]of arquivos){
+    const nome=te.encode(nomeTxt),dados=te.encode(texto),crc=crc32(dados),n=dados.length;
+    const h=new DataView(new ArrayBuffer(30));
+    [[0,0x04034b50,4],[4,20,2],[6,0x0800,2],[8,0,2],[10,tm,2],[12,dt,2],[14,crc,4],[18,n,4],[22,n,4],[26,nome.length,2],[28,0,2]].forEach(([p,v,t])=>t===4?h.setUint32(p,v,true):h.setUint16(p,v,true));
+    const c=new DataView(new ArrayBuffer(46));
+    [[0,0x02014b50,4],[4,20,2],[6,20,2],[8,0x0800,2],[10,0,2],[12,tm,2],[14,dt,2],[16,crc,4],[20,n,4],[24,n,4],[28,nome.length,2],[42,off,4]].forEach(([p,v,t])=>t===4?c.setUint32(p,v,true):c.setUint16(p,v,true));
+    partes.push(new Uint8Array(h.buffer),nome,dados);central.push(new Uint8Array(c.buffer),nome);
+    off+=30+nome.length+n;
+  }
+  const tam=central.reduce((a,b)=>a+b.length,0),fim=new DataView(new ArrayBuffer(22));
+  fim.setUint32(0,0x06054b50,true);fim.setUint16(8,arquivos.length,true);fim.setUint16(10,arquivos.length,true);fim.setUint32(12,tam,true);fim.setUint32(16,off,true);
+  return cat(...partes,...central,new Uint8Array(fim.buffer));
+}
+const xmlEsc=s=>String(s).replace(/[\x00-\x08\x0B\x0C\x0E-\x1F]/g,'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const XML='<?xml version="1.0" encoding="UTF-8" standalone="yes"?>\n',OOX='http://schemas.openxmlformats.org';
+function folhaXlsx(linhas,larguras){
+  const col=i=>{let s='';for(i++;i;i=Math.floor((i-1)/26))s=String.fromCharCode(65+(i-1)%26)+s;return s};
+  const cel=(v,ref,neg)=>typeof v==='number'?`<c r="${ref}"${neg}><v>${v}</v></c>`:`<c r="${ref}" t="inlineStr"${neg}><is><t xml:space="preserve">${xmlEsc(v)}</t></is></c>`;
+  const rows=linhas.map((l,r)=>`<row r="${r+1}">${l.map((v,c)=>cel(v,col(c)+(r+1),r===0?' s="1"':'')).join('')}</row>`).join('');
+  return `${XML}<worksheet xmlns="${OOX}/spreadsheetml/2006/main"><sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews><cols>${larguras.map((w,i)=>`<col min="${i+1}" max="${i+1}" width="${w}" customWidth="1"/>`).join('')}</cols><sheetData>${rows}</sheetData></worksheet>`;
+}
+function livroXlsx(o){
+  const livro=[['Nº','Data e hora','Tipo','Texto','Referência','Hash','Hash anterior','Assinatura'],
+    ...o.atos.map(e=>[e.n,dataHora(e.at),atoNome(e.act),e.text,e.ref||'',e.hash,e.prev,e.sig])];
+  const resumo=[['Campo','Valor'],['Livro de registros',o.nome],['DID',o.did],['Período',o.periodo],
+    ['Atos exportados',`${o.atos.length} de ${o.total}`],['Integridade',integridadeTxt(o.conf)],['Gerado em',o.gerado]];
+  const tipo=t=>`application/vnd.openxmlformats-officedocument.spreadsheetml.${t}+xml`,rel=t=>`${OOX}/officeDocument/2006/relationships/${t}`;
+  return zipSemCompressao([
+    ['[Content_Types].xml',`${XML}<Types xmlns="${OOX}/package/2006/content-types"><Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/><Default Extension="xml" ContentType="application/xml"/><Override PartName="/xl/workbook.xml" ContentType="${tipo('sheet.main')}"/><Override PartName="/xl/worksheets/sheet1.xml" ContentType="${tipo('worksheet')}"/><Override PartName="/xl/worksheets/sheet2.xml" ContentType="${tipo('worksheet')}"/><Override PartName="/xl/styles.xml" ContentType="${tipo('styles')}"/></Types>`],
+    ['_rels/.rels',`${XML}<Relationships xmlns="${OOX}/package/2006/relationships"><Relationship Id="rId1" Type="${rel('officeDocument')}" Target="xl/workbook.xml"/></Relationships>`],
+    ['xl/workbook.xml',`${XML}<workbook xmlns="${OOX}/spreadsheetml/2006/main" xmlns:r="${OOX}/officeDocument/2006/relationships"><sheets><sheet name="Livro" sheetId="1" r:id="rId1"/><sheet name="Resumo" sheetId="2" r:id="rId2"/></sheets></workbook>`],
+    ['xl/_rels/workbook.xml.rels',`${XML}<Relationships xmlns="${OOX}/package/2006/relationships"><Relationship Id="rId1" Type="${rel('worksheet')}" Target="worksheets/sheet1.xml"/><Relationship Id="rId2" Type="${rel('worksheet')}" Target="worksheets/sheet2.xml"/><Relationship Id="rId3" Type="${rel('styles')}" Target="styles.xml"/></Relationships>`],
+    ['xl/styles.xml',`${XML}<styleSheet xmlns="${OOX}/spreadsheetml/2006/main"><fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><name val="Calibri"/></font></fonts><fills count="2"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill></fills><borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders><cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs><cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/><xf numFmtId="0" fontId="1" fillId="0" borderId="0" xfId="0" applyFont="1"/></cellXfs><cellStyles count="1"><cellStyle name="Normal" xfId="0" builtinId="0"/></cellStyles></styleSheet>`],
+    ['xl/worksheets/sheet1.xml',folhaXlsx(livro,[7,20,18,70,30,22,22,22])],
+    ['xl/worksheets/sheet2.xml',folhaXlsx(resumo,[20,90])],
+  ]);
+}
+async function exportarLivro(){
+  if(!await reauth('Exportar livro'))return;
+  openSheet(`<h3>Exportar livro</h3><p class="sub">O arquivo traz os atos do período escolhido e o resultado da conferência de integridade do livro inteiro.</p>
+    <div class="seg" id="exF" style="--n:2"><span class="ind"></span><button aria-pressed="true" data-f="pdf">PDF</button><button aria-pressed="false" data-f="xlsx">Excel</button></div>
+    <label class="f" style="margin-top:0"><span>Período</span><select id="exP">${Object.entries(PERIODOS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>
+    <div id="exInt" hidden><label class="f"><span>De</span><input type="date" id="exDe"></label><label class="f"><span>Até</span><input type="date" id="exAte"></label></div>
+    <p class="hint" id="exH"></p>
+    <button class="btn" id="exGo">Baixar</button>`);
+  let fmt='pdf';wireSeg($('#exF'),b=>{fmt=b.dataset.f});
+  $('#exP').onchange=()=>{$('#exInt').hidden=$('#exP').value!=='int'};
+  $('#exGo').onclick=async()=>{
+    const per=periodoDe($('#exP').value,$('#exDe').value,$('#exAte').value);
+    if(per.erro){$('#exH').textContent=per.erro;$('#exH').classList.add('bad');return}
+    const d=new Date(),o={nome:$('#whoLabel').textContent,did:ses.did,periodo:per.txt,atos:st.book.filter(e=>e.at>=per.ini&&e.at<per.fim),
+      total:st.book.length,conf:await checkBook(),gerado:dataHora(d.getTime())};
+    const base=`livro-${fold(APP.label)}-${d.toISOString().slice(0,10)}`;
+    if(fmt==='pdf')baixar(livroPdf(o),'application/pdf',base+'.pdf');
+    else baixar(livroXlsx(o),'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',base+'.xlsx');
+    closeSheet();toast(`Livro exportado: ${o.atos.length} ${o.atos.length===1?'ato':'atos'}`);
+  };
 }
 /* ================= serviço ================= */
 // Serviços Systekna: cada empresa ou serviço (SRV) tem a própria identidade e pede à Governança a aprovação de

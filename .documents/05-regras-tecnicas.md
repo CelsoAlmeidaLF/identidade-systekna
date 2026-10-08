@@ -110,4 +110,6 @@
 | RT-62 | **PDF:** 1.4, uma página A4 (595 × 842 pt), fontes padrão Helvetica, Helvetica-Bold, Courier e Courier-Bold com WinAnsiEncoding; texto em Latin-1; QR desenhado em retângulos (`re f`) com margem de 4 módulos |
 | RT-63 | Download por `Blob` + `<a download>`; nome `recuperacao-<app>-<aaaa-mm-dd>.pdf`; a URL do blob é revogada depois |
 | RT-64 | **Leitura do QR:** botão "Ler QR code" só se houver `BarcodeDetector` e `getUserMedia`; câmera traseira; lê a cada 300 ms; aceita só texto com cara de código; desliga a câmera ao terminar ou cancelar |
+| RT-66 | **Livro em PDF:** `livroPdf` em `livro.js`, com o escritor `pdfDoc` (várias páginas) de `recuperacao.js`; tabela em Courier 8 (100 caracteres por linha), texto quebrado em 46; texto fora do Latin-1 vira o equivalente (`›`→`>`, `—`→`-`) ou `?` |
+| RT-67 | **Livro em Excel:** `livroXlsx` monta `[Content_Types].xml`, `_rels`, `workbook`, `styles` (cabeçalho em negrito) e duas planilhas com `inlineStr` (texto em UTF-8, inteiro), cabeçalho fixo; ZIP sem compressão com CRC-32 |
 | RT-65 | Na criação, o DID que vai no PDF é derivado das palavras da tela, com o mesmo domínio que a conta vai usar |

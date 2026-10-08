@@ -76,6 +76,15 @@
 | CA-101 | As conferências antigas, só com o texto do livro, também entram, com "Motivo não registrado (antes da 0.24)"; o livro continua íntegro |
 | CA-101a | O filtro por app muda os acessos; a gestão (emitidos, recusados, revogados) vale para o serviço todo |
 
+## 5B. Exportar o livro (`compartilhado/tests/exportar-livro.spec.js`, 0.25)
+
+| CA | Critério |
+|---|---|
+| CA-102 | **Quando** exporta o livro (com PIN) em PDF, **então** recebe várias páginas numeradas, a capa com o total e "Livro íntegro", e todos os atos |
+| CA-102a | **Quando** exporta em Excel nos últimos 30 dias, **então** o .xlsx é um ZIP válido, todo XML é bem formado, a planilha tem só os atos do período e o Resumo traz a integridade |
+| CA-103 | Livro adulterado sai no PDF como "NÃO CONFERE", com o ato onde a corrente se rompe |
+| CA-103a | Intervalo sem datas é recusado; a Carteira não tem livro para exportar |
+
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
 
 | CA | Critério |

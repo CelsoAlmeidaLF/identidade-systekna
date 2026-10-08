@@ -32,6 +32,7 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | `compartilhado/tests/biometria.spec.js` | Passkey com PRF, só biometria |
 | `compartilhado/tests/vetores-oficiais.spec.js` | BIP39, HKDF, Ed25519, X25519, base58, did:key; DID de cada app contra o Node |
 | `compartilhado/tests/recuperacao.spec.js` | Código de recuperação, QR (lido de volta pelo jsQR), PDF dos Ajustes e da criação, recuperar pelo código e pelo QR (0.23) |
+| `compartilhado/tests/exportar-livro.spec.js` | Exportar o livro em PDF e Excel na Governança e no Serviços, períodos, livro adulterado (0.25) |
 | `compartilhado/tests/seguranca`, `pwa`, `versao` · `stk-governanca/tests/nome-emissor` | CSP, instalação/offline, versão, nome da Governança e banco antigo |
 
 ## 3. Regras

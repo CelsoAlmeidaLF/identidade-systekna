@@ -630,6 +630,10 @@ function mountCommonSettings(el){
     <button class="tx" data-cs="export"><span class="dot" data-ic="copy"></span><span class="t"><b>Copiar backup cifrado</b><small>Só abre com as 12 palavras</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="import"><span class="dot" data-ic="restore"></span><span class="t"><b>Restaurar backup</b><small>${APP.importHint}</small></span>${ic('chev')}</button>
   </div>
+  ${typeof exportarLivro==='function'?`<div class="sec-h">Livro</div>
+  <div class="list glass flat">
+    <button class="tx" data-cs="livro"><span class="dot" data-ic="book"></span><span class="t"><b>Exportar livro</b><small>PDF ou Excel, por período · pede o PIN</small></span>${ic('chev')}</button>
+  </div>`:''}
   <div class="sec-h" data-install hidden>Aplicativo</div>
   <div class="list glass flat" data-install hidden>
     <button class="tx" data-cs="install"><span class="dot" data-ic="plus"></span><span class="t"><b>Instalar no celular</b><small>Abre como app, inclusive sem internet</small></span>${ic('chev')}</button>
@@ -696,6 +700,7 @@ const CS={
     $('#swT').onclick=()=>{const g=$('#swGrid');g.classList.toggle('veil');$('#swT').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
     $('#swClose').onclick=closeSheet;
   },
+  livro(){exportarLivro()},
   async pdf(){
     if(!await reauth('Salvar PDF de recuperação'))return;
     openSheet(`<h3>PDF de recuperação</h3><p class="sub">O PDF traz o QR code, o código de recuperação e as 12 palavras. Quem tiver o arquivo controla esta conta: imprima, guarde em lugar seguro e apague o arquivo do aparelho, do e-mail e da nuvem.</p><button class="btn" id="pdfGo">Baixar PDF</button><button class="btn ghost" id="pdfClose">Fechar</button>`);

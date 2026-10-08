@@ -1,7 +1,7 @@
 # 14 · Planejamento e Scrum — Gestão, relatórios e cofre
 
 > **Versão de referência:** 0.23.0 · 08/10/2026 · Responsável (Product Owner): Celso de Almeida Leite Filho (Systekna)
-> **Situação:** Sprint 2 em andamento: **US-20.1 a 20.4 entregues na 0.24.0** (aguardando homologação); próximo: exportar o livro (0.25.0).
+> **Situação:** Sprint 2 **entregue**: US-20.1 a 20.4 na 0.24.0 e US-21.1 a 21.3 na 0.25.0 (aguardando homologação). Próximo: Sprint 3 (cofre), depois das decisões D-7 e D-8.
 > **Finalidade:** os 3 apps continuam sendo de **teste** (prova de conceito), como na [13](13-sprint-primeira-entrega.md).
 
 ## 1. Objetivo
