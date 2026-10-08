@@ -76,6 +76,9 @@
         <div class="did" id="idDid"></div>
         <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
       </div>
+      <div class="sec-h">Cofre <small id="cfN"></small> <button class="link" id="cfNovo" style="margin:0;padding:0;font-size:13px">Novo item</button></div>
+      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="cfBusca" type="search" placeholder="Buscar no cofre" autocomplete="off" aria-label="Buscar no cofre"></label>
+      <div class="list glass flat" id="cfL"></div>
       <div class="sec-h">Chaves públicas <small>pode compartilhar</small></div>
       <div class="list glass flat">
         <div class="kr"><div class="h"><small>DID, para pedir credenciais</small><span><button class="mini sm" data-copyid="did" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="idDid2"></div></div>
@@ -112,6 +115,7 @@
 <script>
 <!-- @inclui ../../compartilhado/src/nucleo.js -->
 <!-- @inclui ../../compartilhado/src/recuperacao.js -->
+<!-- @inclui cofre.js -->
 <!-- @inclui app.js -->
 </script>
 </body>

@@ -1,8 +1,9 @@
 /* ================= serviço ================= */
 // A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
 // completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
-const KEPT_TYPES=['cred','perfil','acesso'];
-// Cartões de pagamento não são guardados (RN10): são apagados ao abrir e ignorados ao restaurar backup.
+const KEPT_TYPES=['cred','perfil','acesso','cofre'];
+// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup. Os cartões de
+// crédito e débito de hoje ficam no cofre (tipo "cofre", 0.26).
 const REMOVED_TYPES=['cartao'];
 
 const APP={
@@ -24,20 +25,20 @@ const APP={
     ses.ids={};
     for(const it of perfilItens())if(it.data.n>0)ses.ids[it.data.n]=await derivarPerfil(it.data.n);
   },
-  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();mountCommonSettings($('#commonSet'));setView('vCreds')},
+  enter(){if(ses.purged)toast(`${ses.purged} ${ses.purged===1?'cartão antigo removido':'cartões antigos removidos'}`);renderId();renderCofre();mountCommonSettings($('#commonSet'));setView('vCreds')},
   onView(v){if(v==='vCreds')renderCreds()},
   onLock(){
-    ['#cList','#mOpenOut'].forEach(s=>$(s).innerHTML='');
-    ['#mSealed','#mText','#mIn','#mTo'].forEach(s=>$(s).value='');
+    ['#cList','#mOpenOut','#cfL'].forEach(s=>$(s).innerHTML='');
+    ['#mSealed','#mText','#mIn','#mTo','#cfBusca'].forEach(s=>$(s).value='');cofreBusca='';
     $('#mSealOut').hidden=true;
   },
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
-    let n=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(KEPT_TYPES.includes(d.type))n++}catch{}}
+    let n=0,k=0;
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre')k++;else if(KEPT_TYPES.includes(d.type))n++}catch{}}
     for(const it of perfilItens())if(it.data.n>0&&!ses.ids[it.data.n])ses.ids[it.data.n]=await derivarPerfil(it.data.n);
-    await persistItems();renderCreds();
-    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}`;
+    await persistItems();renderCreds();renderCofre();
+    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'item':'itens'} do cofre`:''}`;
   }
 };
 async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
