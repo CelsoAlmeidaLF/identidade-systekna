@@ -116,7 +116,13 @@ test('uma Identidade ativa por DID: a nova revoga a anterior, com ato no livro',
   const antes = (await registro()).filter(i => i.type === 'IdentityCredential' && !i.revoked);
   expect(antes).toHaveLength(1);
 
-  await conferirPedido(await pedirIdentidade('Maria Teste Silva'));
+  // A carteira não oferece pedir de novo uma identidade aprovada (1.2.1): o pedido de renovação é assinado direto
+  // pela mesma identidade, como uma carteira antiga faria. A regra testada é da Governança.
+  const renovacao = await carteira.evaluate(async g => {
+    const iat = now();
+    return signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: g, name: 'Maria Teste Silva', wanted: 'IdentityCredential', x: ses.xMb, nonce: b64u.enc(rnd(16)), iat, exp: iat + 600 });
+  }, didGov);
+  await conferirPedido(renovacao);
   await emitir();
   const ativas = (await registro()).filter(i => i.type === 'IdentityCredential' && !i.revoked);
   expect(ativas).toHaveLength(1);

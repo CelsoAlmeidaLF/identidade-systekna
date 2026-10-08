@@ -92,11 +92,12 @@ test('identidade reprovada: a recusa assinada volta pela fila e a carteira mostr
   await expect(toast(carteira)).toHaveText('Chegou 1 resposta');
   await aba(carteira, 'vCreds');
   await expect(pendente('Joana Recusada').locator('.pill')).toHaveText('Reprovada: Dados não conferem');
-  // Reprovada, ela volta para a lista do Solicitar; Dispensar tira o aviso.
-  expect(await listaDoSolicitar()).toContain('Joana Recusada');
+  // Reprovada já foi validada: não volta para a lista do Solicitar. Dispensar só tira o aviso.
+  expect(await listaDoSolicitar()).not.toContain('Joana Recusada');
   await pendente('Joana Recusada').locator('[data-idcancel]').click();
   await expect(toast(carteira)).toHaveText('Aviso dispensado');
   await expect(pendente('Joana Recusada')).toHaveCount(0);
+  expect(await listaDoSolicitar()).not.toContain('Joana Recusada');
 });
 
 test('cancelar um pedido aguardando tira o pedido da fila da Governança', async () => {

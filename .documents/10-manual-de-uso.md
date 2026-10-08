@@ -26,10 +26,10 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 
 | Passo | Onde | O que fazer |
 |---|---|---|
-| 1 | Carteira → **+** → Solicitar aprovação de identidade | A lista mostra só as identidades que podem ser enviadas (as aprovadas e as aguardando ficam em Credenciais). Escolha uma ou **+ Nova identidade** (nome, perfil e, na Personalizada, o nome do perfil). Em **Governança**, a mais recente vem marcada (nome · DID · data). Toque em **Enviar pedido**: em Credenciais aparece "Identidade · Aguardando", com **Cancelar pedido** |
+| 1 | Carteira → **+** → Solicitar aprovação de identidade | A lista mostra só as identidades ainda não validadas (as aprovadas, reprovadas e aguardando não aparecem). Escolha uma ou **+ Nova identidade** (nome, perfil e, na Personalizada, o nome do perfil). Em **Governança**, a mais recente vem marcada (nome · DID · data). Toque em **Enviar pedido**: em Credenciais aparece "Identidade · Aguardando", com **Cancelar pedido** |
 | 2 | STK → **Fila** | O pedido aparece sozinho em **Aguardando** (ou toque em **Buscar pedidos agora**). Toque no cartão **Identidade: nome**: aparecem nome, perfil e DID |
 | 3 | STK | Escolha a validade e toque em **Aprovar identidade**: a aprovação volta pela fila. Ou **Reprovar pedido** com motivo: a recusa assinada também volta. O pedido vai para **Aprovados** ou **Reprovados**; num aprovado, **Reenviar** manda de novo |
-| 4 | Carteira | A aprovação chega sozinha (ou **+** → **Buscar respostas**). Aparece o cartão: perfil · nome · did:key · Governança + validade. Se foi reprovada, o cartão pontilhado mostra "Reprovada: motivo" (toque em **Dispensar**) e a identidade volta à lista do passo 1. Sem resposta em 7 dias, aparece "Pedido vencido: peça de novo" |
+| 4 | Carteira | A aprovação chega sozinha (ou **+** → **Buscar respostas**). Aparece o cartão: perfil · nome · did:key · Governança + validade. Se foi reprovada, o cartão pontilhado mostra "Reprovada: motivo" (toque em **Dispensar** para tirar o aviso); ela não volta à lista do passo 1. Sem resposta em 7 dias, aparece "Pedido vencido: peça de novo" |
 
 ## 2. Aprovação do serviço (Serviços ↔ STK)
 

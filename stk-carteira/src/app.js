@@ -96,22 +96,24 @@ function estadoId(x){
   if(ped&&!ped.respondido)return 'pedido vencido';
   return 'sem aprovação';
 }
-// Só vai para a lista do Solicitar quem pode ser enviado: aprovada (fora do vencimento) e aguardando ficam de fora.
-const podePedir=x=>!['aprovada','aguardando'].includes(estadoId(x));
+// Só vai para a lista do Solicitar quem ainda não foi validado: aprovadas (mesmo vencidas), reprovadas e aguardando
+// ficam de fora. Entram as sem aprovação e as de pedido vencido (sem resposta em 7 dias).
+const podePedir=x=>['sem aprovação','pedido vencido'].includes(estadoId(x));
 // Cartão pontilhado em Credenciais: identidade aguardando, reprovada ou com pedido vencido.
-const pedidosId=()=>identidades().filter(x=>{const ped=(perfilDe(x.n)||{}).pedido,e=estadoId(x);return ped&&!ped.respondido&&(e==='aguardando'||e==='pedido vencido'||e.startsWith('reprovada'))});
+const pedidosId=()=>identidades().filter(x=>{const ped=(perfilDe(x.n)||{}).pedido,e=estadoId(x);return ped&&!ped.respondido&&!ped.dispensado&&(e==='aguardando'||e==='pedido vencido'||e.startsWith('reprovada'))});
 const idPendCard=x=>{
   const ped=perfilDe(x.n).pedido,e=estadoId(x),ab=e==='aguardando';
   const pill=ab?['warn','Aguardando']:ped.recusa?['no','Reprovada: '+ped.recusa]:['no','Pedido vencido: peça de novo'];
   return `<div class="glass flat card pend idpend" data-idpend="${x.n}"><div class="kr" style="padding:0"><div class="h"><small>Identidade · ${esc(perfilTxt(x))}</small><span class="pill ${pill[0]}">${esc(pill[1])}</span></div><div class="v">${esc(x.nome||ped.nome||'Sem nome')}</div><div class="v sub" style="margin-top:4px">${esc(shortDid(x.id.did))} · pedido em ${fmtDate(ped.at)}</div><button class="link" data-idcancel="${x.n}" style="margin:6px 0 0;padding:0;font-size:13px">${ab?'Cancelar pedido':'Dispensar'}</button></div></div>`;
 };
-// Cancelar (aguardando) apaga o pedido da fila remota; dispensar (reprovada ou vencido) só limpa o aviso.
+// Cancelar (aguardando) apaga o pedido da fila remota; dispensar só limpa o aviso: a reprovada continua reprovada
+// (fora da lista do Solicitar) e a de pedido vencido pode ser enviada de novo.
 async function cancelarPedidoId(n){
   const ped=(perfilDe(n)||{}).pedido;if(!ped)return;
   const ab=pedidoAberto(ped);
   if(ab&&!await confirmSheet('Cancelar pedido','O pedido sai da fila da Governança. Se ela já tiver aberto o pedido, a resposta não chega mais aqui. Depois você pode pedir de novo.','Cancelar pedido',true))return;
   if(ab&&ped.nonce)await fsApagar('fila-solicitacao',ped.nonce);
-  await guardarPerfil(n,{pedido:null});
+  await guardarPerfil(n,{pedido:ped.recusa?{...ped,dispensado:true}:null});
   renderCreds();toast(ab?'Pedido cancelado':'Aviso dispensado');
 }
 async function guardarPerfil(n,mudar){
@@ -189,7 +191,7 @@ function actionMenu(){
 function askCred(){
   const ids=identidades().filter(podePedir);let sel=ids.length?ids[0].n:'novo';
   const opcao=x=>`<button class="choice" data-n="${x.n}" aria-pressed="${x.n===sel}"><span class="rd"></span><span class="t"><b>${esc(x.nome||'Sem nome')} · ${esc(perfilTxt(x))}</b><small>${estadoId(x)} · ${esc(shortDid(x.id.did))}</small></span></button>`;
-  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">Escolha a identidade ou crie uma nova. Todas saem das suas 12 palavras, cada uma com um DID próprio. As aprovadas e as que estão aguardando ficam em Credenciais.</p>
+  openSheet(`<h3>Solicitar aprovação de identidade</h3><p class="sub">Escolha a identidade ou crie uma nova. Todas saem das suas 12 palavras, cada uma com um DID próprio. As já aprovadas, reprovadas ou aguardando não aparecem aqui.</p>
     <div class="list glass flat" id="aqL">${ids.map(opcao).join('')}<button class="choice" data-n="novo" aria-pressed="${sel==='novo'}"><span class="rd"></span><span class="t"><b>+ Nova identidade</b><small>Nome e perfil novos, com um DID novo</small></span></button></div>
     <label class="f" id="aqNF"><span>Nome</span><input id="aqN" autocomplete="name" placeholder="Como deve aparecer na identidade"></label>
     <label class="f"><span>Perfil</span><select id="aqP">${Object.entries(PERFIS).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></label>

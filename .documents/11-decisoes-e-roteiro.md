@@ -41,7 +41,7 @@
 | 08/10/2026 | **Versão 1.0.0**: os 3 apps homologados (pré-aprovados) pelo responsável: carteira de did:key e cv:key, mensagens cifradas, cofre de anotações, emissão de credenciais e de crachás pelos serviços |
 | 08/10/2026 | **Fila de pedidos na Governança** (cenário do gestor da STK): uma fila **única** para identidades (did:key) e serviços, com etiqueta em cada cartão (opção B); aprovar ou reprovar cada pedido (1.1) |
 | 08/10/2026 | **Fim do copiar e colar: filas no Firebase** (`fila-solicitacao` e `fila-emissao`) nos três fluxos (identidade, aprovação de emissão, crachá). Projeto novo `systekna-identidade`. O responsável queria login pelo DID, mas sem faturamento ("é só prova de conceito, não é para PRD"): plano gratuito, sem login, Firestore pela API REST; segurança pelas assinaturas e pela cifra do conteúdo (1.2) |
-| 08/10/2026 | **Lista do Solicitar só com o que pode ser enviado** (falha relatada pelo responsável: identidades aprovadas e aguardando não saíam da lista). Aguardando vira cartão em Credenciais, com Cancelar; pedido vence em 7 dias; Governança antiga sai do diretório (1.2.1). Limpeza: apagados o registro da Governança `z6MkqFzUDb…`, que não era mais usada, e um pedido parado para ela |
+| 08/10/2026 | **Lista do Solicitar só com identidades ainda não validadas** (falha relatada pelo responsável: identidades aprovadas e aguardando não saíam da lista; depois ele pediu tirar também as reprovadas). Renovar uma aprovada pela carteira deixa de existir. Aguardando vira cartão em Credenciais, com Cancelar; pedido vence em 7 dias; Governança antiga sai do diretório (1.2.1). Limpeza: apagados o registro da Governança `z6MkqFzUDb…`, que não era mais usada, e um pedido parado para ela |
 
 ## 2. Versões publicadas
 

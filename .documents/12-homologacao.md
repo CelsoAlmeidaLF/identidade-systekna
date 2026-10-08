@@ -27,7 +27,7 @@
 | H-19 | Emissão de credenciais (Governança) e de crachás pelos serviços; os 3 apps completos | Todos | 1.0.0 | ✅ Pré-aprovado ("os 3 apps foram homologados") |
 | H-20 | Fila de pedidos na Governança: receber vários de uma vez; Aguardando · Aprovados · Reprovados; identidades e serviços na mesma fila | STK | 1.1.0 | ⬜ Falta homologar |
 | H-21 | Filas: pedidos e respostas sem copiar e colar (identidade, aprovação de emissão, crachá); diretório de Governanças e serviços | Todos | 1.2.0 | ⬜ Falta homologar |
-| H-22 | Lista do Solicitar só com identidades que podem ser enviadas; cartão Aguardando com Cancelar; pedido vencido; Governança antiga fora da lista | Carteira + STK | 1.2.1 | ⬜ Falta homologar |
+| H-22 | Lista do Solicitar sem as identidades aprovadas, reprovadas ou aguardando; cartão Aguardando com Cancelar; pedido vencido; Governança antiga fora da lista | Carteira + STK | 1.2.1 | ⬜ Falta homologar |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (1.0.0)
