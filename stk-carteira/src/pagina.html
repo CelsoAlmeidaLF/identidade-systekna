@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<!-- Arquivo gerado por compartilhado/scripts/build.js a partir de stk-carteira/src/ e compartilhado/src/. Não edite aqui: edite o código-fonte e rode npm run build. -->
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '{{hash-do-script}}'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#DCEBFA" id="metaTheme">
+<link rel="manifest" href="carteira.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/carteira-192.png">
+<link rel="apple-touch-icon" href="icons/carteira-apple-180.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Carteira">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<title>Carteira de Identidade Systekna</title>
+<link rel="preload" href="fonts/open-sans-latin.woff2" as="font" type="font/woff2" crossorigin>
+<style>
+<!-- @inclui ../../compartilhado/src/estilo.css -->
+</style>
+</head>
+<body data-screen="">
+<div class="sky"></div>
+<div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
+<p class="ver boot" aria-hidden="true">Versão {{versao}}</p>
+
+<section class="screen" id="sWelcome">
+  <div class="wrap center">
+    <div class="orb" data-ic="wallet"></div>
+    <h1>Carteira de Identidade</h1>
+    <p class="lead">Sua identidade soberana. As chaves nascem de 12 palavras, as credenciais ficam cifradas no aparelho e um PIN de 6 dígitos abre a carteira.</p>
+    <button class="btn" id="goCreate">Criar minha carteira</button>
+    <button class="btn ghost" id="goRecover">Recuperar com 12 palavras</button>
+    <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
+    <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
+    <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
+    <p class="ver">Versão {{versao}}</p>
+  </div>
+</section>
+
+<section class="screen" id="sWords">
+  <div class="wrap">
+    <button class="back" data-go="sWelcome"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
+    <h2>Suas 12 palavras</h2>
+    <p class="sub">Anote em papel, nesta ordem. Quem tiver estas palavras tem a sua identidade, e sem elas não existe recuperação.</p>
+    <div class="seg" id="langSeg" style="--n:2"><span class="ind"></span><button aria-pressed="true" data-l="pt">Português</button><button aria-pressed="false" data-l="en">English</button></div>
+    <ol class="words glass veil" id="wordGrid"></ol>
+    <div class="reveal"><button class="link" id="toggleVeil" style="margin:0">Mostrar palavras</button></div>
+    <button class="btn" id="wordsDone">Já anotei</button>
+    <button class="btn ghost" id="wordsNew">Gerar outras palavras</button>
+  </div>
+</section>
+
+<!-- @inclui ../../compartilhado/src/telas.html -->
+<section class="screen" id="sApp">
+  <div class="app">
+    <header class="top">
+      <span class="avatar" data-ic="wallet"></span>
+      <div class="who"><small id="whoLabel">Identidade soberana</small><b id="didShort">did:key:…</b></div>
+      <button class="ib" id="themeBtn" aria-label="Alternar tema claro ou escuro"><svg class="i moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4 8 8 0 1 0 20 14.5z"/></svg><svg class="i sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg></button>
+      <button class="ib" id="lockBtn" aria-label="Bloquear" data-ic="lock"></button>
+    </header>
+
+    <section class="view on" id="vCreds">
+      <h2>Credenciais</h2>
+      <div id="cList"></div>
+      <p class="note" id="cNote" hidden>Para usar uma credencial, toque nela e escolha Apresentar. Você assina um desafio novo a cada uso, então ninguém consegue reaproveitar uma cópia.</p>
+    </section>
+
+    <section class="view" id="vId">
+      <h2>Identidade</h2>
+      <div class="idcard">
+        <div class="r1"><span>Identidade soberana</span><span data-ic="shield"></span></div>
+        <div class="did" id="idDid"></div>
+        <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
+      </div>
+      <div class="sec-h">Chaves públicas <small>pode compartilhar</small></div>
+      <div class="list glass flat">
+        <div class="kr"><div class="h"><small>DID, para pedir credenciais</small><span><button class="mini sm" data-copyid="did" aria-label="Copiar DID" data-ic="copy"></button></span></div><div class="v mono" id="idDid2"></div></div>
+        <div class="kr"><div class="h"><small>Cifragem (X25519), para receber mensagens</small><span><button class="mini sm" data-copyid="xPub" aria-label="Copiar chave de cifragem" data-ic="copy"></button></span></div><div class="v mono" id="idX"></div></div>
+      </div>
+      <details class="raw"><summary>Documento DID</summary><p>Descreve publicamente quais chaves falam por esta identidade.</p><pre class="mono" id="idDoc"></pre></details>
+
+      <div class="sec-h">Mensagens cifradas</div>
+      <div class="seg" id="mSeg" style="--n:2"><span class="ind"></span><button aria-pressed="true">Cifrar</button><button aria-pressed="false">Abrir</button></div>
+      <div id="mA">
+        <label class="f" style="margin-top:0"><span>Chave de cifragem do destinatário</span><div class="inrow"><input id="mTo" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="z6LS…"><button class="mini" id="mMe" type="button">A minha</button></div></label>
+        <label class="f"><span>Mensagem</span><textarea id="mText" rows="3"></textarea></label>
+        <button class="btn" id="mSeal">Cifrar mensagem</button>
+        <div id="mSealOut" hidden><label class="f"><span>Mensagem cifrada</span><textarea class="mono" id="mSealed" rows="4" readonly></textarea></label><button class="btn ghost" id="mCopy">Copiar mensagem cifrada</button></div>
+      </div>
+      <div id="mB" hidden>
+        <label class="f" style="margin-top:0"><span>Mensagem cifrada recebida</span><textarea class="mono" id="mIn" rows="4" spellcheck="false" placeholder="smsg1.…"></textarea></label>
+        <button class="btn" id="mOpen">Decifrar com minha chave</button>
+        <div id="mOpenOut"></div>
+      </div>
+    </section>
+
+    <section class="view" id="vSet">
+      <h2>Ajustes</h2>
+      <div id="commonSet"></div>
+    </section>
+
+  </div>
+</section>
+
+<nav class="dock glass" aria-label="Navegação" style="--n:5"><button data-v="vCreds" aria-current="true"><span data-ic="badge"></span>Credenciais</button><button data-v="vId" aria-current="false"><span data-ic="user"></span>Identidade</button><button class="add" id="dockAdd" aria-label="Ações da carteira" data-ic="plus"></button><button id="dockShow" aria-label="Apresentar credencial"><span data-ic="scan"></span>Apresentar</button><button data-v="vSet" aria-current="false"><span data-ic="sliders"></span>Ajustes</button></nav>
+
+<!-- @inclui ../../compartilhado/src/folha.html -->
+<script>
+<!-- @inclui ../../compartilhado/src/nucleo.js -->
+<!-- @inclui app.js -->
+</script>
+</body>
+</html>

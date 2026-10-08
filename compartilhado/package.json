@@ -1,0 +1,15 @@
+{
+  "name": "identidade-soberana-systekna",
+  "version": "0.22.1",
+  "private": true,
+  "scripts": {
+    "build": "node scripts/build.js",
+    "build:check": "node scripts/build.js --check",
+    "test": "npm run build:check && NODE_PATH=\"$PWD/node_modules\" playwright test",
+    "test:e2e": "NODE_PATH=\"$PWD/node_modules\" playwright test",
+    "icones": "node scripts/gerar-icones.js"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.63.0"
+  }
+}

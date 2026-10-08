@@ -1,0 +1,114 @@
+# 02 · Requisitos Funcionais
+
+> Convenção: **RF-XX-nn** — `CM` comum aos 3 apps, `CT` Carteira, `GV` Governança, `SV` Serviços, `F` futuro.
+> Situação: ✅ aprovado nos primeiros testes do responsável (homologação em andamento) · 🟡 sem teste automatizado · ⬜ planejado · ⏸ adiado.
+
+## 1. Comuns aos 3 apps
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CM-01 | Criar a identidade do app com **12 palavras BIP39** (PT ou EN), veladas até "Mostrar palavras", e confirmar 3 delas | ✅ |
+| RF-CM-02 | Recuperar pelas 12 palavras, explicando quantidade errada, palavra fora da lista ou combinação inválida | ✅ |
+| RF-CM-03 | **PIN de 6 dígitos**: recusa PIN fraco; espera crescente a partir do 5º erro; apaga tudo no 10º | ✅ |
+| RF-CM-04 | Bloquear manualmente, por inatividade (1–30 min) e ao recarregar | ✅ |
+| RF-CM-05 | **Biometria** (passkey com PRF), inclusive o modo "usar só biometria" | ✅ |
+| RF-CM-06 | Ver as 12 palavras e trocar o PIN, com o PIN atual | ✅ |
+| RF-CM-07 | **Backup cifrado** e restauração (só na mesma identidade e no mesmo app) | ✅ |
+| RF-CM-08 | Apagar tudo do aparelho; tema claro/escuro; instalar no celular; funcionar offline | ✅ |
+| RF-CM-09 | Mostrar a versão nas boas-vindas, no PIN e em Ajustes → Sobre | ✅ |
+| RF-CM-10 | Todo pacote copiado sai no envelope `SYSTEKNA:<TIPO>:<JWT>`; tipo trocado é recusado | ✅ |
+| RF-CM-11 | Cada app gera o **próprio DID** a partir das mesmas 12 palavras (separação de domínio) | ✅ |
+
+## 2. Carteira de Identidades Soberanas
+
+### 2.1 Navegação
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CT-01 | Rodapé com 5 botões: **Credenciais · Identidade · ( + ) · Apresentar · Ajustes**, com o + no centro | ✅ |
+| RF-CT-02 | Menu **+**: Solicitar aprovação de identidade, Receber aprovação de identidade, Solicitar acesso a um app, Receber crachá de acesso, Apresentar credencial | ✅ |
+| RF-CT-03 | Aba Identidade: chaves públicas da identidade nº 0, documento DID e mensagens cifradas | ✅ |
+
+### 2.2 Identidades
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CT-10 | **Várias identidades** das mesmas 12 palavras, cada uma com DID próprio (nº 0 é a de sempre) | ✅ |
+| RF-CT-11 | Cada identidade tem **nome** e **perfil**: Identidade, Profissional ou Personalizada (com o nome do perfil editável, ex.: Clube) | ✅ |
+| RF-CT-12 | Quantas quiser, inclusive várias do mesmo perfil | ✅ |
+| RF-CT-13 | **Solicitar aprovação de identidade**: escolher uma identidade ou criar nova; o pedido sai assinado pelo DID dela, com nome e perfil | ✅ |
+| RF-CT-14 | **Receber aprovação de identidade**: guarda na identidade certa pelo DID | ✅ |
+| RF-CT-15 | Situação de cada identidade na lista: aprovada, aguardando, sem aprovação, aprovação vencida | ✅ |
+| RF-CT-16 | Identidades criadas na 0.17.0 viram nome + perfil, com o mesmo DID | ✅ |
+
+### 2.3 Cartões (tela Credenciais)
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CT-20 | **Cartão de identidade**: perfil · nome · did:key com copiar · emissora + validade | ✅ |
+| RF-CT-21 | **Uma cor por perfil**: Identidade azul, Profissional roxo, Personalizada âmbar | ✅ |
+| RF-CT-22 | **Cartão do crachá**: CRACHÁ: APP · organização · **cv:key** com copiar · identidade que usa · validade (verde) | ✅ |
+| RF-CT-23 | Pedido de acesso em andamento ou recusado: cartão pontilhado "Acesso a … · Aguardando / Recusado: motivo" | ✅ |
+| RF-CT-24 | Detalhe da credencial: afirmações, emissor, JWT, Apresentar, Remover | ✅ |
+
+### 2.4 Acesso a apps
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CT-30 | **Solicitar acesso a um app**: ler o Cartão do serviço; conferir que os apps foram aprovados pela mesma Governança da identidade; recusar cartão alterado | ✅ |
+| RF-CT-31 | Escolher o(s) app(s) e a **identidade aprovada** que vai usar; o pedido leva a aprovação dela | ✅ |
+| RF-CT-32 | **Receber crachá de acesso**: aceita o crachá ou a recusa assinada | ✅ |
+| RF-CT-33 | **Apresentar** (rodapé ou menu +): responde ao desafio com a credencial escolhida, assinando pelo DID dela | ✅ |
+
+### 2.5 Outros
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-CT-40 | Mensagens cifradas `smsg1` (cifrar e abrir) | ✅ |
+| RF-CT-41 | Pedido endereçado a um DID de Governança (opcional) | ✅ |
+
+## 3. Governança Systekna (STK)
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-GV-01 | Painel: credenciais ativas, revogadas, emissores confiáveis, verificações, últimos atos, integridade do livro | ✅ |
+| RF-GV-02 | Livro completo com conferência de integridade (cada ato conferido com a chave da época) | ✅ |
+| RF-GV-03 | Aba **Aprovar**: cola o pedido; confere assinatura, prazo, uso único, destinatário | ✅ |
+| RF-GV-04 | **Cartão de aprovação de identidade**: nome, perfil, DID, validade (padrão 1 ano), Aprovar identidade, Recusar | ✅ |
+| RF-GV-05 | **Cartão de aprovação de emissão**: serviço, DID, apps marcáveis (aprovação parcial), aviso de app já aprovado, validade, Aprovar emissão, Recusar | ✅ |
+| RF-GV-06 | Recusa com motivo, **registrada no livro**; o mesmo pedido não volta | ✅ |
+| RF-GV-07 | Uma identidade ativa por DID (a nova substitui); **várias aprovações de emissão** ativas por serviço | ✅ |
+| RF-GV-08 | Aba Verificar: desafio e conferência de apresentação em até 11 pontos | ✅ |
+| RF-GV-09 | Governança: nome público, DID, emissores confiáveis, política de status não verificável, credenciais emitidas e revogação com motivo | ✅ |
+| RF-GV-10 | **Trocar a chave**: 12 palavras novas, aviso de troca assinado pelas duas chaves; **importar troca** de outro emissor | ✅ |
+| RF-GV-11 | Recusar pedido de crachá (é do serviço, não da STK) | ✅ |
+| RF-GV-12 | Emissão de credencial Personalizada pelo formulário genérico | 🟡 (mantida, sem uso nos cenários) |
+
+## 4. Serviços Systekna (SRV)
+
+| ID | Requisito | Sit. |
+|---|---|---|
+| RF-SV-01 | Rodapé: **Painel · Crachás · ( + ) · Portaria · Serviço** | ✅ |
+| RF-SV-02 | Menu **+**: Solicitar aprovação de emissão, Receber aprovação de emissão, Cartão do serviço | ✅ |
+| RF-SV-03 | **Solicitar aprovação de emissão**: nome da organização e apps (adicionar/tirar); Governança informada uma vez; apps já aprovados só para consulta; pedido só dos apps novos | ✅ |
+| RF-SV-04 | **Receber aprovação de emissão**: confere a assinatura da Governança; soma os apps | ✅ |
+| RF-SV-05 | Painel: organização + "Ecossistema aprovado pela Governança Systekna" e **um cartão por app** (App · did:key com copiar · aprovador + validade); pedidos aguardando | ✅ |
+| RF-SV-06 | **Cartão do serviço** com os apps e as aprovações válidas | ✅ |
+| RF-SV-07 | Aba **Crachás**: cartão de análise (nome, identidade, DID, apps marcáveis, validade) | ✅ |
+| RF-SV-08 | **Aprovar acesso**: um crachá por app; validade escolhida, limitada à aprovação do app; um crachá ativo por pessoa e app | ✅ |
+| RF-SV-09 | **Recusar pedido**: recusa assinada para o cliente, com motivo, e registrada no livro | ✅ |
+| RF-SV-10 | **Portaria**: desafio por app; conferência em até 11 pontos; Acesso liberado ou negado, no livro | ✅ |
+| RF-SV-11 | Aba Serviço: nome, DID, Governança (alterar, importar troca de chave), crachás emitidos e revogação | ✅ |
+| RF-SV-12 | Serviço da 0.18 (credenciamento único) vira uma aprovação de emissão | ✅ |
+
+## 5. Futuro
+
+| ID | Requisito | Situação |
+|---|---|---|
+| RF-F-01 | DID da Governança de produção pré-carregado nos apps | ⬜ aguarda a STK de produção |
+| RF-F-02 | Apps das organizações aceitarem o crachá direto ("Entrar com a carteira") | ⬜ |
+| RF-F-03 | QR Code entre aparelhos | ⏸ adiado |
+| RF-F-04 | Lista pública de revogação | ⬜ |
+| RF-F-05 | Remover identidade da carteira | ⬜ não pedido |
+| RF-F-06 | Cofre (senhas, notas, documentos) | ⏸ fase própria (📦 `bkp/avancado`) |
+| RF-F-07 | Divulgação seletiva (SD-JWT), OpenID4VC, VC 2.0 | ⬜ |
