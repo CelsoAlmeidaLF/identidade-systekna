@@ -1,7 +1,7 @@
 # 14 · Planejamento e Scrum — Gestão, relatórios e cofre
 
 > **Versão de referência:** 0.23.0 · 08/10/2026 · Responsável (Product Owner): Celso de Almeida Leite Filho (Systekna)
-> **Situação:** Sprint 2 **entregue** (0.24.0 e 0.25.0). Sprint 3: **US-22.1, 22.2, 22.3, 22.6 e 22.7 entregues na 0.26.0** (aguardando homologação). Próximo: documentos com anexo (US-22.4) e backup com anexos (US-22.5) na 0.27.0.
+> **Situação:** Sprint 2 **entregue** (0.24.0 e 0.25.0). Sprint 3 **entregue** (0.26.0 e 0.27.0). Todas as histórias aguardam homologação do PO; depois, retrospectiva das Sprints 2 e 3.
 > **Finalidade:** os 3 apps continuam sendo de **teste** (prova de conceito), como na [13](13-sprint-primeira-entrega.md).
 
 ## 1. Objetivo

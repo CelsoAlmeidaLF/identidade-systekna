@@ -1,6 +1,6 @@
 # 12 · Homologação
 
-> Versão em homologação: **0.26.0**. Marque cada item ao homologar.
+> Versão em homologação: **0.27.0**. Marque cada item ao homologar.
 > "Aprovado nos primeiros testes" = o responsável aprovou na versão indicada; a homologação final continua.
 
 ## 1. Aprovado nos primeiros testes
@@ -21,6 +21,7 @@
 | H-13 | Relatório de uso no Painel do Serviços (acessos e gestão do período) | Serviços | 0.24.0 | ⬜ Falta homologar |
 | H-14 | Exportar o livro em PDF ou Excel, por período | STK + Serviços | 0.25.0 | ⬜ Falta homologar |
 | H-15 | Cofre: senhas, anotações, cartões e contas bancárias | Carteira | 0.26.0 | ⬜ Falta homologar |
+| H-16 | Documentos com foto ou PDF, aviso de vencimento; backup como arquivo | Carteira (backup: todos) | 0.27.0 | ⬜ Falta homologar |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (0.23.0)

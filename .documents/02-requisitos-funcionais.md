@@ -14,7 +14,7 @@
 | RF-CM-04 | Bloquear manualmente, por inatividade (1–30 min) e ao recarregar | ✅ |
 | RF-CM-05 | **Biometria** (passkey com PRF), inclusive o modo "usar só biometria" | ✅ |
 | RF-CM-06 | Ver as 12 palavras e trocar o PIN, com o PIN atual | ✅ |
-| RF-CM-07 | **Backup cifrado** e restauração (só na mesma identidade e no mesmo app) | ✅ |
+| RF-CM-07 | **Backup cifrado** e restauração (só na mesma identidade e no mesmo app); desde a 0.27 também **baixar como arquivo** e **restaurar pelo arquivo**; backup grande (anexos) sai só como arquivo | ✅ (arquivo: 🟢 0.27) |
 | RF-CM-08 | Apagar tudo do aparelho; tema claro/escuro; instalar no celular; funcionar offline | ✅ |
 | RF-CM-09 | Mostrar a versão nas boas-vindas, no PIN e em Ajustes → Sobre | ✅ |
 | RF-CM-10 | Todo pacote copiado sai no envelope `SYSTEKNA:<TIPO>:<JWT>`; tipo trocado é recusado | ✅ |
@@ -83,7 +83,8 @@
 | RF-CT-53 | Cartão de pagamento: número conferido (Luhn), validade MM/AA, **bandeira** reconhecida (Visa, Mastercard, Elo, American Express, Hipercard), na lista só o final (•••• 1234) | 🟢 |
 | RF-CT-54 | Editar e apagar (com confirmação); a busca olha o título e os campos que não são segredo | 🟢 |
 | RF-CT-55 | O cofre vai no **backup cifrado** e volta ao restaurar | 🟢 |
-| RF-CT-56 | Documentos com foto ou PDF e aviso de vencimento | ⬜ 0.27.0 |
+| RF-CT-56 | **Documento** (0.27): tipo (RG, CNH, passaporte, CPF, título, carteira de trabalho, outro), número, titular, órgão emissor, emissão e validade; **anexo** foto ou PDF até 2 MB, com prévia da foto e botão de baixar | 🟢 |
+| RF-CT-57 | **Aviso de vencimento** na tela Credenciais para documentos que vencem em até 30 dias ou já venceram; tocar abre o documento | 🟢 |
 
 ## 3. Governança Systekna (STK)
 

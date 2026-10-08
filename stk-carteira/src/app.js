@@ -138,12 +138,16 @@ function renderCreds(){
   if(!ses)return;
   const list=creds(),peds=acessos();
   $('#cNote').hidden=!list.length;
+  // Documentos do cofre perto de vencer (30 dias) ou vencidos.
+  const av=avisosCofre();
+  $('#cAvisos').innerHTML=av.length?`<div class="list glass flat" style="margin-bottom:14px">${av.map(({it,n})=>`<button class="tx" data-cfav="${esc(it.rec.id)}"><span class="dot" style="color:${n<0?'var(--out)':'var(--warn)'}">${ic('alert')}</span><span class="t"><b>${esc(it.data.titulo)}</b><small>Documento ${vencimentoTxt(n)} · ${dataBr(it.data.campos.validade)}</small></span>${ic('chev')}</button>`).join('')}</div>`:'';
   $('#cList').innerHTML=list.length||peds.length?`<div class="creds">${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
       <li><span>Cole a aprovação em <b>+</b> › <b>Receber aprovação de identidade</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
+$('#cAvisos').onclick=e=>{const b=e.target.closest('[data-cfav]');if(b)verCofre(b.dataset.cfav)};
 $('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 $('#cList').addEventListener('keydown',e=>{if(e.target.closest('[data-copydid]'))copiarDidDoCartao(e)});
 

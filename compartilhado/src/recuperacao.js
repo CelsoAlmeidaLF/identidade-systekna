@@ -139,6 +139,7 @@ function pdfDoc(paginas,titulo){
   for(let i=0;i<pdf.length;i++){const k=pdf.charCodeAt(i);if(k>255)throw new Error('Caractere fora do Latin-1 no PDF');out[i]=k}
   return out;
 }
+const tamTxt=n=>n<1024*1024?`${Math.max(1,Math.round(n/1024))} KB`:`${(n/1024/1024).toFixed(1).replace('.',',')} MB`;
 function baixar(bytes,tipo,nome){
   const url=URL.createObjectURL(new Blob([bytes],{type:tipo}));
   const a=document.createElement('a');a.href=url;a.download=nome;
