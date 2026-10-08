@@ -22,7 +22,7 @@
 | H-14 | Exportar o livro em PDF ou Excel, por período | STK + Serviços | 0.25.0 | ⬜ Falta homologar |
 | H-15 | Cofre: senhas, anotações, cartões e contas bancárias | Carteira | 0.26.0 | ❌ Reprovado: "não gostei do modelo"; substituído pela 0.28 |
 | H-16 | Documentos com foto ou PDF, aviso de vencimento; backup como arquivo | Carteira (backup: todos) | 0.27.0 | ❌ Documentos retirados na 0.28; backup como arquivo segue para homologar |
-| H-17 | Cofre só com anotações; backup como arquivo | Carteira (backup: todos) | 0.28.0 | ⬜ Falta homologar |
+| H-17 | Cofre só com anotações; backup como arquivo | Carteira (backup: todos) | 0.28.0 | ✅ Aprovado ("testei, está funcionando!") |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (0.23.0)
