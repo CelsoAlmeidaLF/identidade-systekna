@@ -70,7 +70,7 @@
 
 | ID | Requisito | Sit. |
 |---|---|---|
-| RF-CT-40 | Mensagens cifradas `smsg1` (cifrar e abrir) | ✅ |
+| RF-CT-40 | Mensagens cifradas `smsg1` (cifrar e abrir); ao cifrar, o texto original sai da caixa (0.28.1) | ✅ |
 | RF-CT-41 | Pedido endereçado a um DID de Governança (opcional) | ✅ |
 
 ### 2.6 Cofre de anotações (aba Identidade)

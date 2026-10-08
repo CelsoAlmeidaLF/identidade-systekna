@@ -60,13 +60,14 @@
 | 0.25.0 | Exportar o livro em PDF ou Excel, por período, na Governança e no Serviços |
 | 0.26.0 | Cofre da Carteira: senhas, anotações, cartões e contas bancárias |
 | 0.27.0 | Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo |
-| **0.28.0** | **Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados)** |
+| 0.28.0 | Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados) |
+| **0.28.1** | **Mensagens cifradas: o texto original sai da caixa ao cifrar** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.28.0) |
+| `main` | Versão vigente (0.28.1) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 

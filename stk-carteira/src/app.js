@@ -379,7 +379,8 @@ $('#mMe').onclick=()=>{$('#mTo').value=ses.xMb};
 $('#mSeal').onclick=async()=>{
   if(!$('#mTo').value.trim()){$('#mTo').focus();return toast('Informe a chave do destinatário',true)}
   if(!$('#mText').value){$('#mText').focus();return toast('Escreva a mensagem',true)}
-  try{$('#mSealed').value=await sealFor($('#mTo').value,$('#mText').value);$('#mSealOut').hidden=false;toast('Mensagem cifrada')}
+  // Depois de cifrar, o texto original sai da caixa: na tela fica só a mensagem cifrada.
+  try{$('#mSealed').value=await sealFor($('#mTo').value,$('#mText').value);$('#mText').value='';$('#mSealOut').hidden=false;toast('Mensagem cifrada')}
   catch(e){toast(e.message,true)}
 };
 $('#mCopy').onclick=()=>copy($('#mSealed').value);
