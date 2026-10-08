@@ -88,20 +88,21 @@ Todos são JWT EdDSA com `kid` = DID de quem assina e saem no envelope `SYSTEKNA
 ## 6. Fluxos
 
 ```
+Transporte (1.2): fila-solicitacao (pedido cifrado para quem atende) e fila-emissao (resposta cifrada
+para quem pediu), no Firestore; diretorio com o nome e a chave de cifragem da Governança e dos serviços.
+
 F1 · Identidade
-Carteira: + › Solicitar aprovação de identidade ─PEDIDO-APROVACAO─▶ STK: Aprovar identidade
-Carteira: + › Receber aprovação de identidade   ◀────APROVACAO──── (ou recusa, só no livro da STK)
+Carteira: + › Solicitar aprovação de identidade ─fila-solicitacao─▶ STK: Fila › Aprovar | Reprovar
+Carteira (busca sozinha)                     ◀──fila-emissao────── APROVACAO ou RECUSA
 
 F2 · Aprovação de emissão
-Serviços: + › Solicitar aprovação de emissão ─PEDIDO-CREDENCIAMENTO─▶ STK: Aprovar emissão (só o serviço)
-Serviços: + › Receber aprovação de emissão   ◀──────CREDENCIAMENTO─── (ou recusa, só no livro da STK)
+Serviços: + › Solicitar aprovação de emissão ─fila-solicitacao─▶ STK: Fila › Aprovar emissão | Reprovar
+Serviços (busca sozinho)                     ◀──fila-emissao────── CREDENCIAMENTO ou RECUSA
 
 F3 · Acesso a um app
-Serviços: Serviço › Apps (apps, funcionalidades, grupos)
-Serviços: + › Cartão do serviço ──CARTAO-SERVICO──▶ Carteira: + › Solicitar acesso a um app
-          Painel › cartão de um app ──CARTAO-APP──▶ (o app já vem marcado)
-Carteira ──PEDIDO-CRACHA──▶ Serviços: Crachás › Aprovar acesso (marca as funcionalidades) | Recusar pedido
-Carteira: + › Receber crachá de acesso ◀──CRACHA ou RECUSA──
+Serviços: Serviço › Apps (apps, funcionalidades, grupos) ──cartão no diretorio──▶ Carteira: escolhe o serviço
+Carteira: + › Solicitar acesso a um app ─fila-solicitacao─▶ Serviços: Crachás › Aprovar acesso | Recusar
+Carteira (busca sozinha)                ◀──fila-emissao────── CRACHA (um por app) ou RECUSA
 
 F4 · Uso
 Serviços: Portaria › Gerar desafio (app ou funcionalidade) ──DESAFIO──▶ Carteira: Apresentar
@@ -133,6 +134,7 @@ Ajustes › Salvar PDF de recuperação (PIN ou biometria) ──▶ PDF: QR + c
 - `sw.js` com cache `systekna-<versão>`: cada versão troca o cache e chega ao celular; rede primeiro, cópia guardada se offline.
 - A versão (`package.json`) aparece nas boas-vindas, no PIN e em Ajustes → Sobre.
 - Origem compartilhada no Pages: **somente demonstração**.
+- **Filas (1.2):** projeto Firebase `systekna-identidade` (plano gratuito), Firestore em `southamerica-east1`, regras em `firebase/firestore.rules` (publicar com `firebase deploy --only firestore:rules`). Os apps falam com o Firestore pela API REST, sem SDK e sem login.
 
 ## 9. Decisões de arquitetura (ADR)
 
@@ -154,16 +156,18 @@ Ajustes › Salvar PDF de recuperação (PIN ou biometria) ──▶ PDF: QR + c
 | ADR-14 | **Governança aprova o serviço; Serviço › Apps › Funcionalidades** (0.22) | Os apps são do serviço; o crachá leva só os códigos das funcionalidades, sem grupo nem plano |
 | ADR-15 | Pastas por projeto (`stk-*`, `compartilhado/`) com o site na raiz (0.22.1) | Organização sem mudar o endereço do Pages |
 | ADR-16 | **Código de recuperação e PDF com QR**, escritos à mão (0.23) | Recuperar sem digitar 12 palavras, sem biblioteca externa nem mudança na CSP |
+| ADR-17 | **Filas no Firestore pela API REST, sem login** (1.2): conteúdo cifrado (`smsg1`, X25519 + AES-256-GCM) para quem recebe; diretório assinado por cada DID | Acaba o copiar e colar sem servidor próprio nem faturamento; o banco só transporta, quem confere é o aparelho (assinatura Ed25519). Sem login, as regras não sabem quem é o DID: dá para gravar lixo ou apagar itens, não para forjar |
 
 ## 10. Limites conhecidos
 
 | Limite | Evolução possível |
 |---|---|
-| Copiar e colar entre apps (o QR existe só no PDF de recuperação) | QR Code entre os apps (adiado) |
+| Filas sem login: qualquer um pode gravar lixo ou apagar itens (não forjar nem ler) | Login pelo DID (Cloud Function no plano Blaze) |
+| Portaria e verificação ainda por copiar e colar (desafio e prova) | Desafio e prova pelas filas |
 | Apps das organizações não leem o crachá | "Entrar com a carteira" (login sem senha) |
 | Revogação só visível a quem revogou | Lista pública de status |
 | A apresentação revela todas as afirmações | SD-JWT |
-| DID da Governança informado à mão (âncora vazia) | Pré-carregar o DID da STK de produção |
+| Governança escolhida no diretório (âncora `GOVERNANCA_PADRAO` vazia) | Pré-carregar o DID da STK de produção |
 | Chaves no navegador | HSM / hardware seguro em produção |
 | PDF de recuperação é uma cópia completa da conta | Senha no PDF (não feito); orientar imprimir e apagar |
 | Ler QR pela câmera só onde há `BarcodeDetector` (Chrome do Android) | Leitor de QR próprio |

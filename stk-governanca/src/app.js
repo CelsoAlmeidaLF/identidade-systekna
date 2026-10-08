@@ -9,18 +9,19 @@ const APP={
   <p><b>Verificação.</b> O desafio é um número aleatório válido por 10 minutos e aceito uma única vez. Na apresentação, o emissor confere a assinatura do titular, o desafio, a assinatura de quem emitiu a credencial, se ela é do titular, se quem a emitiu é confiável, a revogação e a validade.</p>
   <p><b>Revogação.</b> Fica no registro deste emissor e vale para tudo o que ele verifica. Em produção, a lista de status é publicada para que qualquer verificador consulte.</p>
   <p><b>Livro.</b> Cada ato guarda o hash SHA-256 do ato anterior e é assinado pelo emissor. Alterar ou apagar um ato quebra a corrente, e a conferência de integridade mostra onde.</p>
+  <p><b>Filas.</b> Pedidos e respostas passam pelo Firestore, sem copiar e colar: cada pedido vai cifrado para a chave de quem atende e cada resposta volta cifrada para quem pediu. O banco só transporta; quem confere a assinatura é este aparelho. Sem login (prova de conceito): alguém pode gravar lixo na fila, mas não forjar nem ler.</p>
   <p><b>Limite.</b> Os dados ficam cifrados neste aparelho. Num emissor real, o livro e a lista de status ficariam replicados em servidores, e a chave do emissor num módulo de hardware (HSM).</p>`,
   async load(){
     const r=await DB.get('state');
     st=r?await unseal(ses.vaultKey,r,'state'):null;
     if(!st){st={name:'Governança Systekna',issued:[],trust:[],book:[],challenges:[],seq:0,verifs:0};await ato('abertura','Livro aberto e Governança criada',ses.did);await save()}
   },
-  enter(){$('#whoLabel').textContent=st.name;fillTypeSelects();mountCommonSettings($('#commonSet'));setView('vPanel')},
+  enter(){$('#whoLabel').textContent=st.name;fillTypeSelects();mountCommonSettings($('#commonSet'));setView('vPanel');publicarGov();iniciarFilas(sincronizarGov)},
   onView(v){if(v==='vPanel')renderPanel();if(v==='vIssue')renderFila();if(v==='vGov')renderGov()},
   onLock(){
-    st=null;pedido=null;itemFila=null;$('#iFilaV').hidden=false;
+    pararFilas();st=null;pedido=null;itemFila=null;$('#iFilaV').hidden=false;
     ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#gTrust','#gIssued','#iOk','#iFila','#iqRes','#iqH'].forEach(s=>$(s).innerHTML='');
-    ['#iqT','#iJwt','#vChalT','#vpT'].forEach(s=>$(s).value='');
+    ['#iJwt','#vChalT','#vpT'].forEach(s=>$(s).value='');
     ['#iForm','#iOut','#vChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Governança Systekna';
   },
@@ -76,7 +77,7 @@ $('#iType').onchange=drawClaims;
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
 $('#iAdd').onclick=()=>{$('#iClaims').insertAdjacentHTML('beforeend',claimRow('',''));$('#iClaims').lastElementChild.querySelector('input').focus()};
 /* ================= fila de pedidos ================= */
-// Os pedidos colados (um ou vários) são conferidos e entram na fila, guardada cifrada no estado.
+// Os pedidos que chegam pela fila-solicitacao são conferidos e entram na fila local, guardada cifrada no estado.
 // Cada um espera a decisão do gestor: aprovar (emite a credencial) ou reprovar (com motivo, no livro).
 let filtro='aguardando',itemFila=null;
 const fila=()=>st.fila||(st.fila=[]);
@@ -99,28 +100,38 @@ async function conferirPedido(tok){
   return r;
 }
 const quemFila=f=>`${f.nome||shortDid(f.did)}${f.apelido?' ('+f.apelido+')':''}`;
-$('#iqGo').onclick=async()=>{
-  const H=$('#iqH'),txt=$('#iqT').value;
-  H.textContent='';H.classList.remove('bad');$('#iqRes').innerHTML='';
-  const toks=txt.match(PACOTES)||(txt.trim()?[txt]:[]);
-  if(!toks.length)return shake($('#iqF'));
-  const erros=[];let n=0;
-  for(const t of toks){
+// A Governança se publica no diretório (nome e chave de cifragem, assinados): é por ele que a carteira e o serviço
+// encontram a quem pedir e para quem cifrar o pedido.
+const publicarGov=()=>publicarDiretorio('governanca',st.name).catch(()=>{});
+// Busca os pedidos endereçados a esta Governança, confere cada um e põe na fila. O item da fila remota é apagado
+// depois de lido: daqui em diante ele vive cifrado no estado da Governança.
+async function sincronizarGov(manual){
+  if(!st)return;
+  const H=$('#iqH'),erros=[];let n=0;
+  for(const d of await buscarSolicitacoes()){
+    if(d.erro){await fsApagar('fila-solicitacao',d.id);continue}
     try{
-      const r=await conferirPedido(t),p=r.payload;
-      const f={nonce:p.nonce,tok:r.tok,did:r.did,tipo:VC_TYPES[p.wanted]?p.wanted:'IdentityCredential',nome:p.name||'',apelido:p.apelido||'',exp:p.exp||0,recebido:Date.now(),status:'aguardando'};
+      const r=await conferirPedido(d.tok),p=r.payload;
+      if(typeof p.x!=='string')throw new Error('O pedido não traz a chave de cifragem de quem pediu: a resposta não teria como voltar.');
+      parseXKey(p.x);
+      const f={nonce:p.nonce,tok:r.tok,did:r.did,x:p.x,tipo:VC_TYPES[p.wanted]?p.wanted:'IdentityCredential',nome:p.name||'',apelido:p.apelido||'',exp:p.exp||0,recebido:Date.now(),status:'aguardando'};
       fila().push(f);n++;
       await ato('pedido',`Pedido de ${ROTULO[f.tipo]||vcLabel(f.tipo)} recebido: ${quemFila(f)}`,r.did);
     }catch(e){erros.push(e.message)}
+    await fsApagar('fila-solicitacao',d.id);
   }
   if(n)await save();
-  if(toks.length===1&&erros.length){H.textContent=erros[0];H.classList.add('bad');shake($('#iqF'));return}
-  if(!erros.length)$('#iqT').value='';
-  H.textContent=`${n} ${n===1?'pedido entrou':'pedidos entraram'} na fila${erros.length?`; ${erros.length} não ${erros.length===1?'entrou':'entraram'}`:''}.`;
-  if(erros.length){H.classList.add('bad');$('#iqRes').innerHTML=erros.map(m=>verdictHtml(false,'Pedido não entrou',esc(m))).join('')}
-  filtro='aguardando';setSeg($('#iSeg'),0);renderFila();
-  if(n)toast(n===1?'Pedido na fila':`${n} pedidos na fila`);
-};
+  if(n||erros.length||manual){
+    H.textContent=n?`${n} ${n===1?'pedido novo':'pedidos novos'} na fila${erros.length?`; ${erros.length} recusado${erros.length===1?'':'s'} na conferência`:''}.`:erros.length?`${erros.length} pedido${erros.length===1?'':'s'} recusado${erros.length===1?'':'s'} na conferência.`:'Nenhum pedido novo.';
+    H.classList.toggle('bad',!!erros.length);
+    $('#iqRes').innerHTML=erros.map(m=>verdictHtml(false,'Pedido não entrou',esc(m))).join('');
+  }
+  renderFila();if($('#vPanel').classList.contains('on'))renderPanel();
+  if(n)toast(n===1?'Pedido novo na fila':`${n} pedidos novos na fila`);
+}
+$('#iqGo').onclick=()=>sincronizarGov(true).catch(e=>{$('#iqH').textContent=e.message;$('#iqH').classList.add('bad')});
+// Resposta para quem pediu, cifrada para a chave que veio no pedido.
+const responder=(f,toks)=>enviarEmissao(f.did,f.x,f.nonce,toks);
 function renderFila(){
   if(!st)return;
   const conta=k=>fila().filter(f=>f.status===k).length,ag=conta('aguardando');
@@ -143,8 +154,8 @@ $('#iFila').onclick=async e=>{
   const f=fila().find(x=>x.nonce===b.dataset.fila);if(!f)return;
   if(f.status==='reprovado')return toast(`Reprovado: ${f.motivo}`);
   if(f.status==='aprovado'){
-    $('#iJwt').value=f.aprovacao||'';
-    $('#iOk').innerHTML=verdictHtml(true,f.tipo==='ServiceAccreditationCredential'?'Emissão aprovada':'Identidade aprovada',`${esc(quemFila(f))}, em ${fmtTime(f.decidido)}. Copie a aprovação para entregar de novo.`);
+    $('#iJwt').value=f.aprovacao||'';itemFila=f;
+    $('#iOk').innerHTML=verdictHtml(f.entregue!==false,f.tipo==='ServiceAccreditationCredential'?'Emissão aprovada':'Identidade aprovada',`${esc(quemFila(f))}, em ${fmtTime(f.decidido)}. ${f.entregue===false?'A aprovação ainda não foi entregue: toque em Reenviar.':'A aprovação foi enviada pela fila.'}`);
     $('#iFilaV').hidden=true;$('#iOut').hidden=false;return;
   }
   let r;try{r=await verifyJWT(f.tok)}catch(e){return toast(e.message,true)}
@@ -224,25 +235,39 @@ $('#iGo').onclick=async()=>{
   if(!Object.values(claims).some(Boolean)){toast(ident?'O pedido não traz o nome da pessoa':'Preencha ao menos um campo com valor',true);return}
   if(pedido.payload.exp&&pedido.payload.exp<now()){toast('Este pedido venceu. Reprove ou peça um novo.',true);return}
   try{$('#iJwt').value=embrulhar(await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce,ident?pedido.payload.apelido:''))}catch(e){toast(e.message,true);return}
-  if(itemFila){Object.assign(itemFila,{status:'aprovado',decidido:Date.now(),aprovacao:$('#iJwt').value});await save();itemFila=null}
+  const f=itemFila;let entregue=true;
+  if(f){
+    Object.assign(f,{status:'aprovado',decidido:Date.now(),aprovacao:$('#iJwt').value});
+    try{await responder(f,[f.aprovacao])}catch(e){entregue=false;toast(e.message,true)}
+    f.entregue=entregue;await save();
+  }
   const quem=`${esc(pedido.payload.name||shortDid(pedido.did))}${ident&&pedido.payload.apelido?' ('+esc(pedido.payload.apelido)+')':''}`;
-  $('#iOk').innerHTML=ident?verdictHtml(true,'Identidade aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação à pessoa.`)
-    :srv?verdictHtml(true,'Emissão aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação ao serviço.`)
+  const envio=entregue?'Enviada pela fila.':'Não foi possível enviar agora: toque em Reenviar.';
+  $('#iOk').innerHTML=ident?verdictHtml(true,'Identidade aprovada',`Credencial emitida para ${quem}, registrada no livro. ${envio}`)
+    :srv?verdictHtml(true,'Emissão aprovada',`Credencial emitida para ${quem}, registrada no livro. ${envio}`)
     :verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${quem}, registrada no livro.`);
-  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;renderFila();toast('Credencial emitida');
+  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;renderFila();if(entregue)toast('Credencial emitida e enviada');
 };
-$('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
+$('#iCopy').onclick=async()=>{
+  const f=itemFila;if(!f||!f.aprovacao)return;
+  try{await responder(f,[f.aprovacao]);f.entregue=true;await save();toast('Aprovação reenviada')}
+  catch(e){toast(/já está/.test(e.message)?'A aprovação já está na fila, esperando a carteira buscar.':e.message,true)}
+};
 // Recusa: fica só no livro, com o motivo (a carteira continua aguardando). O pedido recusado não volta.
 $('#iRec').onclick=async()=>{
   if(!pedido)return;
   const p=pedido.payload,did=pedido.did,srv=$('#iType').value==='ServiceAccreditationCredential';
-  openSheet(`<h3>Reprovar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise ${srv?'o serviço':'a pessoa'} por fora; ${srv?'ele':'ela'} pode enviar um pedido novo.</p>
+  openSheet(`<h3>Reprovar pedido</h3><p class="sub">A recusa fica registrada no livro e volta assinada pela fila, com o motivo. ${srv?'O serviço':'A pessoa'} pode enviar um pedido novo.</p>
     <label class="f"><span>Motivo</span><select id="rcM">${(srv?['Serviço não identificado','Serviço não autorizado','Pedido duplicado','Outro']:['Pessoa não identificada','Dados não conferem','Pedido duplicado','Outro']).map(m=>`<option>${m}</option>`).join('')}</select></label>
     <button class="btn danger" id="rcGo">Reprovar</button>`);
   $('#rcGo').onclick=async()=>{
     const motivo=$('#rcM').value;
     st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:did,nome:p.name||'',apelido:p.apelido||'',motivo,at:Date.now()}];
-    if(itemFila)Object.assign(itemFila,{status:'reprovado',decidido:Date.now(),motivo});
+    if(itemFila){
+      Object.assign(itemFila,{status:'reprovado',decidido:Date.now(),motivo});
+      const rec=await signJWT('recusa+jwt',{iss:ses.did,sub:did,nonce:p.nonce,motivo,iat:now()});
+      try{await responder(itemFila,[rec])}catch(e){toast(e.message,true)}
+    }
     await ato('recusa',srv?`Aprovação de emissão de ${p.name||shortDid(did)} recusada: ${motivo}`:`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
     closeSheet();voltarFila();
     $('#iqH').textContent=`Pedido recusado: ${motivo}. Registrado no livro.`;$('#iqH').classList.remove('bad');toast('Pedido recusado');
@@ -316,7 +341,7 @@ function renderGov(){
 }
 $('#gNameS').onclick=async()=>{
   const n=$('#gName').value.trim();if(!n||n===st.name)return;
-  st.name=n;await ato('nome',`Nome público alterado para ${n}`);await save();$('#whoLabel').textContent=n;toast('Nome salvo');
+  st.name=n;await ato('nome',`Nome público alterado para ${n}`);await save();$('#whoLabel').textContent=n;publicarGov();toast('Nome salvo');
 };
 $('#gDidC').onclick=()=>copy(ses.did,'DID copiado');
 
@@ -369,7 +394,7 @@ async function trocarChave(pin){
   await DB.set('meta',{did:ses.did,lang:'pt',dom:APP.dominio,created:Date.now()});
   const bio=await DB.get('bioLock');if(bio){forgetPasskey(b64u.dec(bio.cred));await DB.del('bioLock')}
   sheetClose=null;closeSheet();
-  $('#didShort').textContent=shortDid(ses.did);renderGov();refreshBio();
+  $('#didShort').textContent=shortDid(ses.did);renderGov();refreshBio();publicarGov();
   toast('Chave trocada. Copie o aviso para quem confia na Governança');
 }
 $('#gRotAv').onclick=()=>{const a=(st.rotations||[]).at(-1);if(a)copy(embrulhar(a),'Aviso de troca copiado')};

@@ -113,3 +113,14 @@
 | RT-66 | **Livro em PDF:** `livroPdf` em `livro.js`, com o escritor `pdfDoc` (várias páginas) de `recuperacao.js`; tabela em Courier 8 (100 caracteres por linha), texto quebrado em 46; texto fora do Latin-1 vira o equivalente (`›`→`>`, `—`→`-`) ou `?` |
 | RT-67 | **Livro em Excel:** `livroXlsx` monta `[Content_Types].xml`, `_rels`, `workbook`, `styles` (cabeçalho em negrito) e duas planilhas com `inlineStr` (texto em UTF-8, inteiro), cabeçalho fixo; ZIP sem compressão com CRC-32 |
 | RT-65 | Na criação, o DID que vai no PDF é derivado das palavras da tela, com o mesmo domínio que a conta vai usar |
+
+## 8. Filas (1.2)
+
+| ID | Regra |
+|---|---|
+| RT-70 | `compartilhado/src/filas.js`: Firestore pela **API REST** (`fetch`, `credentials: 'omit'`, `no-referrer`), projeto `systekna-identidade`; sem SDK e sem login |
+| RT-71 | `fila-solicitacao/{nonce}` e `fila-emissao/{nonce}`: `{para: did, env: smsg1, criado}`. `env` = `sealFor(x, conteúdo)`: X25519 efêmera + HKDF-SHA256 + AES-256-GCM (o mesmo das mensagens cifradas). Na emissão, o conteúdo é a lista JSON de tokens |
+| RT-72 | O pedido leva `x` (chave X25519 de quem pede, `z6LS…`), assinado junto: a resposta é cifrada para ela. Pedido sem `x` não entra |
+| RT-73 | `diretorio/{did}`: `{tipo, jwt, atualizado}`; `jwt` é `diretorio+jwt` assinado pelo próprio DID com `name`, `x` e, no serviço, `cartao`. Quem lê confere a assinatura e que o `iss` é o id do registro |
+| RT-74 | Busca ao entrar e a cada 30 s (`iniciarFilas`), parada ao bloquear; a Governança e o serviço consultam `fila-solicitacao` por `para`; a resposta é lida por `nonce` (sem listar) e apagada depois |
+| RT-75 | Regras (`firebase/firestore.rules`): formato e tamanho (`para` did:key, `env` começa com `smsg1.`, até 60 mil caracteres; diretório até 100 mil); `fila-emissao` não pode ser listada; diretório não pode ser apagado |

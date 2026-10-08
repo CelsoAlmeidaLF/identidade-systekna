@@ -366,12 +366,12 @@ async function sealFor(toMb,text){
   const r=await seal(await msgKey(shared,ephPub,toPub),te.encode(text));shared.fill(0);
   return['smsg1',b64u.enc(ephPub),r.iv,r.ct].join('.');
 }
-async function openMsg(pkg){
+async function openMsg(pkg,quem=ses){
   const p=pkg.trim().split('.');
   if(p.length!==4||p[0]!=='smsg1')throw new Error('Isso não parece uma mensagem cifrada. Ela começa com smsg1.');
   const ephPub=b64u.dec(p[1]);
-  const shared=new Uint8Array(await S.deriveBits({name:'X25519',public:await S.importKey('raw',ephPub,{name:'X25519'},false,[])},ses.xPriv,256));
-  try{return td.decode(await unseal(await msgKey(shared,ephPub,ses.xPub),{iv:p[2],ct:p[3]},null,true))}
+  const shared=new Uint8Array(await S.deriveBits({name:'X25519',public:await S.importKey('raw',ephPub,{name:'X25519'},false,[])},quem.xPriv,256));
+  try{return td.decode(await unseal(await msgKey(shared,ephPub,quem.xPub),{iv:p[2],ct:p[3]},null,true))}
   catch{throw new Error('Esta mensagem não foi cifrada para a sua chave, ou foi alterada.')}
   finally{shared.fill(0)}
 }

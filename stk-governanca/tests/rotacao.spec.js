@@ -3,7 +3,7 @@
 // o livro continua íntegro com as duas chaves, credenciais antigas continuam sendo desta Governança e quem
 // confiava no DID antigo passa a confiar no novo ao importar o aviso.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, PIN, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, telaDoPin, digitarPin, payloadDe } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, entregarNaCarteira, receberPedido, PIN, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, telaDoPin, digitarPin, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -22,10 +22,10 @@ async function pedirIdentidade() {
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
   await carteira.fill('#aqN', 'Maria Teste');
+  await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  const tok = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const tok = await ultimoPedidoPara(gov);
   return tok;
 }
 
@@ -38,11 +38,7 @@ async function emitirIdentidade() {
 }
 
 async function guardarNaCarteira(tok) {
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await carteira.fill('#rcT', tok);
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await entregarNaCarteira(carteira, tok)).toBe('Credencial guardada');
 }
 
 /** Desafio da Governança respondido pela carteira com a credencial escolhida (pelo jti). */

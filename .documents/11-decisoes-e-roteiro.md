@@ -40,6 +40,7 @@
 | 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
 | 08/10/2026 | **Versão 1.0.0**: os 3 apps homologados (pré-aprovados) pelo responsável: carteira de did:key e cv:key, mensagens cifradas, cofre de anotações, emissão de credenciais e de crachás pelos serviços |
 | 08/10/2026 | **Fila de pedidos na Governança** (cenário do gestor da STK): uma fila **única** para identidades (did:key) e serviços, com etiqueta em cada cartão (opção B); aprovar ou reprovar cada pedido (1.1) |
+| 08/10/2026 | **Fim do copiar e colar: filas no Firebase** (`fila-solicitacao` e `fila-emissao`) nos três fluxos (identidade, aprovação de emissão, crachá). Projeto novo `systekna-identidade`. O responsável queria login pelo DID, mas sem faturamento ("é só prova de conceito, não é para PRD"): plano gratuito, sem login, Firestore pela API REST; segurança pelas assinaturas e pela cifra do conteúdo (1.2) |
 
 ## 2. Versões publicadas
 
@@ -65,13 +66,14 @@
 | 0.28.0 | Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados) |
 | 0.28.1 | Mensagens cifradas: o texto original sai da caixa ao cifrar |
 | 1.0.0 | Primeira versão homologada dos 3 apps (sem mudança nas telas desde a 0.28.1) |
-| **1.1.0** | **Governança: fila de pedidos (Aguardando · Aprovados · Reprovados), receber vários pedidos de uma vez** |
+| 1.1.0 | Governança: fila de pedidos (Aguardando · Aprovados · Reprovados), receber vários pedidos de uma vez |
+| **1.2.0** | **Filas no Firebase: pedidos e respostas sem copiar e colar, cifrados para quem recebe; diretório de Governanças e serviços** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (1.1.0) |
+| `main` | Versão vigente (1.2.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 
@@ -80,9 +82,10 @@
 | Prioridade | Item |
 |---|---|
 | 1 | Revisão de criptografia (08/10/2026): fixar o DID da Governança na carteira e conferir o emissor do crachá; centralizar `exp`/`nbf`/`aud` no `verifyJWT` e criar testes negativos de JWT |
+| 1a | Desafio e prova da portaria pelas filas (o último copiar e colar) |
 | 2 | Atualizar os testes antigos que ainda usam telas substituídas ([07](07-testes.md) §4) |
 | 2a | Vários serviços por organização (combinado na 0.22) |
 | 3 | Criar a Governança Systekna de produção e pré-carregar o DID dela nos apps (DP-08) |
 | 4 | "Entrar com a carteira": os apps das organizações aceitarem o crachá direto |
 | 5 | Lista pública de revogação |
-| — | Adiados: QR Code para os pacotes entre os apps, senha no PDF de recuperação, cofre, divulgação seletiva (SD-JWT), domínio próprio |
+| — | Adiados: login pelo DID nas filas (plano Blaze), senha no PDF de recuperação, cofre, divulgação seletiva (SD-JWT), domínio próprio |

@@ -24,7 +24,8 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | `stk-carteira/tests/acesso.spec.js` | Acesso a apps: Cartão do serviço e do app, pedido, análise, crachá com cv:key, recusa assinada, portaria |
 | `stk-governanca/tests/governanca.spec.js` | Envelope, uma identidade ativa por DID, regras da STK |
 | `stk-governanca/tests/rotacao.spec.js` | Troca de chave da STK e importação do aviso |
-| `stk-governanca/tests/fila.spec.js` | Fila de pedidos da STK: receber vários, Aguardando · Aprovados · Reprovados, vencido, bloqueio (1.1) |
+| `stk-governanca/tests/fila.spec.js` | Fila de pedidos da STK alimentada pela fila-solicitacao: Aguardando · Aprovados · Reprovados, vencido, bloqueio, resposta cifrada (1.1/1.2) |
+| `compartilhado/tests/filas.spec.js` | Ciclo completo pelas filas nos 3 apps: identidade, aprovação de emissão, cartão no diretório, crachá e recusas (1.2) |
 | `stk-servicos/tests/servicos.spec.js` | Crachás e portaria (versão anterior das telas — ver §4) |
 | `compartilhado/tests/dominio.spec.js` | Um DID por app a partir das mesmas 12 palavras |
 | `stk-governanca/tests/criterios-de-aceite.spec.js` | Fluxo base: pedido, emissão, apresentação, revogação, livro |
@@ -47,9 +48,13 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | RTE-04 | Identidades de teste só com frases BIP39 conhecidas; nunca dados reais |
 | RTE-05 | Todo arquivo de fluxo termina conferindo que não houve violação de CSP |
 
-## 4. Situação da suíte completa (08/10/2026, código 1.0.0)
+## 3A. Firestore falso nos testes (1.2)
 
-**177 passaram · 4 falharam · 37 não rodaram** (dependiam dos que falharam, no mesmo arquivo), em 13,9 min. São as mesmas 4 falhas da 0.22.1; nenhuma nova. Na 0.22.1 eram 156 aprovados. Na 0.23.0, `recuperacao.spec.js` (9 testes) passou, e os arquivos afetados pela recuperação rodaram com 80 aprovados e só a falha antiga de `identidades.spec.js`.
+Os testes não usam o Firestore de verdade. `helpers.js` liga, em cada página preparada, um Firestore falso em memória (um por arquivo de teste) que responde à API REST (criar, gravar, ler, apagar, consulta por campo). `ultimoPedidoPara(page)` abre o último pedido enviado a quem tem a página; `buscarRespostas(page)` faz o mesmo que + › Buscar respostas; `receberPedido(gov, tok)` põe o pedido na fila da Governança, se ainda não está, e abre o cartão dele. As regras do Firestore foram conferidas no projeto real com `curl` (formato certo passa, lixo leva 403, `fila-emissao` não lista).
+
+## 4. Situação da suíte completa (08/10/2026, código 1.2.0)
+
+**189 passaram · 4 falharam · 37 não rodaram** (dependiam dos que falharam, no mesmo arquivo), em 12,6 min. São as mesmas 4 falhas da 0.22.1, pelos mesmos motivos; nenhuma nova. Na 1.0.0 eram 177 aprovados. Na 0.23.0, `recuperacao.spec.js` (9 testes) passou, e os arquivos afetados pela recuperação rodaram com 80 aprovados e só a falha antiga de `identidades.spec.js`.
 
 As 4 falhas são de **testes antigos que esperam telas que mudaram depois deles** — os testes de cada entrega nova passaram:
 

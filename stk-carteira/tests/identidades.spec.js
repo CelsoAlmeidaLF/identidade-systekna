@@ -3,7 +3,7 @@
 // uma identidade ou cria uma nova com nome e perfil (Identidade, Profissional ou Personalizada com nome do perfil).
 // Pode haver várias, inclusive do mesmo perfil, todas derivadas da semente das 12 palavras, cada uma com DID próprio.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, entregarNaCarteira, receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -26,10 +26,10 @@ async function solicitar(n, { nome, perfil, rotulo } = {}) {
   if (nome !== undefined) await carteira.fill('#aqN', nome);
   if (perfil) await carteira.selectOption('#aqP', perfil);
   if (rotulo !== undefined) await carteira.fill('#aqR', rotulo);
+  await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  const tok = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const tok = await ultimoPedidoPara(gov);
   return tok;
 }
 
@@ -128,12 +128,7 @@ test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa',
   expect(p.vc.credentialSubject).toEqual({ id: p.sub, nome: 'Maria S. Consultora' });
   expect(p.exp - p.iat).toBe(365 * DIA);
 
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await expect(carteira.locator('#sheetBody h3')).toHaveText('Receber aprovação de identidade');
-  await carteira.fill('#rcT', aprovacao);
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await entregarNaCarteira(carteira, aprovacao)).toBe('Credencial guardada');
   // Cartão: perfil, nome, emissora + validade.
   const card = carteira.locator('#cList .cred').filter({ hasText: 'Maria S. Consultora' });
   await expect(card.locator('.r1 .tipo')).toHaveText('Profissional');

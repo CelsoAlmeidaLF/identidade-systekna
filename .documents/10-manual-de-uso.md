@@ -1,7 +1,7 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **1.1.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
-> Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
+> Passo a passo nas telas, versão **1.2.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Desde a 1.2.0, pedidos e respostas passam de um app para o outro **sozinhos, pelas filas** (Firestore): `fila-solicitacao` e `fila-emissao`. Nada é copiado e colado; os apps buscam ao abrir e a cada 30 segundos. Precisa de internet para enviar e receber.
 
 ## Links
 
@@ -26,19 +26,19 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 
 | Passo | Onde | O que fazer |
 |---|---|---|
-| 1 | Carteira → **+** → Solicitar aprovação de identidade | Escolha a identidade ou **+ Nova identidade** (nome, perfil e, na Personalizada, o nome do perfil). Toque em **Assinar pedido** e **Copiar pedido** |
-| 2 | STK → **Fila** | Cole o pedido (ou vários de uma vez) e toque em **Receber pedidos**. Ele entra em **Aguardando**. Toque no cartão **Identidade: nome**: aparecem nome, perfil e DID |
-| 3 | STK | Escolha a validade e toque em **Aprovar identidade** e **Copiar**. Ou **Reprovar pedido** com motivo (fica só no livro). O pedido vai para **Aprovados** ou **Reprovados**; um aprovado, tocado, mostra a aprovação para copiar de novo |
-| 4 | Carteira → **+** → Receber aprovação de identidade | Cole. Aparece o cartão: perfil · nome · did:key · Governança + validade |
+| 1 | Carteira → **+** → Solicitar aprovação de identidade | Escolha a identidade ou **+ Nova identidade** (nome, perfil e, na Personalizada, o nome do perfil). Em **Governança**, a lista vem do diretório. Toque em **Enviar pedido** |
+| 2 | STK → **Fila** | O pedido aparece sozinho em **Aguardando** (ou toque em **Buscar pedidos agora**). Toque no cartão **Identidade: nome**: aparecem nome, perfil e DID |
+| 3 | STK | Escolha a validade e toque em **Aprovar identidade**: a aprovação volta pela fila. Ou **Reprovar pedido** com motivo: a recusa assinada também volta. O pedido vai para **Aprovados** ou **Reprovados**; num aprovado, **Reenviar** manda de novo |
+| 4 | Carteira | A aprovação chega sozinha (ou **+** → **Buscar respostas**). Aparece o cartão: perfil · nome · did:key · Governança + validade. Se foi reprovada, a identidade aparece "reprovada: motivo" na lista do passo 1 |
 
 ## 2. Aprovação do serviço (Serviços ↔ STK)
 
 | Passo | Onde | O que fazer |
 |---|---|---|
-| 1 | Serviços → **+** → Solicitar aprovação de emissão | Na 1ª vez, cole o DID da STK (STK → aba Governança → DID). Informe o **nome do serviço**. **Assinar pedido** e **Copiar**. O pedido não leva apps |
-| 2 | STK → **Fila** | Cole em **Receber pedidos** e toque no cartão **Serviço: nome**. O cartão mostra o serviço e o DID, sem lista de apps (se já aprovado, avisa que aprovar de novo renova) |
-| 3 | STK | Escolha a validade e toque em **Aprovar emissão** e **Copiar**. Ou **Reprovar pedido** |
-| 4 | Serviços → **+** → Receber aprovação de emissão | Cole. O serviço fica aprovado |
+| 1 | Serviços → **+** → Solicitar aprovação de emissão | Na 1ª vez, escolha a **Governança** na lista (vem do diretório). Informe o **nome do serviço** e toque em **Enviar pedido**. O pedido não leva apps |
+| 2 | STK → **Fila** | Toque no cartão **Serviço: nome**. O cartão mostra o serviço e o DID, sem lista de apps (se já aprovado, avisa que aprovar de novo renova) |
+| 3 | STK | Escolha a validade e toque em **Aprovar emissão**. Ou **Reprovar pedido** |
+| 4 | Serviços | A aprovação chega sozinha (ou **+** → **Buscar respostas e pedidos**). O serviço fica aprovado; uma recusa aparece no Painel como "Recusado: motivo" |
 
 ## 3. Apps e funcionalidades do serviço (Serviços)
 
@@ -53,11 +53,11 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 
 | Passo | Onde | O que fazer |
 |---|---|---|
-| 1 | Serviços → **+** → Cartão do serviço (todos os apps) **ou** Painel → toque no cartão de um app (**Cartão do app**) | Copie o cartão e envie à pessoa |
-| 2 | Carteira → **+** → Solicitar acesso a um app | Cole o cartão e toque em **Ler cartão**. Cada app mostra as funcionalidades e os grupos. Marque o(s) app(s) (no Cartão do app ele já vem marcado), escolha a identidade aprovada, **Assinar pedido** e **Copiar**. Em Credenciais aparece "Acesso a … · Aguardando" |
-| 3 | Serviços → **Crachás** | Cole o pedido e toque em **Conferir pedido**. O cartão de análise mostra nome, identidade, DID, os apps e, em cada um, os grupos e as funcionalidades, **todas marcadas** |
-| 4 | Serviços | Desmarque o que a pessoa não pode usar (tocar num grupo marca ou desmarca as funcionalidades dele). **Aprovar acesso** (um crachá por app, com as funcionalidades liberadas; copie) ou **Recusar pedido** com motivo (copie a recusa assinada) |
-| 5 | Carteira → **+** → Receber crachá de acesso | Cole. Crachá: aparece o cartão verde **CRACHÁ: APP …** com a **cv:key**. Recusa: o pedido fica "Recusado: motivo" |
+| 1 | Serviços | Com a aprovação de emissão e ao menos um app, o **Cartão do serviço** vai sozinho para o diretório (ou **+** → Cartão do serviço publica na hora) |
+| 2 | Carteira → **+** → Solicitar acesso a um app | Escolha o **serviço** na lista. Cada app mostra as funcionalidades e os grupos. Marque o(s) app(s), escolha a identidade aprovada e toque em **Enviar pedido**. Em Credenciais aparece "Acesso a … · Aguardando" |
+| 3 | Serviços → **Crachás** | O pedido aparece sozinho na lista (ou **Buscar pedidos agora**). Toque nele: o cartão de análise mostra nome, identidade, DID, os apps e, em cada um, os grupos e as funcionalidades, **todas marcadas** |
+| 4 | Serviços | Desmarque o que a pessoa não pode usar (tocar num grupo marca ou desmarca as funcionalidades dele). **Aprovar acesso** (um crachá por app, com as funcionalidades liberadas) ou **Recusar pedido** com motivo. A resposta volta pela fila |
+| 5 | Carteira | O crachá chega sozinho (ou **+** → **Buscar respostas**): aparece o cartão verde **CRACHÁ: APP …** com a **cv:key**. Recusa: o pedido fica "Recusado: motivo" |
 
 ## 5. Usar o acesso (portaria)
 

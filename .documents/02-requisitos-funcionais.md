@@ -2,7 +2,7 @@
 
 > Convenção: **RF-XX-nn** — `CM` comum aos 3 apps, `CT` Carteira, `GV` Governança, `SV` Serviços, `F` futuro.
 > Situação: ✅ homologado pelo responsável (pré-aprovado na 1.0.0) · 🟢 com teste automatizado, ainda não homologado · 🟡 sem teste automatizado · ⬜ planejado · ⏸ adiado.
-> Versão de referência: **1.1.0**.
+> Versão de referência: **1.2.0**.
 
 ## 1. Comuns aos 3 apps
 
@@ -24,6 +24,16 @@
 | RF-CM-15 | **Exportar o livro** (Governança e Serviços, 0.25): Ajustes → Exportar livro, pede o PIN; **PDF** (várias páginas, capa com DID, período, total e conferência de integridade) ou **Excel .xlsx** (planilhas Livro e Resumo); período: todo o livro, últimos 30 dias, este mês, mês passado ou intervalo de datas | ✅ |
 | RF-CM-14 | **Ler QR code** na tela Recuperar, pela câmera, onde o navegador lê QR (Chrome do Android); nos outros, a câmera do aparelho lê e a pessoa cola o texto | ✅ (0.23) |
 
+## 1A. Filas (1.2)
+
+| ID | Requisito | Situação |
+|---|---|---|
+| RF-FL-01 | Pedidos (identidade, aprovação de emissão, crachá) vão pela **fila-solicitacao**, cifrados para a chave X25519 de quem atende | 🟢 (1.2) |
+| RF-FL-02 | Respostas (aprovação, crachás, recusa) voltam pela **fila-emissao**, cifradas para a chave que veio no pedido; quem recebe apaga o item depois de ler | 🟢 (1.2) |
+| RF-FL-03 | **Diretório**: a Governança e cada serviço publicam, assinados pela própria chave, o nome e a chave de cifragem (o serviço, também o cartão); a carteira e o serviço escolhem por ele | 🟢 (1.2) |
+| RF-FL-04 | Busca ao abrir o app e a cada 30 segundos, enquanto desbloqueado; e pelo menu, na hora | 🟢 (1.2) |
+| RF-FL-05 | O copiar e colar sai dos três fluxos (identidade, aprovação de emissão, crachá); o Cartão do app colado dá lugar ao diretório | 🟢 (1.2) |
+
 ## 2. Carteira de Identidades Soberanas
 
 ### 2.1 Navegação
@@ -31,7 +41,7 @@
 | ID | Requisito | Sit. |
 |---|---|---|
 | RF-CT-01 | Rodapé com 5 botões: **Credenciais · Identidade · ( + ) · Apresentar · Ajustes**, com o + no centro | ✅ |
-| RF-CT-02 | Menu **+**: Solicitar aprovação de identidade, Receber aprovação de identidade, Solicitar acesso a um app, Receber crachá de acesso, Apresentar credencial | ✅ |
+| RF-CT-02 | Menu **+**: Solicitar aprovação de identidade, Solicitar acesso a um app, Buscar respostas, Apresentar credencial (1.2) | 🟢 (1.2) |
 | RF-CT-03 | Aba Identidade: chaves públicas da identidade nº 0, documento DID e mensagens cifradas | ✅ |
 
 ### 2.2 Identidades
@@ -42,7 +52,7 @@
 | RF-CT-11 | Cada identidade tem **nome** e **perfil**: Identidade, Profissional ou Personalizada (com o nome do perfil editável, ex.: Clube) | ✅ |
 | RF-CT-12 | Quantas quiser, inclusive várias do mesmo perfil | ✅ |
 | RF-CT-13 | **Solicitar aprovação de identidade**: escolher uma identidade ou criar nova; o pedido sai assinado pelo DID dela, com nome e perfil | ✅ |
-| RF-CT-14 | **Receber aprovação de identidade**: guarda na identidade certa pelo DID | ✅ |
+| RF-CT-14 | **Receber aprovação de identidade** pela fila (1.2: sem colar): guarda na identidade certa pelo DID; só aceita da Governança a quem a identidade pediu; a recusa aparece como "reprovada: motivo" | 🟢 (1.2) |
 | RF-CT-15 | Situação de cada identidade na lista: aprovada, aguardando, sem aprovação, aprovação vencida | ✅ |
 | RF-CT-16 | Identidades criadas na 0.17.0 viram nome + perfil, com o mesmo DID | ✅ |
 
@@ -63,7 +73,7 @@
 | RF-CT-30 | **Solicitar acesso a um app**: ler o Cartão do serviço ou o **Cartão do app** (0.21, o app já vem marcado); conferir que o **serviço** foi aprovado pela mesma Governança da identidade (0.22); recusar cartão alterado | ✅ (0.21–0.22: ✅) |
 | RF-CT-34 | Mostrar, em cada app do cartão, as **funcionalidades** e os **grupos** dele (0.22) | ✅ |
 | RF-CT-31 | Escolher o(s) app(s) e a **identidade aprovada** que vai usar; o pedido leva a aprovação dela | ✅ |
-| RF-CT-32 | **Receber crachá de acesso**: aceita o crachá ou a recusa assinada | ✅ |
+| RF-CT-32 | **Receber crachá de acesso** pela fila (1.2): aceita o crachá (só do serviço a quem pediu) ou a recusa assinada | 🟢 (1.2) |
 | RF-CT-33 | **Apresentar** (rodapé ou menu +): responde ao desafio com a credencial escolhida, assinando pelo DID dela | ✅ |
 
 ### 2.5 Outros
@@ -88,7 +98,7 @@
 |---|---|---|
 | RF-GV-01 | Painel: **pedidos aguardando na fila** (toque abre a Fila, 1.1), credenciais ativas, revogadas, emissores confiáveis, verificações, últimos atos, integridade do livro | ✅ |
 | RF-GV-02 | Livro completo com conferência de integridade (cada ato conferido com a chave da época) | ✅ |
-| RF-GV-03 | Aba **Fila** (era Aprovar até a 1.0): **Receber pedidos** aceita um ou vários pedidos colados de uma vez; cada um é conferido (assinatura, prazo, uso único, destinatário, já na fila) e entra na fila; os que não entram mostram o motivo | 🟢 (1.1) |
+| RF-GV-03 | Aba **Fila** (era Aprovar até a 1.0): os pedidos chegam pela **fila-solicitacao** (1.2), sozinhos ou por **Buscar pedidos agora**; cada um é conferido (assinatura, prazo, uso único, destinatário, já na fila, chave de resposta) e entra na fila; os que não entram mostram o motivo | 🟢 (1.2) |
 | RF-GV-13 | **Fila única** de pedidos de identidade (did:key) e de serviço, com etiqueta **Identidade**, **Serviço** ou **Personalizada**; filtros **Aguardando · Aprovados · Reprovados** com contagem; cada cartão mostra nome, perfil, DID e quando chegou | 🟢 (1.1) |
 | RF-GV-14 | Tocar num pedido **aguardando** abre o cartão de aprovação; num **aprovado**, mostra a aprovação para copiar de novo; pedido **vencido** na fila só pode ser reprovado | 🟢 (1.1) |
 | RF-GV-15 | A fila fica **cifrada** com o estado da Governança: continua depois de bloquear e vai no backup; cada pedido recebido entra no livro | 🟢 (1.1) |
@@ -107,12 +117,12 @@
 | ID | Requisito | Sit. |
 |---|---|---|
 | RF-SV-01 | Rodapé: **Painel · Crachás · ( + ) · Portaria · Serviço** | ✅ |
-| RF-SV-02 | Menu **+**: Solicitar aprovação de emissão, Receber aprovação de emissão, Cartão do serviço | ✅ |
+| RF-SV-02 | Menu **+**: Solicitar aprovação de emissão, Buscar respostas e pedidos, Cartão do serviço (publica no diretório) (1.2) | 🟢 (1.2) |
 | RF-SV-13 | **Serviço › Apps** (0.22): cadastrar apps (aplicativo, serviço ou ferramenta); em cada um, **funcionalidades** (nome, código e tipo: módulo, micro-serviço ou ferramenta) e **grupos** de funcionalidades; tirar funcionalidade ou grupo; tudo no livro | ✅ |
 | RF-SV-15 | **Relatório de uso** no Painel (0.24): 7 ou 30 dias, filtro por app; acessos liberados e negados por dia (barras), por app, por funcionalidade e por motivo de negação; gestão do período (crachás emitidos, pedidos recusados, crachás revogados) | ✅ |
 | RF-SV-14 | **Cartão do app** (0.21): tocar no cartão de um app no Painel gera o cartão só daquele app; app sem aprovação válida avisa e não gera | ✅ |
 | RF-SV-03 | **Solicitar aprovação de emissão**: nome do serviço; Governança informada uma vez; se já aprovado, pedir de novo renova. Sem apps desde a 0.22 | ✅ (0.22) |
-| RF-SV-04 | **Receber aprovação de emissão**: confere a assinatura da Governança e guarda a aprovação do serviço | ✅ |
+| RF-SV-04 | **Receber aprovação de emissão** pela fila (1.2): confere a assinatura da Governança e guarda a aprovação; a recusa aparece no Painel | 🟢 (1.2) |
 | RF-SV-05 | Painel: organização + "Ecossistema aprovado pela Governança Systekna" e **um cartão por app** do catálogo (App · did:key com copiar · aprovador + validade); pedidos aguardando | ✅ |
 | RF-SV-06 | **Cartão do serviço** com os apps, o **catálogo** (funcionalidades e grupos) e a aprovação válida | ✅ (catálogo: ✅ 0.22) |
 | RF-SV-07 | Aba **Crachás**: cartão de análise (nome, identidade, DID, apps marcáveis e, em cada app, os **grupos** como atalho e as **funcionalidades**, todas já marcadas; validade) | ✅ (funcionalidades: ✅ 0.22) |
@@ -128,7 +138,9 @@
 |---|---|---|
 | RF-F-01 | DID da Governança de produção pré-carregado nos apps | ⬜ aguarda a STK de produção |
 | RF-F-02 | Apps das organizações aceitarem o crachá direto ("Entrar com a carteira") | ⬜ |
-| RF-F-03 | QR Code para os pacotes entre os apps (pedido, aprovação, cartão, crachá, desafio e apresentação); hoje o QR existe só no PDF de recuperação | ⏸ adiado (DP-04) |
+| RF-F-03 | QR Code para os pacotes entre os apps | ⏸ substituído pelas filas na 1.2 (RF-FL); desafio e prova da portaria continuam por copiar e colar |
+| RF-F-10 | Desafio e prova da portaria pelas filas | ⬜ |
+| RF-F-11 | Login pelo DID nas filas (precisa do plano Blaze) | ⬜ adiado: sem faturamento |
 | RF-F-08 | Senha no PDF de recuperação | ⬜ não pedido |
 | RF-F-09 | Vários serviços por organização | ⬜ próximo passo combinado |
 | RF-F-04 | Lista pública de revogação | ⬜ |

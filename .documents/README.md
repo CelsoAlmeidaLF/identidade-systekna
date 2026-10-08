@@ -1,7 +1,7 @@
 # Documentação — Identidade Soberana Systekna
 
 > **Versão da documentação:** v4 · 08/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
-> **Código de referência:** branch `main`, versão **1.1.0**, publicada no GitHub Pages.
+> **Código de referência:** branch `main`, versão **1.2.0**, publicada no GitHub Pages.
 > **Situação:** os 3 apps foram **homologados (pré-aprovados)** pelo responsável na **1.0.0**.
 > **Substitui:** `docs/` (v0), `docs_v1/` (v1) e `docs_v2/` (v2), que ficam no histórico do git.
 

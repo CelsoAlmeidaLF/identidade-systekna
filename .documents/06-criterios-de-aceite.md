@@ -106,6 +106,17 @@
 | CA-114 | Reprovar pede o motivo, registra no livro e o pedido vai para Reprovados, com o motivo no cartão |
 | CA-115 | Pedido vencido na fila aparece como Vencido: Aprovar fica desligado e Reprovar continua |
 
+## 5E. Filas (`compartilhado/tests/filas.spec.js` e `fila.spec.js`, 1.2)
+
+| CA | Critério |
+|---|---|
+| CA-120 | **Dado** a Governança publicada no diretório, **quando** a carteira envia o pedido, **então** ele chega à Fila da STK; na fila remota há só texto cifrado, sem o nome |
+| CA-121 | Aprovar envia a aprovação pela fila-emissao; a carteira recebe sozinha e o item some da fila |
+| CA-122 | Reprovar envia a recusa assinada; a carteira mostra "reprovada: motivo" |
+| CA-123 | O serviço escolhe a Governança no diretório, recebe a aprovação pela fila e publica o cartão no diretório ao ter um app |
+| CA-124 | A carteira escolhe o serviço no diretório, pede o crachá pela fila, recebe o crachá (ou a recusa) sozinha |
+| CA-125 | Pedido repetido, de crachá na STK ou sem a chave de resposta não entra, com o motivo; cartão alterado no diretório é recusado |
+
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
 
 | CA | Critério |

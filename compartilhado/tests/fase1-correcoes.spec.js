@@ -60,11 +60,11 @@ async function conferirApresentacao(token) {
   return emissor.locator('#vpOut');
 }
 
+/** Entrega à conferência da carteira (a mesma que a fila usa) e devolve a mensagem dela. */
 async function receberNaCarteira(token) {
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await carteira.fill('#rcT', token);
-  await carteira.click('#rcGo');
+  const m = await carteira.evaluate(async t => { try { return await receberResposta(t, null); } catch (e) { return e.message; } finally { renderCreds(); } }, token);
+  carteira.__msg = m;
+  return m;
 }
 
 async function ajusteCarteira(chave) {
@@ -152,8 +152,7 @@ test.describe('1.3 · tipo do token (typ) é exigido', () => {
 
   test('carteira recusa token com conteúdo de credencial mas typ diferente de vc+jwt', async () => {
     await receberNaCarteira(await assinar(emissor, 'pedido+jwt', vcPayload(didEmissor, didCarteira)));
-    await expect(carteira.locator('#rcH')).toHaveText('Isto não é uma credencial verificável.');
-    await fecharSheet(carteira);
+    expect(carteira.__msg).toBe('Isto não é uma credencial verificável.');
   });
 });
 
@@ -161,22 +160,21 @@ test.describe('1.4 · carteira recusa credencial fora da validade', () => {
   test('credencial já expirada', async () => {
     const ontem = Math.floor(Date.now() / 1000) - 86_400;
     await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { iat: ontem - 60, nbf: ontem - 60, exp: ontem })));
-    await expect(carteira.locator('#rcH')).toContainText('Esta credencial venceu em');
-    await fecharSheet(carteira);
+    expect(carteira.__msg).toContain('Esta credencial venceu em');
   });
 
   test('credencial que ainda não entrou em vigor', async () => {
     const amanha = Math.floor(Date.now() / 1000) + 86_400;
     await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { nbf: amanha })));
-    await expect(carteira.locator('#rcH')).toContainText('Esta credencial só vale a partir de');
-    await fecharSheet(carteira);
+    expect(carteira.__msg).toContain('Esta credencial só vale a partir de');
   });
 });
 
 test('1.5 · status não verificável é recusado por padrão e aceito só com política explícita', async () => {
   const vc = await assinar(outroEmissor, 'vc+jwt', vcPayload(didOutro, didCarteira));
-  await receberNaCarteira(vc);
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  // A carteira só aceita aprovação de quem ela pediu (1.2): registra o pedido a esse emissor antes.
+  await carteira.evaluate(async d => guardarPerfil(0, { pedido: { at: Date.now(), nome: 'Teste', nonce: null, gov: d } }), didOutro);
+  expect(await receberNaCarteira(vc)).toBe('Credencial guardada');
 
   // O outro emissor entra na lista de confiança.
   await aba(emissor, 'vGov');

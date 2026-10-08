@@ -3,7 +3,7 @@
 // crachás (CV:KEY) para quem tem a Identidade aprovada e confere o acesso na portaria.
 // A carteira ainda não tem a tela de pedir crachá: o pedido é assinado direto na página da carteira.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, entregarNaCarteira, receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -59,11 +59,7 @@ async function emitirCrachas() {
 }
 
 async function receberNaCarteira(tok) {
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await carteira.fill('#rcT', tok);
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await entregarNaCarteira(carteira, tok)).toBe('Credencial guardada');
 }
 
 async function gerarDesafio(app) {
@@ -110,9 +106,10 @@ test.beforeAll(async ({ browser }) => {
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
   await carteira.fill('#aqN', 'Maria Teste');
+  await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  const pedido = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const pedido = await ultimoPedidoPara(gov);
   await receberPedido(gov, pedido);
   await gov.click('#iGo');
   await expect(gov.locator('#iOk')).toContainText('Credencial emitida');
@@ -290,7 +287,7 @@ test.describe('crachás', () => {
 
   test('a Governança não atende pedido de crachá', async () => {
     await receberPedido(gov, await pedidoDeCracha(['Portaria'], { aud: 'emissor' }));
-    await expect(gov.locator('#iqH')).toHaveText('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
+    await expect(gov.locator('#iqRes')).toContainText('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
   });
 });
 
