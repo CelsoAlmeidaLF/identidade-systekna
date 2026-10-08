@@ -27,13 +27,13 @@
 | H-19 | Emissão de credenciais (Governança) e de crachás pelos serviços; os 3 apps completos | Todos | 1.0.0 | ✅ Pré-aprovado ("os 3 apps foram homologados") |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
-## 2. Roteiro de homologação (0.23.0)
+## 2. Roteiro de homologação (1.0.0)
 
 Siga o [Manual de uso](10-manual-de-uso.md). Para cada passo, anote ✔ ou o problema encontrado.
 
 | # | Verificar | Resultado |
 |---|---|---|
-| R-01 | Criar Carteira, STK e Serviços com 12 palavras diferentes; versão 0.23.0 nos três | |
+| R-01 | Criar Carteira, STK e Serviços com 12 palavras diferentes; versão 1.0.0 nos três | |
 | R-02 | Criar 3 identidades (Identidade, Profissional, Personalizada: Clube) e pedir aprovação de cada | |
 | R-03 | STK aprova duas e recusa uma; a recusada continua "aguardando" na carteira | |
 | R-04 | Cartões de identidade com perfil, nome, did:key (copiar), Governança + validade, cores certas | |

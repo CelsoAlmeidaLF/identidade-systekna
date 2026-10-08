@@ -1,6 +1,6 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **0.28.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Passo a passo nas telas, versão **1.0.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
 > Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
 
 ## Links

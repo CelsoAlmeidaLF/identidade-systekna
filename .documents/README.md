@@ -1,6 +1,6 @@
 # Documentação — Identidade Soberana Systekna
 
-> **Versão da documentação:** v3.1 · 08/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
+> **Versão da documentação:** v4 · 08/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
 > **Código de referência:** branch `main`, versão **1.0.0**, publicada no GitHub Pages.
 > **Situação:** os 3 apps foram **homologados (pré-aprovados)** pelo responsável na **1.0.0**.
 > **Substitui:** `docs/` (v0), `docs_v1/` (v1) e `docs_v2/` (v2), que ficam no histórico do git.
@@ -70,4 +70,5 @@ Site: <https://celsoalmeidalf.github.io/identidade-systekna/> · Repositório: <
 | v1 | `docs_v1/` | 03/10/2026 | Alvo de 3 apps (protótipo) |
 | v2 | `docs_v2/` (só no histórico do git desde a 0.22.1) | 03/10/2026 | Código 0.13.0 (atual + alvo) |
 | v3 | `.documents/` | 03/10/2026 | Código 0.20.0: os 3 apps construídos e aprovados nos primeiros testes |
-| **v3.1** | **`.documents/`** | **08/10/2026** | **Código 0.23.0: cartão do app, Serviço › Apps › Funcionalidades, pastas por projeto, recuperação com código e PDF** |
+| v3.1 | `.documents/` | 08/10/2026 | Código 0.23.0: cartão do app, Serviço › Apps › Funcionalidades, pastas por projeto, recuperação com código e PDF |
+| **v4** | **`.documents/`** | **08/10/2026** | **Código 1.0.0: os 3 apps homologados; mensagens cifradas, cofre de anotações, revisão de criptografia** |
