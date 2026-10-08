@@ -47,13 +47,14 @@
 | 0.20.0 | Acesso a apps: pedir, aprovar ou recusar e usar o crachá CV:KEY |
 | 0.21.0 | Cartão por app: o Serviços gera o cartão de um app só |
 | 0.22.0 | Serviço › Apps › Funcionalidades: a Governança aprova só o serviço |
-| **0.22.1** | **Pastas reorganizadas por projeto (`stk-*`, `compartilhado/`, `.documents/`); sem mudança nas telas** |
+| 0.22.1 | Pastas reorganizadas por projeto (`stk-*`, `compartilhado/`, `.documents/`); sem mudança nas telas |
+| **0.23.0** | **Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras (3 apps)** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.22.1) |
+| `main` | Versão vigente (0.23.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 

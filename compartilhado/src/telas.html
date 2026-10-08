@@ -13,11 +13,12 @@
   <div class="wrap">
     <button class="back" id="recBack"><svg class="i" viewBox="0 0 24 24"><path d="M15 5l-7 7 7 7"/></svg>Voltar</button>
     <h2>Recuperar identidade</h2>
-    <p class="sub">Digite as 12 palavras na ordem, separadas por espaço. Em português ou inglês.</p>
-    <label class="f" id="recField"><span>Palavras de recuperação</span>
-      <textarea id="recWords" rows="4" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="palavra1 palavra2 palavra3 …"></textarea></label>
+    <p class="sub">Digite as 12 palavras na ordem, separadas por espaço, ou o código de recuperação (STK1-…) do PDF.</p>
+    <label class="f" id="recField"><span>12 palavras ou código de recuperação</span>
+      <textarea id="recWords" rows="4" autocomplete="off" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="palavra1 palavra2 … ou STK1-…"></textarea></label>
     <p class="hint" id="recHint">0 de 12 palavras</p>
-    <button class="btn" id="recGo">Validar palavras</button>
+    <button class="btn" id="recGo">Validar</button>
+    <button class="btn ghost" id="recScan" hidden>Ler QR code</button>
   </div>
 </section>
 
