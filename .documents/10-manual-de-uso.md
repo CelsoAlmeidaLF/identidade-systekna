@@ -68,6 +68,8 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | Trocar a chave da STK | STK → aba Governança → **Trocar a chave**; depois **Copiar aviso de troca** e envie a quem confia |
 | Importar a troca de chave da STK | Serviços → aba Serviço → Importar troca de chave · STK de terceiros → Emissores confiáveis → Importar troca de chave |
 | Backup | Ajustes → Copiar backup cifrado / Restaurar backup |
+| PDF de recuperação (0.23) | Ajustes → **Salvar PDF de recuperação** (pede o PIN) → Baixar PDF. Também na criação: tela das 12 palavras → **Salvar PDF de recuperação**. O PDF traz o QR code, o código STK1-… e as 12 palavras |
+| Recuperar pelo código (0.23) | Recuperar → digite as 12 palavras **ou** o código STK1-… No Android, **Ler QR code** abre a câmera; no iPhone, leia o QR com a câmera do aparelho e cole o texto |
 | Conferir o livro | Painel → Ver livro completo → Conferir integridade |
 
 ## 6. Se algo der errado

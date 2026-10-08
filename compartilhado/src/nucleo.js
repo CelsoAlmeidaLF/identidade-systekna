@@ -479,6 +479,11 @@ async function drawWords(){
 }
 $('#toggleVeil').onclick=()=>{const g=$('#wordGrid');g.classList.toggle('veil');$('#toggleVeil').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
 wireSeg($('#langSeg'),async b=>{draft.lang=b.dataset.l;await drawWords()});
+// PDF com o QR code, o código e as 12 palavras. O DID ainda não existe: é derivado aqui só para constar no papel.
+$('#wordsPdf').onclick=async()=>{
+  const seed=await wordsToSeed(draft.words),id=await deriveIdentity(seed,dominioDe(await DB.get('meta')));seed.fill(0);
+  await saveRecoveryPdf(draft.ent,draft.lang,id.did);toast('PDF de recuperação salvo');
+};
 $('#wordsNew').onclick=async()=>{draft.ent=rnd(16);await drawWords();toast('Novas palavras geradas')};
 $('#wordsDone').onclick=()=>{
   const pos=[];while(pos.length<3){const p=1+crypto.getRandomValues(new Uint32Array(1))[0]%12;if(!pos.includes(p))pos.push(p)}
@@ -494,15 +499,24 @@ $('#confirmGo').onclick=()=>{
 };
 
 /* ================= recuperação ================= */
-function goRecover(from){$('#recWords').value='';$('#recHint').textContent='0 de 12 palavras';$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad');$('#recBack').onclick=()=>from==='lock'?showLock():show('sWelcome');show('sRecover')}
+function goRecover(from){$('#recWords').value='';$('#recHint').textContent='0 de 12 palavras';$('#recScan').hidden=!qrReaderOn();$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad');$('#recBack').onclick=()=>from==='lock'?showLock():show('sWelcome');show('sRecover')}
 $('#goRecover').onclick=()=>goRecover('welcome');
-$('#recWords').oninput=()=>{const n=normWords($('#recWords').value).length;$('#recHint').textContent=`${n} de 12 palavras`;$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad')};
+$('#recWords').oninput=()=>{const t=$('#recWords').value,n=normWords(t).length;$('#recHint').textContent=isRecCode(t)?'Código de recuperação':`${n} de 12 palavras`;$('#recHint').classList.remove('bad');$('#recField').classList.remove('bad')};
+$('#recScan').onclick=async()=>{const t=await scanQr();if(t){$('#recWords').value=t;$('#recWords').oninput();$('#recGo').click()}};
 $('#recGo').onclick=async()=>{
-  const words=normWords($('#recWords').value),hint=$('#recHint');
+  const t=$('#recWords').value,hint=$('#recHint');
+  let words=normWords(t);
   const fail=m=>{hint.textContent=m;hint.classList.add('bad');shake($('#recField'))};
   let r;
-  try{r=await wordsToEntropy(words)}
+  try{
+    // O código de recuperação vira as mesmas 12 palavras: daqui em diante o caminho é um só.
+    if(isRecCode(t)){r=await codeToEntropy(t);words=await entropyToWords(r.ent,r.lang)}
+    else r=await wordsToEntropy(words);
+  }
   catch(e){
+    if(e.code==='codeLen')return fail(`O código tem 32 letras e números depois de STK1. Você digitou ${e.n}.`);
+    if(e.code==='codeChar')return fail(`O código não usa ${e.bad.join(', ')} (não tem 0, 1, O nem I). Confira a letra.`);
+    if(e.code==='codeSum')return fail('O código não confere. Confira letra por letra.');
     if(e.code==='count')return fail(`São 12 palavras. Você digitou ${words.length}.`);
     if(e.code==='word')return fail(`${e.bad.length>1?'As palavras':'A palavra'} nº ${e.bad.join(', ')} não ${e.bad.length>1?'estão':'está'} na lista oficial. Confira a grafia.`);
     return fail('As palavras existem, mas a combinação não fecha. Confira a ordem.');
@@ -604,6 +618,7 @@ function mountCommonSettings(el){
   el.innerHTML=`<div class="sec-h">Segurança</div>
   <div class="list glass flat">
     <button class="tx" data-cs="words"><span class="dot" data-ic="note"></span><span class="t"><b>Ver as 12 palavras</b><small id="csWordsHow">Pede o PIN</small></span>${ic('chev')}</button>
+    <button class="tx" data-cs="pdf"><span class="dot" data-ic="note"></span><span class="t"><b>Salvar PDF de recuperação</b><small id="csPdfHow">QR code, código e as 12 palavras · pede o PIN</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="pin"><span class="dot" data-ic="key"></span><span class="t"><b>Trocar PIN</b><small>Pede o PIN atual</small></span>${ic('chev')}</button>
     <button class="tx" data-cs="bio" hidden><span class="dot" data-ic="shield"></span><span class="t"><b>Desbloqueio por biometria</b><small>Digital ou rosto, pelo chip de segurança do aparelho</small></span><span class="rv" id="csBio"></span></button>
     <button class="tx" data-cs="bioOnly" hidden><span class="dot" data-ic="lock"></span><span class="t"><b>Usar só biometria</b><small>Apaga o PIN deste aparelho</small></span><span class="rv" id="csBioOnly"></span></button>
@@ -662,6 +677,7 @@ async function refreshBio(){
   $('#csBioOnly').textContent=pin?'Desativado':'Ativado';
   document.querySelector('[data-cs="pin"]').hidden=!pin;
   $('#csWordsHow').textContent=pin?'Pede o PIN':'Pede a biometria';
+  $('#csPdfHow').textContent=`QR code, código e as 12 palavras · ${pin?'pede o PIN':'pede a biometria'}`;
 }
 /* Novo PIN digitado duas vezes no teclado da folha; T é o título que acompanha os passos. */
 function newPinSteps(T,onDone){
@@ -679,6 +695,12 @@ const CS={
     openSheet(`<h3>As 12 palavras</h3><p class="sub">Confira que ninguém está olhando a tela.</p><ol class="words glass veil" id="swGrid">${words.map(w=>`<li>${w}</li>`).join('')}</ol><div class="reveal"><button class="link" id="swT" style="margin:0">Mostrar palavras</button></div><button class="btn ghost" id="swClose">Fechar</button>`);
     $('#swT').onclick=()=>{const g=$('#swGrid');g.classList.toggle('veil');$('#swT').textContent=g.classList.contains('veil')?'Mostrar palavras':'Esconder palavras'};
     $('#swClose').onclick=closeSheet;
+  },
+  async pdf(){
+    if(!await reauth('Salvar PDF de recuperação'))return;
+    openSheet(`<h3>PDF de recuperação</h3><p class="sub">O PDF traz o QR code, o código de recuperação e as 12 palavras. Quem tiver o arquivo controla esta conta: imprima, guarde em lugar seguro e apague o arquivo do aparelho, do e-mail e da nuvem.</p><button class="btn" id="pdfGo">Baixar PDF</button><button class="btn ghost" id="pdfClose">Fechar</button>`);
+    $('#pdfGo').onclick=async()=>{await saveRecoveryPdf(ses.ent,ses.lang,ses.did);closeSheet();toast('PDF de recuperação salvo')};
+    $('#pdfClose').onclick=closeSheet;
   },
   pin(){
     let next=null;
