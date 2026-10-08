@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-aZlXaZ1uUEpp5w6/ksS9YF/ZLmDTYpWg0Okr3QebWU0='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-Zvw/BYaNRTnTy9Fq1eICWKllE5H1v9qH1AIoVsOhZ3U='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="carteira.webmanifest">
@@ -383,7 +383,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.27.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.28.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -395,7 +395,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.27.0</p>
+    <p class="ver">Versão 0.28.0</p>
   </div>
 </section>
 
@@ -445,7 +445,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.27.0</p>
+    <p class="ver">Versão 0.28.0</p>
   </div>
 </section>
 
@@ -460,7 +460,6 @@ body[data-screen="sApp"] .dock{display:grid}
 
     <section class="view on" id="vCreds">
       <h2>Credenciais</h2>
-      <div id="cAvisos"></div>
       <div id="cList"></div>
       <p class="note" id="cNote" hidden>Para usar uma credencial, toque nela e escolha Apresentar. Você assina um desafio novo a cada uso, então ninguém consegue reaproveitar uma cópia.</p>
     </section>
@@ -472,8 +471,8 @@ body[data-screen="sApp"] .dock{display:grid}
         <div class="did" id="idDid"></div>
         <div class="r3"><span id="idCreated"></span><span>Ed25519 + X25519</span></div>
       </div>
-      <div class="sec-h">Cofre <small id="cfN"></small> <button class="link" id="cfNovo" style="margin:0;padding:0;font-size:13px">Novo item</button></div>
-      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="cfBusca" type="search" placeholder="Buscar no cofre" autocomplete="off" aria-label="Buscar no cofre"></label>
+      <div class="sec-h">Cofre <small id="cfN"></small> <button class="link" id="cfNovo" style="margin:0;padding:0;font-size:13px">Nova anotação</button></div>
+      <label class="search glass flat"><svg class="i" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg><input id="cfBusca" type="search" placeholder="Buscar nas anotações" autocomplete="off" aria-label="Buscar nas anotações"></label>
       <div class="list glass flat" id="cfL"></div>
       <div class="sec-h">Chaves públicas <small>pode compartilhar</small></div>
       <div class="list glass flat">
@@ -571,7 +570,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.27.0';
+const APP_VERSION='0.28.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 
@@ -1535,151 +1534,58 @@ async function scanQr(){
   });
 }
 /* ================= cofre (aba Identidade) ================= */
-// Itens do tipo "cofre", cada um cifrado com a chave da carteira (AAD = id), como as credenciais. Só guarda: nada é
-// gerado nem enviado. Tipos (kind): senha, anotação, cartão (crédito, débito ou outros) e conta bancária.
-// Os campos marcados como segredo ficam velados na tela e são copiados sem aparecer. O documento (0.27) pode ter um
-// anexo (foto ou PDF, até 2 MB), guardado em base64 dentro do item cifrado.
-const COFRE={
-  senha:{nome:'Senha',ic:'key',campos:[['site','Site ou app'],['usuario','Usuário ou e-mail'],['senha','Senha',{seg:1}],['nota','Anotação',{area:1}]]},
-  anotacao:{nome:'Anotação',ic:'note',campos:[['texto','Texto',{area:1,linhas:8}]]},
-  cartao:{nome:'Cartão',ic:'wallet',campos:[['tipo','Tipo',{opcoes:['Crédito','Débito','Crédito e débito','Outro (plano de saúde, fidelidade…)']}],
-    ['nomeCartao','Nome no cartão'],['numero','Número',{seg:1,num:1}],['validade','Validade (MM/AA)'],['cvv','Código de segurança (CVV)',{seg:1,num:1}],['nota','Anotação',{area:1}]]},
-  documento:{nome:'Documento',ic:'file',campos:[['tipoDoc','Tipo',{opcoes:['RG','CNH','Passaporte','CPF','Título de eleitor','Carteira de trabalho','Outro']}],
-    ['numero','Número'],['titular','Titular'],['orgao','Órgão emissor'],['emissao','Emissão',{data:1}],['validade','Validade',{data:1}],['nota','Anotação',{area:1}]]},
-  conta:{nome:'Conta bancária',ic:'home',campos:[['banco','Banco'],['agencia','Agência',{num:1}],['conta','Conta',{num:1}],
-    ['tipoConta','Tipo',{opcoes:['Corrente','Poupança','Pagamento','Salário']}],['titular','Titular'],['pix','Chave Pix'],['nota','Anotação',{area:1}]]},
-};
-const cofreItens=()=>ses.items.filter(i=>i.data.type==='cofre');
-const soDig=s=>String(s||'').replace(/\D/g,'');
-// Elo vem antes porque alguns cartões Elo começam com 4 ou 5.
-const ELO=/^(4011|4312|4389|4514|4576|5041|5066|5067|509|6277|6362|6363|650|6516|6550)/;
-const bandeiraDe=n=>{const d=soDig(n);return ELO.test(d)?'Elo':/^(606282|3841)/.test(d)?'Hipercard':/^4/.test(d)?'Visa':/^(5[1-5]|2[2-7])/.test(d)?'Mastercard':/^3[47]/.test(d)?'American Express':''};
-const luhn=n=>{const d=soDig(n);if(d.length<12||d.length>19)return false;let s=0;for(let i=0;i<d.length;i++){let x=+d[d.length-1-i];if(i%2){x*=2;if(x>9)x-=9}s+=x}return s%10===0};
-const dataBr=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');return m?`${m[3]}/${m[2]}/${m[1]}`:String(s||'')};
-// Dias até a data (aaaa-mm-dd), contados de meia-noite a meia-noite: 0 = hoje, negativo = já passou.
-const diasAte=s=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(s||'');if(!m)return null;const h=new Date();return Math.round((new Date(+m[1],+m[2]-1,+m[3])-new Date(h.getFullYear(),h.getMonth(),h.getDate()))/864e5)};
-const vencimentoTxt=n=>n<0?`venceu há ${-n} ${n===-1?'dia':'dias'}`:n===0?'vence hoje':`vence em ${n} ${n===1?'dia':'dias'}`;
-const ANEXO_MAX=2*1024*1024;
-// Documentos que vencem em até 30 dias, ou já venceram: aparecem como aviso na tela Credenciais.
-function avisosCofre(){
-  return cofreItens().filter(i=>i.data.kind==='documento').map(i=>({it:i,n:diasAte((i.data.campos||{}).validade)}))
-    .filter(x=>x.n!==null&&x.n<=30).sort((a,b)=>a.n-b.n);
-}
-const finalCartao=n=>{const d=soDig(n);return d?'•••• '+d.slice(-4):''};
-function resumoCofre(d){
-  const c=d.campos||{};
-  if(d.kind==='senha')return c.usuario||c.site||'Senha';
-  if(d.kind==='anotacao')return(c.texto||'').split('\n')[0].slice(0,60)||'Anotação';
-  if(d.kind==='cartao')return[c.tipo&&c.tipo.split(' (')[0],bandeiraDe(c.numero),finalCartao(c.numero)].filter(Boolean).join(' · ')||'Cartão';
-  if(d.kind==='documento')return[c.tipoDoc,c.titular,c.validade&&`válido até ${dataBr(c.validade)}`,d.anexo&&'com anexo'].filter(Boolean).join(' · ')||'Documento';
-  if(d.kind==='conta')return[c.banco,c.agencia&&`ag. ${c.agencia}`,c.conta&&`conta ${c.conta}`].filter(Boolean).join(' · ')||'Conta bancária';
-  return '';
-}
+// Anotações de texto, cada uma cifrada com a chave da carteira (tipo "cofre", AAD = id), como as credenciais.
+// Desde a 0.28 o cofre guarda só anotações (título e texto). Itens de outros tipos criados na 0.26 e na 0.27
+// (senha, cartão, conta, documento) ficam intactos no aparelho e no backup, mas não aparecem.
+const cofreItens=()=>ses.items.filter(i=>i.data.type==='cofre'&&i.data.kind==='anotacao');
+const textoDe=d=>(d.campos&&d.campos.texto)||'';
 let cofreBusca='';
 function renderCofre(){
   const box=$('#cfL');if(!box||!ses)return;
-  const q=fold(cofreBusca),todos=cofreItens().sort((a,b)=>fold(a.data.titulo).localeCompare(fold(b.data.titulo)));
-  // A busca olha o título e os campos que não são segredo.
-  const casa=it=>{const t=COFRE[it.data.kind];return fold([it.data.titulo,t?t.nome:'',...(t?t.campos:[]).filter(c=>!(c[2]&&c[2].seg)).map(c=>(it.data.campos||{})[c[0]])].join(' ')).includes(q)};
-  const lista=q?todos.filter(casa):todos;
-  $('#cfN').textContent=todos.length?`${todos.length} ${todos.length===1?'item':'itens'}`:'';
-  box.innerHTML=lista.length?lista.map(it=>{const t=COFRE[it.data.kind]||{nome:'Item',ic:'vault'};
-    return `<button class="tx" data-cf="${esc(it.rec.id)}"><span class="dot">${ic(t.ic)}</span><span class="t"><b>${esc(it.data.titulo||t.nome)}</b><small>${esc(t.nome)} · ${esc(resumoCofre(it.data))}</small></span>${ic('chev')}</button>`}).join('')
-    :`<div class="empty">${todos.length?'Nada encontrado.':'Cofre vazio. Toque em Novo item para guardar senhas, anotações, cartões, documentos e contas.'}</div>`;
+  const q=fold(cofreBusca),todos=cofreItens().sort((a,b)=>(b.data.updated||0)-(a.data.updated||0));
+  const lista=q?todos.filter(it=>fold(`${it.data.titulo} ${textoDe(it.data)}`).includes(q)):todos;
+  $('#cfN').textContent=todos.length?`${todos.length} ${todos.length===1?'anotação':'anotações'}`:'';
+  box.innerHTML=lista.length?lista.map(it=>`<button class="tx" data-cf="${esc(it.rec.id)}"><span class="dot">${ic('note')}</span><span class="t"><b>${esc(it.data.titulo)}</b><small>${esc(textoDe(it.data).split('\n')[0].slice(0,70)||'Sem texto')}</small></span>${ic('chev')}</button>`).join('')
+    :`<div class="empty">${todos.length?'Nada encontrado.':'Cofre vazio. Toque em Nova anotação para guardar um texto cifrado.'}</div>`;
 }
 $('#cfBusca').oninput=()=>{cofreBusca=$('#cfBusca').value;renderCofre()};
 $('#cfNovo').onclick=()=>editarCofre();
 $('#cfL').onclick=e=>{const b=e.target.closest('[data-cf]');if(b)verCofre(b.dataset.cf)};
-// Copia um segredo sem mostrar e tenta limpar a área de transferência depois de 30 s.
-async function copiarSegredo(v,rotulo){
-  await copy(v,`${rotulo} copiado. Sai da área de transferência em 30 s`);
-  setTimeout(()=>{try{navigator.clipboard.writeText('').catch(()=>{})}catch{}},30000);
-}
 function verCofre(id){
   const it=ses.items.find(i=>i.rec.id===id);if(!it)return;
-  const d=it.data,t=COFRE[d.kind],c=d.campos||{};
-  const linhas=t.campos.filter(([k])=>c[k]).map(([k,rot,o={}])=>{
-    const v=String(c[k]),mostra=o.seg?(k==='numero'?finalCartao(v):'••••••'):o.data?dataBr(v):v;
-    return `<div class="kr"><div class="h"><small>${esc(rot)}</small><span>${o.seg?`<button class="mini sm" data-ver="${k}" aria-label="Mostrar ${esc(rot)}" data-ic="eye"></button> `:''}<button class="mini sm" data-cp="${k}" aria-label="Copiar ${esc(rot)}" data-ic="copy"></button></span></div><div class="v${o.seg||o.num?' mono':''}" id="cfv-${k}" style="white-space:pre-wrap">${esc(mostra)}</div></div>`}).join('');
-  let extra=d.kind==='cartao'&&bandeiraDe(c.numero)?`<div class="kr"><div class="h"><small>Bandeira</small></div><div class="v">${esc(bandeiraDe(c.numero))}</div></div>`:'';
-  const venc=d.kind==='documento'?diasAte(c.validade):null;
-  if(venc!==null)extra+=`<div class="kr"><div class="h"><small>Situação</small></div><div class="v" id="cfVenc" style="color:${venc<0?'var(--out)':venc<=30?'var(--warn)':'var(--in)'}">${venc<0||venc<=30?'Documento '+vencimentoTxt(venc):'Dentro da validade'}</div></div>`;
-  const ax=d.anexo;
-  if(ax)extra+=`<div class="kr"><div class="h"><small>Anexo · ${esc(ax.nome)} · ${tamTxt(ax.tam)}</small><span><button class="mini sm" id="cfAxB" aria-label="Baixar anexo" data-ic="restore"></button></span></div>${/^image\//.test(ax.tipo)?'<canvas id="cfPrev" style="display:block;width:100%;border-radius:12px;margin-top:6px"></canvas>':'<div class="v">PDF: toque em baixar para abrir</div>'}</div>`;
-  openSheet(`<div class="dhead"><span class="dot">${ic(t.ic)}</span><div><h3>${esc(d.titulo||t.nome)}</h3><small>${esc(t.nome)} · atualizado em ${fmtDate(d.updated||d.created)}</small></div></div>
-    <div class="list glass flat">${linhas+extra||'<div class="empty">Sem campos preenchidos.</div>'}</div>
+  const d=it.data;
+  openSheet(`<div class="dhead"><span class="dot">${ic('note')}</span><div><h3>${esc(d.titulo)}</h3><small>Anotação · atualizada em ${fmtDate(d.updated||d.created)}</small></div></div>
+    <div class="list glass flat"><div class="kr"><div class="h"><small>Texto</small><span><button class="mini sm" id="cfCp" aria-label="Copiar texto" data-ic="copy"></button></span></div><div class="v" id="cfTexto" style="white-space:pre-wrap">${esc(textoDe(d))}</div></div></div>
     <div class="pair mt"><button class="btn ghost" id="cfEd">Editar</button><button class="btn ghost" id="cfDel" style="color:var(--out)">Apagar</button></div>`);
-  $('#sheetBody').onclick=async e=>{
-    const cp=e.target.closest('[data-cp]'),vr=e.target.closest('[data-ver]');
-    if(cp){const k=cp.dataset.cp,o=(t.campos.find(x=>x[0]===k)||[])[2]||{},rot=t.campos.find(x=>x[0]===k)[1];o.seg?copiarSegredo(String(c[k]),rot):copy(String(c[k]),`${rot} copiado`)}
-    if(vr){const k=vr.dataset.ver,el=$('#cfv-'+k),aberto=el.dataset.aberto==='1';
-      el.textContent=aberto?(k==='numero'?finalCartao(c[k]):'••••••'):(k==='numero'?soDig(c[k]).replace(/(\d{4})(?=\d)/g,'$1 '):String(c[k]));el.dataset.aberto=aberto?'':'1'}
-  };
+  $('#cfCp').onclick=()=>copy(textoDe(d),'Texto copiado');
   $('#cfEd').onclick=()=>editarCofre(id);
-  if(ax){
-    const bytes=()=>b64u.dec(ax.b64);
-    $('#cfAxB').onclick=()=>baixar(bytes(),ax.tipo,ax.nome);
-    // Prévia da foto num canvas: createImageBitmap não passa pela CSP (img-src só aceita o próprio site).
-    if($('#cfPrev'))createImageBitmap(new Blob([bytes()],{type:ax.tipo})).then(bm=>{const cv=$('#cfPrev');if(!cv)return;cv.width=bm.width;cv.height=bm.height;cv.getContext('2d').drawImage(bm,0,0)}).catch(()=>{const cv=$('#cfPrev');if(cv)cv.replaceWith(Object.assign(document.createElement('div'),{className:'v',textContent:'Não foi possível mostrar a foto: toque em baixar.'}))});
-  }
   $('#cfDel').onclick=async()=>{
-    if(!await confirmSheet('Apagar do cofre',`${esc(d.titulo||t.nome)} sai deste aparelho. Se estiver num backup antigo, volta ao restaurar.`,'Apagar',true))return verCofre(id);
-    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCofre();renderCreds();toast('Item apagado');
+    if(!await confirmSheet('Apagar anotação',`${esc(d.titulo)} sai deste aparelho. Se estiver num backup antigo, volta ao restaurar.`,'Apagar',true))return verCofre(id);
+    ses.items=ses.items.filter(i=>i.rec.id!==id);await persistItems();renderCofre();toast('Anotação apagada');
   };
 }
 function editarCofre(id){
   const it=id&&ses.items.find(i=>i.rec.id===id),d=it?it.data:null;
-  let kind=d?d.kind:'senha';
-  const campo=([k,rot,o={}],v='')=>o.opcoes?`<label class="f"><span>${esc(rot)}</span><select data-k="${k}">${o.opcoes.map(x=>`<option${x===v?' selected':''}>${esc(x)}</option>`).join('')}</select></label>`
-    :o.area?`<label class="f"><span>${esc(rot)}</span><textarea data-k="${k}" rows="${o.linhas||3}" autocomplete="off">${esc(v)}</textarea></label>`
-    :`<label class="f" data-f="${k}"><span>${esc(rot)}</span><input data-k="${k}" value="${esc(v)}" autocomplete="off" autocapitalize="none" spellcheck="false"${o.seg?' type="password"':''}${o.data?' type="date"':''}${o.num?' inputmode="numeric"':''}${o.seg?' class="mono"':''}></label>`;
-  // Anexo do documento: undefined = sem mudança, null = tirado, objeto = novo arquivo.
-  let anexo;
-  const anexoAtual=()=>anexo===undefined?(d&&d.kind==='documento'?d.anexo:null):anexo;
-  const desenhaAnexo=()=>{const a=anexoAtual(),el=$('#cfAxInfo');if(!el)return;
-    el.innerHTML=a?`<div class="tx"><span class="t"><b>${esc(a.nome)}</b><small>${tamTxt(a.tam)}</small></span><button class="mini sm" id="cfAxTira" aria-label="Tirar anexo" data-ic="trash"></button></div>`:'';paintIcons(el);
-    if($('#cfAxTira'))$('#cfAxTira').onclick=()=>{anexo=null;$('#cfAx').value='';desenhaAnexo()}};
-  const desenha=()=>{$('#cfCampos').innerHTML=COFRE[kind].campos.map(c=>campo(c,d&&d.kind===kind?(d.campos||{})[c[0]]||'':'')).join('')
-    +(kind==='documento'?`<label class="f" id="cfAxF"><span>Foto ou PDF do documento (até 2 MB)</span><input type="file" id="cfAx" accept="image/*,application/pdf"></label><div class="list glass flat" id="cfAxInfo"></div>`:'');
-    if(kind!=='documento')return;
-    desenhaAnexo();
-    $('#cfAx').onchange=async()=>{
-      const f=$('#cfAx').files[0],H=$('#cfH');if(!f)return;
-      if(!/^image\/|^application\/pdf$/.test(f.type)){$('#cfAx').value='';H.textContent='O anexo precisa ser uma foto ou um PDF.';H.classList.add('bad');return}
-      if(f.size>ANEXO_MAX){$('#cfAx').value='';H.textContent=`O arquivo tem ${tamTxt(f.size)}. O limite é 2 MB.`;H.classList.add('bad');return}
-      anexo={nome:f.name,tipo:f.type,tam:f.size,b64:b64u.enc(new Uint8Array(await f.arrayBuffer()))};H.textContent='';H.classList.remove('bad');desenhaAnexo();
-    };
-  };
-  const kinds=Object.keys(COFRE);
-  openSheet(`<h3>${d?'Editar item':'Novo item no cofre'}</h3><p class="sub">Fica cifrado neste aparelho e volta pelo backup. Ninguém mais vê.</p>
-    ${d?'':`<div class="seg" id="cfKind" style="--n:${kinds.length}"><span class="ind"></span>${kinds.map((k,i)=>`<button aria-pressed="${i===0}" data-kind="${k}">${k==='conta'?'Conta':COFRE[k].nome}</button>`).join('')}</div>`}
-    <label class="f" id="cfTF" style="margin-top:0"><span>Título</span><input id="cfT" value="${esc(d?d.titulo:'')}" autocomplete="off" placeholder="Ex.: E-mail pessoal, Cartão Nubank, RG da Maria"></label>
-    <div id="cfCampos"></div><p class="hint" id="cfH"></p>
+  openSheet(`<h3>${d?'Editar anotação':'Nova anotação'}</h3><p class="sub">Fica cifrada neste aparelho e volta pelo backup. Ninguém mais vê.</p>
+    <label class="f" id="cfTF" style="margin-top:0"><span>Título</span><input id="cfT" value="${esc(d?d.titulo:'')}" autocomplete="off" placeholder="Ex.: Lembretes, Ideias, Endereços"></label>
+    <label class="f" id="cfXF"><span>Texto</span><textarea id="cfX" rows="10" autocomplete="off">${esc(d?textoDe(d):'')}</textarea></label>
+    <p class="hint" id="cfH"></p>
     <button class="btn" id="cfSalvar">Salvar</button>`);
-  desenha();
-  if(!d)wireSeg($('#cfKind'),b=>{kind=b.dataset.kind;desenha()});
   $('#cfSalvar').onclick=async()=>{
-    const H=$('#cfH'),fail=(m,el)=>{H.textContent=m;H.classList.add('bad');if(el)shake(el)};
-    const titulo=$('#cfT').value.trim();
-    if(!titulo)return fail('Dê um título ao item.',$('#cfTF'));
-    const campos={};document.querySelectorAll('#cfCampos [data-k]').forEach(el=>{const v=el.value.trim();if(v)campos[el.dataset.k]=v});
-    if(kind==='cartao'&&campos.numero&&!/^Outro/.test(campos.tipo||'')&&!luhn(campos.numero))return fail('O número do cartão não confere. Confira os dígitos.',document.querySelector('[data-f="numero"]'));
-    if(kind==='cartao'&&campos.validade&&!/^(0[1-9]|1[0-2])\/\d{2}$/.test(campos.validade))return fail('Validade no formato MM/AA, por exemplo 08/29.',document.querySelector('[data-f="validade"]'));
-    if(kind==='documento'&&campos.emissao&&campos.validade&&campos.validade<campos.emissao)return fail('A validade vem antes da emissão.',document.querySelector('[data-f="validade"]'));
-    const ax=kind==='documento'?anexoAtual():null;
-    if(!Object.keys(campos).length&&!ax)return fail('Preencha ao menos um campo.');
+    const H=$('#cfH'),fail=(m,el)=>{H.textContent=m;H.classList.add('bad');shake(el)};
+    const titulo=$('#cfT').value.trim(),texto=$('#cfX').value.replace(/\s+$/,'');
+    if(!titulo)return fail('Dê um título à anotação.',$('#cfTF'));
+    if(!texto.trim())return fail('Escreva o texto da anotação.',$('#cfXF'));
     const ts=Date.now();
-    await saveItem({type:'cofre',kind,titulo,campos,...(ax?{anexo:ax}:{}),created:d?d.created:ts,updated:ts},id);
-    renderCreds();
-    closeSheet();renderCofre();toast(d?'Item atualizado':'Guardado no cofre');
+    await saveItem({type:'cofre',kind:'anotacao',titulo,campos:{texto},created:d?d.created:ts,updated:ts},id);
+    closeSheet();renderCofre();toast(d?'Anotação atualizada':'Anotação guardada');
   };
 }
 /* ================= serviço ================= */
 // A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
 // completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
 const KEPT_TYPES=['cred','perfil','acesso','cofre'];
-// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup. Os cartões de
-// crédito e débito de hoje ficam no cofre (tipo "cofre", 0.26).
+// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup.
 const REMOVED_TYPES=['cartao'];
 
 const APP={
@@ -1711,10 +1617,10 @@ const APP={
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
     let n=0,k=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre')k++;else if(KEPT_TYPES.includes(d.type))n++}catch{}}
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre'){if(d.kind==='anotacao')k++}else if(KEPT_TYPES.includes(d.type))n++}catch{}}
     for(const it of perfilItens())if(it.data.n>0&&!ses.ids[it.data.n])ses.ids[it.data.n]=await derivarPerfil(it.data.n);
     await persistItems();renderCreds();renderCofre();
-    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'item':'itens'} do cofre`:''}`;
+    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'anotação':'anotações'} do cofre`:''}`;
   }
 };
 async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
@@ -1814,16 +1720,12 @@ function renderCreds(){
   if(!ses)return;
   const list=creds(),peds=acessos();
   $('#cNote').hidden=!list.length;
-  // Documentos do cofre perto de vencer (30 dias) ou vencidos.
-  const av=avisosCofre();
-  $('#cAvisos').innerHTML=av.length?`<div class="list glass flat" style="margin-bottom:14px">${av.map(({it,n})=>`<button class="tx" data-cfav="${esc(it.rec.id)}"><span class="dot" style="color:${n<0?'var(--out)':'var(--warn)'}">${ic('alert')}</span><span class="t"><b>${esc(it.data.titulo)}</b><small>Documento ${vencimentoTxt(n)} · ${dataBr(it.data.campos.validade)}</small></span>${ic('chev')}</button>`).join('')}</div>`:'';
   $('#cList').innerHTML=list.length||peds.length?`<div class="creds">${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
       <li><span>Cole a aprovação em <b>+</b> › <b>Receber aprovação de identidade</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
-$('#cAvisos').onclick=e=>{const b=e.target.closest('[data-cfav]');if(b)verCofre(b.dataset.cfav)};
 $('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 $('#cList').addEventListener('keydown',e=>{if(e.target.closest('[data-copydid]'))copiarDidDoCartao(e)});
 

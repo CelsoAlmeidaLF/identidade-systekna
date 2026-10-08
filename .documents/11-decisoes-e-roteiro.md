@@ -36,6 +36,7 @@
 | 08/10/2026 | Pastas por projeto (`stk-carteira`, `stk-governanca`, `stk-servicos`, `compartilhado`), documentação em `.documents/`, site continua na raiz da `main`; saem os redirecionamentos `cartorio-` e `emissor-systekna.html` (0.22.1) |
 | 08/10/2026 | **Cofre na Carteira**, dentro da aba Identidade; só guarda (sem gerador): senhas, anotações, **cartões de crédito e débito** e outros cartões, contas bancárias e, depois, documentos com foto ou PDF (até 2 MB) |
 | 08/10/2026 | Relatório de uso no Serviços com acessos e gestão ("relatório de log"); livro exportado em PDF ou Excel na Governança e no Serviços |
+| 08/10/2026 | **Cofre da Carteira só com anotações ("por enquanto")**: o PO não gostou do modelo com senhas, cartões, contas e documentos; ficam só texto e anotações (0.28). O backup em arquivo continua |
 | 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
 
 ## 2. Versões publicadas
@@ -58,13 +59,14 @@
 | 0.24.0 | Relatório de uso no Painel do Serviços: acessos por dia, app, funcionalidade e motivo; gestão do período |
 | 0.25.0 | Exportar o livro em PDF ou Excel, por período, na Governança e no Serviços |
 | 0.26.0 | Cofre da Carteira: senhas, anotações, cartões e contas bancárias |
-| **0.27.0** | **Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo** |
+| 0.27.0 | Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo |
+| **0.28.0** | **Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados)** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (0.27.0) |
+| `main` | Versão vigente (0.28.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 
