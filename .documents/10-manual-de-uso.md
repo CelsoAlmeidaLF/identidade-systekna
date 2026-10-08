@@ -1,6 +1,6 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **0.23.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Passo a passo nas telas, versão **0.24.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
 > Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
 
 ## Links
@@ -66,6 +66,13 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | 1 | Serviços → **Portaria** | Escolha o app e, em **Funcionalidade**, "Só a entrada no app" ou uma funcionalidade. Toque em **Gerar desafio**; copie |
 | 2 | Carteira → **Apresentar** (rodapé) | Cole o desafio, **Ler desafio**, escolha o crachá e **Assinar e apresentar**; copie |
 | 3 | Serviços → Portaria | Cole a prova e toque em **Conferir acesso**: **Acesso liberado** ou **Acesso negado** com o motivo (ex.: a funcionalidade não está no crachá) |
+
+## 5A. Relatório de uso (Serviços)
+
+| Passo | Onde | O que fazer |
+|---|---|---|
+| 1 | Serviços → **Painel** → Relatório de uso | Escolha **7 dias** ou **30 dias** e, se quiser, um **app** |
+| 2 | | Veja os acessos **liberados** (verde) e **negados** (vermelho) por dia, as listas **Por app**, **Por funcionalidade** e **Por que negou**, e a **Gestão no período** (crachás emitidos, pedidos recusados, crachás revogados) |
 
 ## 6. Recuperar a conta (cada app)
 

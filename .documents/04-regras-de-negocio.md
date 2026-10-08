@@ -72,7 +72,8 @@
 | RN-41 | O desafio vale 10 minutos e uma única vez; a prova vale 5 minutos e é dirigida a quem desafiou |
 | RN-42 | A portaria só libera se **todos** os pontos passarem: dono do crachá, desafio desta portaria, prazos, emitido por este serviço, app certo, funcionalidade liberada (quando o desafio é de uma funcionalidade), não revogado, validade, aprovação de emissão do serviço vigente |
 | RN-44 | O desafio pode ser para **só a entrada no app** ou para **uma funcionalidade** do app (0.22) |
-| RN-43 | Toda conferência (liberada ou negada) vai para o livro do serviço |
+| RN-43 | Toda conferência (liberada ou negada) vai para o livro do serviço e, desde a 0.24, também para o registro do relatório de uso (app, funcionalidade, primeiro ponto que falhou) |
+| RN-45 | O relatório de uso lê as conferências antigas do texto do livro, sem o motivo ("motivo não registrado"); a gestão do período vale para o serviço todo, mesmo com filtro de app |
 
 ## 7. Livro, revogação e confiança
 

@@ -319,6 +319,15 @@ body[data-screen="sApp"] .dock{display:grid}
 .stat{padding:14px 16px}
 .stat small{display:block;color:var(--soft);font-size:12px}
 .stat b{font:300 30px/1.1 var(--font);letter-spacing:-.02em}
+/* Relatório de uso (Serviços): barras por dia, liberados embaixo e negados em cima */
+.uso-bars{display:flex;align-items:flex-end;gap:3px;height:96px;padding:14px 14px 0}
+.uso-bars .d{flex:1;min-width:0;height:100%;display:flex;flex-direction:column-reverse}
+.uso-bars .d i{display:block;border-radius:3px 3px 0 0}
+.uso-bars .d .l{background:var(--in)}
+.uso-bars .d .n{background:var(--out)}
+.uso-eixo{display:flex;justify-content:space-between;padding:6px 14px 0;font-size:11px;color:var(--faint)}
+.uso-leg{display:flex;gap:14px;padding:8px 14px 12px;font-size:12px;color:var(--soft)}
+.uso-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 
 /* livro */
 .ato{display:flex;gap:12px;align-items:flex-start;padding:12px 16px}

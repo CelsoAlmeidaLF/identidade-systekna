@@ -96,6 +96,7 @@
 | RF-SV-01 | Rodapé: **Painel · Crachás · ( + ) · Portaria · Serviço** | ✅ |
 | RF-SV-02 | Menu **+**: Solicitar aprovação de emissão, Receber aprovação de emissão, Cartão do serviço | ✅ |
 | RF-SV-13 | **Serviço › Apps** (0.22): cadastrar apps (aplicativo, serviço ou ferramenta); em cada um, **funcionalidades** (nome, código e tipo: módulo, micro-serviço ou ferramenta) e **grupos** de funcionalidades; tirar funcionalidade ou grupo; tudo no livro | 🟢 |
+| RF-SV-15 | **Relatório de uso** no Painel (0.24): 7 ou 30 dias, filtro por app; acessos liberados e negados por dia (barras), por app, por funcionalidade e por motivo de negação; gestão do período (crachás emitidos, pedidos recusados, crachás revogados) | 🟢 |
 | RF-SV-14 | **Cartão do app** (0.21): tocar no cartão de um app no Painel gera o cartão só daquele app; app sem aprovação válida avisa e não gera | 🟢 |
 | RF-SV-03 | **Solicitar aprovação de emissão**: nome do serviço; Governança informada uma vez; se já aprovado, pedir de novo renova. Sem apps desde a 0.22 | 🟢 (0.22) |
 | RF-SV-04 | **Receber aprovação de emissão**: confere a assinatura da Governança e guarda a aprovação do serviço | ✅ |

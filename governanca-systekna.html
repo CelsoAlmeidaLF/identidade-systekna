@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-g0+ERat2aIREDs3btL9MD9wGaMRUVwQbLhOeS2AQtOk='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'sha256-/z/vn08HGHrb8pRujqcJiRvW4mi96M32AJXyXDvq1Cg='; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -338,6 +338,15 @@ body[data-screen="sApp"] .dock{display:grid}
 .stat{padding:14px 16px}
 .stat small{display:block;color:var(--soft);font-size:12px}
 .stat b{font:300 30px/1.1 var(--font);letter-spacing:-.02em}
+/* Relatório de uso (Serviços): barras por dia, liberados embaixo e negados em cima */
+.uso-bars{display:flex;align-items:flex-end;gap:3px;height:96px;padding:14px 14px 0}
+.uso-bars .d{flex:1;min-width:0;height:100%;display:flex;flex-direction:column-reverse}
+.uso-bars .d i{display:block;border-radius:3px 3px 0 0}
+.uso-bars .d .l{background:var(--in)}
+.uso-bars .d .n{background:var(--out)}
+.uso-eixo{display:flex;justify-content:space-between;padding:6px 14px 0;font-size:11px;color:var(--faint)}
+.uso-leg{display:flex;gap:14px;padding:8px 14px 12px;font-size:12px;color:var(--soft)}
+.uso-leg i{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
 
 /* livro */
 .ato{display:flex;gap:12px;align-items:flex-start;padding:12px 16px}
@@ -374,7 +383,7 @@ body[data-screen="sApp"] .dock{display:grid}
 <body data-screen="">
 <div class="sky"></div>
 <div class="orbs"><i class="o1"></i><i class="o2"></i><i class="o3"></i></div>
-<p class="ver boot" aria-hidden="true">Versão 0.23.0</p>
+<p class="ver boot" aria-hidden="true">Versão 0.24.0</p>
 
 <section class="screen" id="sWelcome">
   <div class="wrap center">
@@ -386,7 +395,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <button class="btn ghost" id="goInstall" data-install hidden>Instalar no celular</button>
     <p class="fine">Ambiente de teste. Nada sai deste aparelho sem você copiar.</p>
     <p class="fine warn-t" id="unsupported" hidden>Este navegador não tem Ed25519 e X25519 no WebCrypto. Atualize o Chrome, Safari ou Firefox.</p>
-    <p class="ver">Versão 0.23.0</p>
+    <p class="ver">Versão 0.24.0</p>
   </div>
 </section>
 
@@ -436,7 +445,7 @@ body[data-screen="sApp"] .dock{display:grid}
     <div class="pad" id="pinPad"></div>
     <button class="btn ghost" id="bioBtn" hidden>Usar biometria</button>
     <button class="link" id="pinLink">Esqueci meu PIN</button>
-    <p class="ver">Versão 0.23.0</p>
+    <p class="ver">Versão 0.24.0</p>
   </div>
 </section>
 
@@ -587,7 +596,7 @@ function b58dec(str){let n=0n;for(const c of str){const i=B58.indexOf(c);if(i<0)
 const shortDid=d=>d?d.slice(0,15)+'…'+d.slice(-6):'';
 const fmtDate=t=>new Date(t).toLocaleDateString('pt-BR',{day:'2-digit',month:'short',year:'numeric'});
 const fmtTime=t=>new Date(t).toLocaleString('pt-BR',{day:'2-digit',month:'short',hour:'2-digit',minute:'2-digit'});
-const APP_VERSION='0.23.0';
+const APP_VERSION='0.24.0';
 const store={get(k){try{return localStorage.getItem(APP.db+':'+k)}catch{return null}},set(k,v){try{localStorage.setItem(APP.db+':'+k,v)}catch{}}};
 const fold=s=>String(s||'').normalize('NFKD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
 

@@ -1,6 +1,6 @@
 # 12 · Homologação
 
-> Versão em homologação: **0.23.0**. Marque cada item ao homologar.
+> Versão em homologação: **0.24.0**. Marque cada item ao homologar.
 > "Aprovado nos primeiros testes" = o responsável aprovou na versão indicada; a homologação final continua.
 
 ## 1. Aprovado nos primeiros testes
@@ -18,6 +18,7 @@
 | H-09 | Cartão do app (um app só, já marcado na carteira) | Serviços + Carteira | 0.21.0 | ⬜ Falta homologar |
 | H-10 | Governança aprova só o serviço; Serviço › Apps › Funcionalidades e grupos; crachá com funcionalidades; portaria por funcionalidade | STK + Serviços + Carteira | 0.22.0 | ⬜ Falta homologar |
 | H-11 | Pastas reorganizadas, sem mudança nas telas | Todos | 0.22.1 | ✅ Publicado e conferido no Pages |
+| H-13 | Relatório de uso no Painel do Serviços (acessos e gestão do período) | Serviços | 0.24.0 | ⬜ Falta homologar |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (0.23.0)

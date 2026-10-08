@@ -1,7 +1,7 @@
 # Documentação — Identidade Soberana Systekna
 
 > **Versão da documentação:** v3.1 · 08/10/2026 · Responsável: Celso de Almeida Leite Filho (Systekna)
-> **Código de referência:** branch `main`, versão **0.23.0**, publicada no GitHub Pages.
+> **Código de referência:** branch `main`, versão **0.24.0**, publicada no GitHub Pages.
 > **Situação:** as funcionalidades até a 0.20.0 e a recuperação com PDF (0.23.0) foram **aprovadas nos testes** do responsável; cartão do app (0.21) e Serviço › Apps › Funcionalidades (0.22) seguem em **homologação**.
 > **Substitui:** `docs/` (v0), `docs_v1/` (v1) e `docs_v2/` (v2), que ficam no histórico do git.
 
@@ -35,6 +35,7 @@ Site: <https://celsoalmeidalf.github.io/identidade-systekna/> · Repositório: <
 | 11 | [Decisões e roteiro](11-decisoes-e-roteiro.md) | Todas as decisões tomadas, histórico de versões e próximos passos |
 | 12 | [Homologação](12-homologacao.md) | Checklist do que foi aprovado e do que falta homologar |
 | 13 | [Sprint da primeira entrega](13-sprint-primeira-entrega.md) | Papéis dos 3 apps, entregas E-01 a E-08, limites aceitos e o que fica para a F5 |
+| 14 | [Planejamento e Scrum: gestão, relatórios e cofre](14-sprint-gestao-e-relatorios.md) | Sprints 2 e 3: relatório de uso, exportar o livro, cofre da carteira |
 | — | [`plan.md`](plan.md) e [`identidade-soberana-systekna-arquitetura.md`](identidade-soberana-systekna-arquitetura.md) | **Históricos** (plano em fases e arquitetura da época da carteira + emissor); não descrevem a versão atual |
 
 ### Ordem de leitura sugerida
