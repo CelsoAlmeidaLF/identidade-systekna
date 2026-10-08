@@ -2,7 +2,7 @@
 // RN59: credencial, livro e log nunca levam CPF, RG, foto e afins. A trava fica em issue(), no emissor.
 // DP-03 (03/10/2026): a credencial de identidade leva só o nome; kycValidado e outros campos são recusados.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, preparar, aba, toast, fecharSheet, vigiarCsp, payloadDe } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, receberPedido, WORDS, preparar, aba, toast, fecharSheet, vigiarCsp, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -16,10 +16,10 @@ async function pedir(nome) {
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
   await carteira.fill('#aqN', nome);
+  await carteira.selectOption('#aqE', await emissor.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  const tok = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const tok = await ultimoPedidoPara(emissor);
   return tok;
 }
 

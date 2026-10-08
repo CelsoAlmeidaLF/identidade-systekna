@@ -9,6 +9,9 @@
 | **Apresentar** | Responder a um desafio com uma credencial, assinando pelo DID dela (prova de posse) |
 | **Backup cifrado (`scb1`)** | Cópia dos dados do app que só abre com as 12 palavras da mesma identidade, no mesmo app |
 | **Biometria (PRF)** | Desbloqueio por digital ou rosto, em que o chip do aparelho libera o segredo que abre a identidade |
+| **Diretório** | Coleção no Firestore onde a Governança e cada serviço publicam, assinados pela própria chave, o nome e a chave de cifragem (o serviço, também o cartão). É por ele que a carteira escolhe a quem pedir (1.2) |
+| **Fila-emissão (`fila-emissao`)** | Fila de respostas: aprovação, crachás ou recusa, cifrados para quem pediu e lidos pelo número do pedido (1.2) |
+| **Fila-solicitação (`fila-solicitacao`)** | Fila de pedidos: cada pedido vai cifrado para a chave de quem atende (Governança ou serviço), endereçado ao DID dele (1.2) |
 | **Cartão (na tela)** | Representação visual de uma credencial: perfil ou tipo, nome, did:key/cv:key, emissor e validade |
 | **Cartão do serviço** | Pacote público assinado pelo serviço com o nome, os apps, o catálogo (funcionalidades e grupos) e a aprovação de emissão; a carteira o lê para pedir acesso |
 | **Cartão do app** | O mesmo que o Cartão do serviço, com um app só; sai ao tocar no cartão do app no Painel do Serviços |

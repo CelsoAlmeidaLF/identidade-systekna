@@ -3,7 +3,7 @@
 // e das correções de 03/10/2026: pedido endereçado a um emissor e backup do emissor com livro conferido.
 // Tokens fora do comum (vencidos, perto do vencimento) são assinados na página com signJWT.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, vigiarCsp, telaDoPin, digitarPin, preparar, aba, toast, fecharSheet, payloadDe } = require('./helpers');
+const { ultimoPedidoPara, receberPedido, WORDS, vigiarCsp, telaDoPin, digitarPin, preparar, aba, toast, fecharSheet, payloadDe } = require('./helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -63,21 +63,21 @@ async function acaoCarteira(acao) {
   await carteira.click(`#sheetBody [data-act="${acao}"]`);
 }
 
+/** Entrega à conferência da carteira (a mesma que a fila usa) e devolve a mensagem dela. */
 async function receberNaCarteira(token) {
-  await acaoCarteira('get');
-  await carteira.fill('#rcT', token);
-  await carteira.click('#rcGo');
+  const m = await carteira.evaluate(async t => { try { return await receberResposta(t, null); } catch (e) { return e.message; } finally { renderCreds(); } }, token);
+  carteira.__msg = m;
+  return m;
 }
 
 /** Pede pela tela da carteira; devolve o pedido assinado. */
 async function pedirPelaTela(didDoEmissor = '') {
   await acaoCarteira('ask');
   await carteira.fill('#aqN', 'Maria Teste');
-  if (didDoEmissor) await carteira.fill('#aqE', didDoEmissor);
+  await carteira.selectOption('#aqE', await emissor.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  const pedido = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const pedido = await ultimoPedidoPara(emissor);
   return pedido;
 }
 
@@ -325,7 +325,7 @@ test('P08 · pedido vencido é recusado pelo emissor', async () => {
     note: '', nonce: 'pedido-vencido', iat: antes, exp: antes + 7 * DIA,
   });
   await conferirPedido(emissor, pedido);
-  await expect(emissor.locator('#iqH')).toHaveText('Este pedido expirou. Peça um novo ao titular.');
+  await expect(emissor.locator('#iqRes')).toContainText('Este pedido expirou. Peça um novo ao titular.');
   await expect(emissor.locator('#iForm')).toBeHidden();
 });
 
@@ -353,28 +353,22 @@ test('P11 · a mesma credencial não entra duas vezes', async () => {
   await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
   const credencial = await emissor.inputValue('#iJwt');
 
+  expect(await receberNaCarteira(credencial)).toBe('Credencial guardada');
   await receberNaCarteira(credencial);
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
-  await receberNaCarteira(credencial);
-  await expect(carteira.locator('#rcH')).toHaveText('Esta credencial já está na carteira.');
-  await fecharSheet(carteira);
+  expect(carteira.__msg).toBe('Esta credencial já está na carteira.');
 });
 
 test('P12 · credencial perto do vencimento aparece como "Vence em N dias"', async () => {
   const iat = agora() - 360 * DIA;
-  await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { iat, nbf: iat, exp: agora() + 5 * DIA })));
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await receberNaCarteira(await assinar(emissor, 'vc+jwt', vcPayload(didEmissor, didCarteira, { iat, nbf: iat, exp: agora() + 5 * DIA })))).toBe('Credencial guardada');
   await expect(carteira.locator('#cList')).toContainText('Vence em 5 dias');
 });
 
 test.describe('pedido endereçado a um emissor', () => {
-  test('a carteira recusa um DID de emissor inválido', async () => {
+  test('a carteira só oferece Governanças publicadas no diretório, assinadas por elas', async () => {
     await acaoCarteira('ask');
-    await carteira.fill('#aqN', 'Maria Teste');
-    await carteira.fill('#aqE', 'did:web:exemplo.com');
-    await carteira.click('#aqGo');
-    await expect(carteira.locator('#aqEH')).toContainText('não usa did:key');
-    await expect(carteira.locator('#aqOut')).toBeHidden();
+    await expect(carteira.locator(`#aqE option[value="${didEmissor}"]`)).toHaveCount(1);
+    expect(await carteira.locator('#aqE option').count()).toBeGreaterThanOrEqual(1);
     await fecharSheet(carteira);
   });
 
@@ -383,18 +377,11 @@ test.describe('pedido endereçado a um emissor', () => {
     expect(payloadDe(pedido).aud).toBe(didEmissor);
 
     await conferirPedido(outroEmissor, pedido);
-    await expect(outroEmissor.locator('#iqH')).toHaveText('Este pedido foi feito para outro emissor. Peça ao titular um pedido para este emissor.');
+    await expect(outroEmissor.locator('#iqRes')).toContainText('Este pedido foi feito para outro emissor. Peça ao titular um pedido para este emissor.');
     await expect(outroEmissor.locator('#iForm')).toBeHidden();
 
     await conferirPedido(emissor, pedido);
     await expect(emissor.locator('#iWho')).toContainText('Pedido conferido');
-  });
-
-  test('pedido sem DID continua valendo para qualquer emissor', async () => {
-    const pedido = await pedirPelaTela();
-    expect(payloadDe(pedido).aud).toBe('emissor');
-    await conferirPedido(outroEmissor, pedido);
-    await expect(outroEmissor.locator('#iWho')).toContainText('Pedido conferido');
   });
 });
 

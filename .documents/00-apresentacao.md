@@ -56,7 +56,7 @@
 
 ## Limites que precisam ficar claros
 
-- O transporte entre os apps é **copiar e colar** (QR Code entre os apps adiado; o QR existe no PDF de recuperação).
+- Desde a 1.2, pedidos e respostas vão **pelas filas** (Firestore), cifrados para quem recebe; a portaria ainda usa copiar e colar. As filas não têm login (prova de conceito): dá para gravar lixo, não para forjar nem ler.
 - Os apps das organizações (Câmbio etc.) **ainda não leem o crachá sozinhos**: a conferência é na Portaria do app Serviços. A integração ("Entrar com a carteira") é um próximo passo.
 - A revisão de criptografia de 08/10/2026 deixou pontos abertos: a carteira ainda não fixa o DID da Governança nem confere o emissor do crachá, e o PIN de 6 dígitos é protegido só por JavaScript ([11](11-decisoes-e-roteiro.md) §4).
 - O ambiente publicado é **de demonstração** (origem compartilhada no GitHub Pages): não usar para identidades reais.

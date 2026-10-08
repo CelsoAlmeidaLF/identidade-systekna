@@ -4,7 +4,7 @@
 // uma ou mais funcionalidades (o grupo é só atalho); o crachá leva as funcionalidades liberadas, sem grupo nem plano,
 // e a portaria confere a funcionalidade pedida no próprio crachá.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
+const { buscarRespostas, ultimoPedidoPara, entregarNaCarteira, receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -35,11 +35,10 @@ async function aprovarNaStk() {
   return gov.inputValue('#iJwt');
 }
 
-async function receber(tok) {
-  await menu('get');
-  await srv.fill('#srT', tok);
-  await srv.click('#srGo');
-  await expect(toast(srv)).toHaveText('Aprovação de emissão guardada');
+/** O serviço busca a resposta da Governança na fila. */
+async function receber() {
+  await buscarRespostas(srv);
+  await expect(toast(srv)).toHaveText('Resposta da Governança recebida');
 }
 
 /** Cadastra uma funcionalidade e espera o resultado (salvar é assíncrono e limpa o formulário). */
@@ -93,9 +92,9 @@ test.afterAll(async () => {
 test('rodapé com o + no centro e o menu com as três ações', async () => {
   await expect(srv.locator('.dock > button')).toHaveText(['Painel', 'Crachás', '', 'Portaria', 'Serviço']);
   await srv.click('#dockAdd');
-  await expect(srv.locator('#sheetBody [data-act] b')).toHaveText(['Solicitar aprovação de emissão', 'Receber aprovação de emissão', 'Cartão do serviço']);
+  await expect(srv.locator('#sheetBody [data-act] b')).toHaveText(['Solicitar aprovação de emissão', 'Buscar respostas e pedidos', 'Cartão do serviço']);
   await fecharSheet(srv);
-  await expect(srv.locator('#pCred')).toContainText('Governança não informada');
+  await expect(srv.locator('#pCred')).toContainText('Governança não escolhida');
 });
 
 let pedido1 = '';
@@ -104,17 +103,14 @@ test('solicitar: o pedido leva só o serviço, sem apps, e fica aguardando', asy
   await menu('ask');
   await expect(srv.locator('#saA')).toHaveCount(0);
   await srv.fill('#saN', 'Systekna Software');
-  await srv.fill('#saG', didSrv);
+  // A Governança vem do diretório (o próprio serviço não aparece: ele não é Governança).
+  await expect(srv.locator(`#saG option[value="${didSrv}"]`)).toHaveCount(0);
+  await srv.selectOption('#saG', didGov);
   await srv.click('#saGo');
-  await expect(srv.locator('#saH')).toHaveText('Este é o DID do próprio serviço.');
-  await srv.fill('#saG', didGov);
-  await srv.click('#saGo');
-  await expect(srv.locator('#saOut')).toBeVisible();
-  pedido1 = await srv.inputValue('#saJ');
-  await fecharSheet(srv);
-
-  expect(pedido1).toMatch(/^SYSTEKNA:PEDIDO-CREDENCIAMENTO:/);
+  await expect(toast(srv)).toHaveText('Pedido enviado à Governança Systekna');
+  pedido1 = await ultimoPedidoPara(gov);
   const p = payloadDe(pedido1);
+  expect(p.x).toBe(await srv.evaluate(() => ses.xMb));
   expect([p.iss, p.aud, p.name, p.wanted, 'apps' in p]).toEqual([didSrv, didGov, 'Systekna Software', 'ServiceAccreditationCredential', false]);
   await aba(srv, 'vPanel');
   await expect(srv.locator('#pAprov .pend')).toContainText('Aguardando aprovação');
@@ -130,7 +126,7 @@ test('a STK aprova o serviço, sem lista de apps', async () => {
   const p = payloadDe(tok);
   expect(p.vc.credentialSubject).toEqual({ id: didSrv, servico: 'Systekna Software' });
   expect(p.exp - p.iat).toBe(365 * DIA);
-  await receber(tok);
+  await receber();
   await expect(srv.locator('#pAprov .pend')).toHaveCount(0);
   await expect(srv.locator('#pCred')).toContainText('Nenhum app ainda');
 });
@@ -139,17 +135,19 @@ test('a STK recusa: o motivo fala do serviço, não de apps', async () => {
   await menu('ask');
   await expect(srv.locator('#saOk')).toContainText('O serviço já está aprovado até');
   await srv.click('#saGo');
-  await expect(srv.locator('#saOut')).toBeVisible();
-  const tok = await srv.inputValue('#saJ');
-  await fecharSheet(srv);
-  await conferirNaStk(tok);
+  await expect(toast(srv)).toHaveText(/^Pedido enviado/);
+  await conferirNaStk(await ultimoPedidoPara(gov));
   await expect(gov.locator('#iSrvAtiva')).toContainText('Este serviço já está aprovado até');
   await gov.click('#iRec');
   await gov.selectOption('#rcM', 'Serviço não autorizado');
   await gov.click('#rcGo');
   await expect(toast(gov)).toHaveText('Pedido recusado');
   expect(await gov.evaluate(() => st.book.at(-1).text)).toBe('Aprovação de emissão de Systekna Software recusada: Serviço não autorizado');
-  // O pedido de renovação fica aguardando; tira para não poluir o painel.
+  // A recusa volta assinada pela fila: o pedido aparece recusado, com o motivo.
+  await buscarRespostas(srv);
+  await aba(srv, 'vPanel');
+  await expect(srv.locator('#pAprov .pend')).toContainText('Recusado: Serviço não autorizado');
+  // Tira o pedido recusado para não poluir o painel.
   await srv.evaluate(async () => { st.pendentes = []; await save(); renderPanel(); });
 });
 
@@ -190,13 +188,13 @@ test('o serviço cadastra o app, as funcionalidades e um grupo', async () => {
   await expect(srv.locator('#pAprov .cred .main')).toHaveText('3 funcionalidades · 1 grupo');
 });
 
-test('o Cartão do app leva as funcionalidades, os grupos e a aprovação do serviço', async () => {
-  await srv.click(`#pAprov [data-app="${APP}"]`);
-  const cartao = await srv.inputValue('#scJ');
-  await fecharSheet(srv);
-  const p = payloadDe(cartao);
+test('o Cartão do serviço, publicado no diretório, leva as funcionalidades, os grupos e a aprovação', async () => {
+  await buscarRespostas(srv);
+  const [d] = await carteira.evaluate(() => lerDiretorio('servico'));
+  expect(d.did).toBe(didSrv);
+  const p = payloadDe(d.payload.cartao);
   const aprov = await srv.evaluate(() => st.aprovacoes[0].jwt);
-  expect([p.app, p.apps, p.aprovacoes]).toEqual([APP, [APP], [aprov]]);
+  expect([p.name, p.apps, p.aprovacoes]).toEqual(['Systekna Software', [APP], [aprov]]);
   expect(p.catalogo).toEqual([{
     nome: APP,
     funcoes: [{ id: 'despesas', nome: 'Lançar despesas' }, { id: 'receita', nome: 'Lançar receita' }, { id: 'lancar-cartoes', nome: 'Lançar cartões' }],
@@ -211,38 +209,32 @@ test('ao aprovar o acesso, o grupo marca as funcionalidades; o crachá leva só 
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
   await carteira.fill('#aqN', 'Maria Teste');
+  await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  const pedidoId = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const pedidoId = await ultimoPedidoPara(gov);
   await conferirNaStk(pedidoId);
   const anterior = await gov.inputValue('#iJwt');
   await gov.click('#iGo');
   await expect(gov.locator('#iJwt')).not.toHaveValue(anterior);
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="get"]');
-  await carteira.fill('#rcT', await gov.inputValue('#iJwt'));
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await entregarNaCarteira(carteira, await gov.inputValue('#iJwt'))).toBe('Credencial guardada');
 
-  // A pessoa lê o Cartão do serviço e vê as funcionalidades e os grupos.
+  // A pessoa escolhe o serviço no diretório e vê as funcionalidades e os grupos.
   await menu('card');
-  const cartao = await srv.inputValue('#scJ');
-  await fecharSheet(srv);
+  await expect(toast(srv)).toHaveText('Cartão do serviço publicado no diretório');
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="access"]');
-  await carteira.fill('#paC', cartao);
-  await carteira.click('#paLer');
+  await carteira.click(`#paS [data-srv="${didSrv}"]`);
   await expect(carteira.locator(`#paApps [data-app="${APP}"]`)).toContainText('Funcionalidades: Lançar despesas, Lançar receita, Lançar cartões');
   await expect(carteira.locator(`#paApps [data-app="${APP}"]`)).toContainText('Grupos: Básico');
   await carteira.click(`#paApps [data-app="${APP}"]`);
   await carteira.click('#paGo');
-  await expect(carteira.locator('#paJ')).not.toHaveValue('');
-  const pedido = await carteira.inputValue('#paJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado a /);
+  const pedido = await ultimoPedidoPara(srv);
 
   await aba(srv, 'vBadge');
-  await srv.fill('#cqT', pedido);
   await srv.click('#cqGo');
+  await srv.locator(`#cFila [data-ent="${payloadDe(pedido).nonce}"]`).click();
   await expect(srv.locator('#cWho')).toContainText('Pedido conferido');
   const fn = id => srv.locator(`#cApps [data-fn="${id}"]`);
   const grupo = srv.locator('#cApps [data-gr="basico"]');
@@ -273,11 +265,8 @@ test('ao aprovar o acesso, o grupo marca as funcionalidades; o crachá leva só 
   expect(p.exp).toBe(aprov.exp);
   expect(await srv.evaluate(() => st.book.at(-1).text)).toBe(`Crachá ${APP} (Lançar despesas, Lançar receita) emitido para Maria Teste`);
 
-  await carteira.click('#dockAdd');
-  await carteira.click('#sheetBody [data-act="badge"]');
-  await carteira.fill('#rbT', cracha);
-  await carteira.click('#rbGo');
-  await expect(toast(carteira)).toHaveText('Crachá guardado');
+  await buscarRespostas(carteira);
+  await expect(toast(carteira)).toHaveText('Chegou 1 resposta');
 });
 
 test('portaria: a funcionalidade liberada passa; a que não está no crachá é negada', async () => {

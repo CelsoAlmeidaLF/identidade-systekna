@@ -4,7 +4,7 @@
 // armazenamento compartilhado). Os tokens passam de um para o outro pelo
 // valor das caixas de texto, como no copiar e colar manual.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, vigiarCsp } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, entregarNaCarteira, receberPedido, WORDS, preparar, bloquearEDesbloquear, aba, toast, fecharSheet, vigiarCsp } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -21,10 +21,7 @@ async function acaoCarteira(acao) {
 }
 
 async function receberNaCarteira(token) {
-  await acaoCarteira('get');
-  await carteira.fill('#rcT', token);
-  await carteira.click('#rcGo');
-  await expect(toast(carteira)).toHaveText('Credencial guardada');
+  expect(await entregarNaCarteira(carteira, token)).toBe('Credencial guardada');
 }
 
 async function gerarDesafio(tipo = 'any') {
@@ -78,10 +75,10 @@ test('01 · Governança criada com o livro aberto e íntegro', async () => {
 test('02 · pedido válido é conferido e o mesmo pedido reenviado é recusado', async () => {
   await acaoCarteira('ask');
   await carteira.fill('#aqN', 'Maria Teste');
+  await carteira.selectOption('#aqE', await emissor.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  pedido = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  pedido = await ultimoPedidoPara(emissor);
 
   await receberPedido(emissor, pedido);
   await expect(emissor.locator('#iWho')).toContainText('Pedido conferido');
@@ -91,10 +88,8 @@ test('02 · pedido válido é conferido e o mesmo pedido reenviado é recusado',
   await expect(emissor.locator('#iOk')).toContainText('Credencial emitida');
   credencial = await emissor.inputValue('#iJwt');
 
-  await emissor.click('#iNew');
-  await emissor.fill('#iqT', pedido);
-  await emissor.click('#iqGo');
-  await expect(emissor.locator('#iqH')).toContainText('já foi atendido');
+  expect(await receberPedido(emissor, pedido)).toBe(false);
+  await expect(emissor.locator('#iqRes')).toContainText('já foi atendido');
   await expect(emissor.locator('#iForm')).toBeHidden();
 });
 

@@ -1,0 +1,37 @@
+rules_version = '2';
+// Filas da Identidade Soberana Systekna (1.2.0). Prova de conceito no plano gratuito, sem login:
+// as regras só conferem o formato. Quem recebe confere a assinatura Ed25519 e abre a cifra X25519;
+// forjar um pedido ou uma aprovação continua impossível sem a chave de quem assina.
+service cloud.firestore {
+  match /databases/{db}/documents {
+    function did(s) { return s is string && s.size() <= 80 && s.matches('did:key:z[1-9A-HJ-NP-Za-km-z]+'); }
+    function texto(s, n) { return s is string && s.size() > 0 && s.size() <= n; }
+    function idOk(id) { return id.size() >= 16 && id.size() <= 40 && id.matches('[A-Za-z0-9_-]+'); }
+    function envelope(d) {
+      return d.keys().hasOnly(['para', 'env', 'criado']) && d.keys().hasAll(['para', 'env', 'criado'])
+        && did(d.para) && texto(d.env, 60000) && d.env.matches('smsg1[.].*') && d.criado is int;
+    }
+
+    // Pedidos: quem atende busca pelos endereçados ao seu DID (para) e apaga depois de ler.
+    match /fila-solicitacao/{id} {
+      allow create: if idOk(id) && envelope(request.resource.data);
+      allow get, delete: if true;
+      allow list: if request.query.limit <= 50;
+    }
+    // Respostas: lidas só por quem sabe o número do pedido (nonce de 128 bits); não dá para listar.
+    match /fila-emissao/{id} {
+      allow create: if idOk(id) && envelope(request.resource.data);
+      allow get, delete: if true;
+      allow list: if false;
+    }
+    // Diretório: Governanças e serviços, cada registro assinado pela chave do próprio DID.
+    match /diretorio/{d} {
+      allow get, list: if true;
+      allow create, update: if did(d)
+        && request.resource.data.keys().hasOnly(['tipo', 'jwt', 'atualizado'])
+        && request.resource.data.tipo in ['governanca', 'servico']
+        && texto(request.resource.data.jwt, 100000) && request.resource.data.atualizado is int;
+      allow delete: if false;
+    }
+  }
+}

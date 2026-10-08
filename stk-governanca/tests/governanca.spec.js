@@ -3,7 +3,7 @@
 // credenciamento ativos por DID, e o envelope SYSTEKNA:<TIPO>:<JWT> em todo pacote copiado.
 // O app Serviços ainda não existe: o pedido de credenciamento é assinado direto na página de um serviço simulado.
 const { test, expect } = require('@playwright/test');
-const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
+const { ultimoPedidoPara, entregarNaCarteira, receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -22,7 +22,7 @@ async function pedidoDeCredenciamento(apps, extra = {}) {
   const iat = agora();
   return assinar(servico, 'pedido+jwt', {
     iss: didServico, sub: didServico, aud: 'emissor', name: 'Academia Boa Forma', wanted: 'ServiceAccreditationCredential',
-    apps, note: '', nonce: `credenciamento-${Math.random()}`, iat, exp: iat + 7 * 86_400, ...extra,
+    apps, note: '', x: await servico.evaluate(() => ses.xMb), nonce: `credenciamento-${Math.random()}`, iat, exp: iat + 7 * 86_400, ...extra,
   });
 }
 
@@ -30,10 +30,10 @@ async function pedirIdentidade(nome = 'Maria Teste') {
   await carteira.click('#dockAdd');
   await carteira.click('#sheetBody [data-act="ask"]');
   await carteira.fill('#aqN', nome);
+  await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
-  await expect(carteira.locator('#aqOut')).toBeVisible();
-  const tok = await carteira.inputValue('#aqJ');
-  await fecharSheet(carteira);
+  await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
+  const tok = await ultimoPedidoPara(gov);
   return tok;
 }
 
@@ -69,17 +69,14 @@ test.afterAll(async () => {
 test.describe('envelope SYSTEKNA:<TIPO>:<JWT>', () => {
   test('pedido, aprovação, desafio e prova saem com o envelope do tipo certo', async () => {
     const pedido = await pedirIdentidade();
-    expect(pedido).toMatch(/^SYSTEKNA:PEDIDO-APROVACAO:ey/);
+    // Pela fila vai o JWT puro, cifrado; o envelope SYSTEKNA:<TIPO>: ficou para o que ainda se copia (desafio e prova).
+    expect(pedido).toMatch(/^ey/);
     await conferirPedido(pedido);
     await expect(gov.locator('#iWho')).toContainText('Pedido conferido');
     const aprovacao = await emitir();
     expect(aprovacao).toMatch(/^SYSTEKNA:APROVACAO:ey/);
 
-    await carteira.click('#dockAdd');
-    await carteira.click('#sheetBody [data-act="get"]');
-    await carteira.fill('#rcT', aprovacao);
-    await carteira.click('#rcGo');
-    await expect(toast(carteira)).toHaveText('Credencial guardada');
+    expect(await entregarNaCarteira(carteira, aprovacao)).toBe('Credencial guardada');
     // A carteira guarda o JWT sem o envelope: é ele que vai dentro da prova.
     expect(await carteira.evaluate(() => creds()[0].data.jwt)).toMatch(/^ey/);
 
@@ -106,9 +103,9 @@ test.describe('envelope SYSTEKNA:<TIPO>:<JWT>', () => {
   test('envelope com tipo trocado é recusado; JWT sem envelope ainda é aceito', async () => {
     const pedido = await pedirIdentidade();
     const jwt = pedido.replace(/^SYSTEKNA:[A-Z-]+:/, '');
-    await conferirPedido(`SYSTEKNA:DESAFIO:${jwt}`);
-    await expect(gov.locator('#iqH')).toHaveText('O pacote diz DESAFIO, mas o conteúdo é PEDIDO-APROVACAO. Ele foi alterado.');
-    await expect(gov.locator('#iForm')).toBeHidden();
+    // O envelope é conferido por quem lê o pacote (hoje, o desafio e a prova copiados).
+    expect(await gov.evaluate(t => verifyJWT(t).then(() => 'ok', e => e.message), `SYSTEKNA:DESAFIO:${jwt}`))
+      .toBe('O pacote diz DESAFIO, mas o conteúdo é PEDIDO-APROVACAO. Ele foi alterado.');
 
     await conferirPedido(jwt);
     await expect(gov.locator('#iWho')).toContainText('Pedido conferido');

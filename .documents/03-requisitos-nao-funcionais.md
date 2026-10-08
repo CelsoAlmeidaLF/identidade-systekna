@@ -18,6 +18,8 @@
 | RNF-12 | PDF de recuperação só depois de confirmar o PIN ou a biometria; o PDF e a tela avisam que o arquivo é uma cópia completa da conta | `recuperacao.spec.js` |
 | RNF-13 | QR e PDF gerados no aparelho, sem biblioteca externa e sem mudar a CSP; o arquivo não sai do aparelho sem a pessoa enviar | `recuperacao.spec.js`, `seguranca.spec.js` |
 
+| RNF-14 | Filas (1.2): o Firestore só guarda envelopes cifrados (`smsg1`) e o DID de quem recebe; a CSP libera só `https://firestore.googleapis.com` em `connect-src`; sem SDK de terceiros | `filas.spec.js`, `fila.spec.js` |
+
 ## 2. Privacidade
 
 | ID | Requisito |

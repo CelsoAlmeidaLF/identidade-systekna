@@ -26,6 +26,7 @@
 | H-18 | Mensagens cifradas (cifrar e abrir); cofre de anotações guarda as mensagens cifradas | Carteira | 0.28.1 | ✅ Pré-aprovado na 1.0.0 |
 | H-19 | Emissão de credenciais (Governança) e de crachás pelos serviços; os 3 apps completos | Todos | 1.0.0 | ✅ Pré-aprovado ("os 3 apps foram homologados") |
 | H-20 | Fila de pedidos na Governança: receber vários de uma vez; Aguardando · Aprovados · Reprovados; identidades e serviços na mesma fila | STK | 1.1.0 | ⬜ Falta homologar |
+| H-21 | Filas: pedidos e respostas sem copiar e colar (identidade, aprovação de emissão, crachá); diretório de Governanças e serviços | Todos | 1.2.0 | ⬜ Falta homologar |
 | H-12 | Recuperação pelo código STK1-… ou pelas 12 palavras; PDF com QR code, código e palavras | Todos | 0.23.0 | ✅ Aprovado ("testei aqui! Está funcionando!") |
 
 ## 2. Roteiro de homologação (1.0.0)
@@ -57,11 +58,12 @@ Siga o [Manual de uso](10-manual-de-uso.md). Para cada passo, anote ✔ ou o pro
 
 | Ponto | Situação |
 |---|---|
-| Transporte por copiar e colar | Esperado (QR entre os apps adiado; o QR existe só no PDF de recuperação) |
+| Transporte | Pelas filas desde a 1.2; a portaria (desafio e prova) ainda por copiar e colar. Sem internet, nada é enviado nem recebido |
+| Filas sem login | Esperado (prova de conceito, sem faturamento): dá para gravar lixo ou apagar itens, não para forjar nem ler |
 | PDF de recuperação é uma cópia completa da conta | Esperado e aceito: imprimir e apagar o arquivo |
 | "Ler QR code" só aparece onde o navegador lê QR (Chrome do Android) | Esperado; no iPhone, ler com a câmera do aparelho e colar |
 | Os apps das organizações (Câmbio etc.) não leem o crachá; a conferência é na Portaria | Esperado (próximo passo) |
-| DID da STK informado à mão no Serviços | Esperado até existir a STK de produção |
+| Governança escolhida na lista do diretório | Esperado até existir a STK de produção (DID pré-carregado) |
 | STK ou Serviços criados antes da 0.16.0 mostram aviso de derivação antiga | Esperado; para testar do zero, "Apagar tudo deste aparelho" |
 | Revisão de criptografia (08/10/2026): a carteira ainda não fixa o DID da Governança nem confere o emissor do crachá; PIN de 6 dígitos protegido só por JavaScript; mensagens cifradas sem remetente | Conhecido; próximos passos em [11](11-decisoes-e-roteiro.md) §4 |
 | Testes automatizados antigos ainda usam telas substituídas | Ver [07](07-testes.md) §4 |

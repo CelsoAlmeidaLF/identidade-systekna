@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <!-- Só roda o script desta página (o hash é calculado por scripts/build.js). Nada é carregado de fora do site. -->
-<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '{{hash-do-script}}'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self'; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src '{{hash-do-script}}'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; connect-src 'self' https://firestore.googleapis.com; manifest-src 'self'; worker-src 'self'; base-uri 'none'; form-action 'none'">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#DCEBFA" id="metaTheme">
 <link rel="manifest" href="governanca.webmanifest">
@@ -80,11 +80,10 @@
     <section class="view" id="vIssue">
       <h2>Fila de pedidos</h2>
       <div id="iFilaV">
-      <p class="sub">Cole um ou vários pedidos que chegaram: de pessoas, para aprovar a identidade (did:key), ou de serviços, para aprovar a emissão. Cada pedido é conferido e entra na fila para você aprovar ou reprovar.</p>
-      <label class="f" id="iqF"><span>Pedidos</span><textarea class="mono" id="iqT" rows="4" spellcheck="false" placeholder="SYSTEKNA:PEDIDO-APROVACAO:…"></textarea></label>
+      <p class="sub">Os pedidos chegam sozinhos pela fila: de pessoas, para aprovar a identidade (did:key), e de serviços, para aprovar a emissão. Cada pedido é conferido e fica aqui para você aprovar ou reprovar; a resposta volta pela fila.</p>
       <p class="hint" id="iqH"></p>
       <div id="iqRes"></div>
-      <button class="btn" id="iqGo">Receber pedidos</button>
+      <button class="btn ghost" id="iqGo">Buscar pedidos agora</button>
       <div class="seg mt" id="iSeg" style="--n:3"><span class="ind"></span><button aria-pressed="true" data-f="aguardando">Aguardando</button><button aria-pressed="false" data-f="aprovado">Aprovados</button><button aria-pressed="false" data-f="reprovado">Reprovados</button></div>
       <div class="list glass flat" id="iFila"></div>
       </div>
@@ -102,8 +101,8 @@
       </div>
       <div id="iOut" hidden>
         <div id="iOk"></div>
-        <label class="f"><span>Aprovação emitida, entregue a quem pediu</span><textarea class="mono" id="iJwt" rows="6" readonly></textarea></label>
-        <div class="pair"><button class="btn ghost" id="iCopy">Copiar</button><button class="btn ghost" id="iNew">Voltar à fila</button></div>
+        <textarea class="mono" id="iJwt" hidden readonly aria-hidden="true"></textarea>
+        <div class="pair"><button class="btn ghost" id="iCopy">Reenviar</button><button class="btn ghost" id="iNew">Voltar à fila</button></div>
       </div>
     </section>
 
@@ -148,6 +147,7 @@
 <script>
 <!-- @inclui ../../compartilhado/src/nucleo.js -->
 <!-- @inclui ../../compartilhado/src/recuperacao.js -->
+<!-- @inclui ../../compartilhado/src/filas.js -->
 <!-- @inclui ../../compartilhado/src/livro.js -->
 <!-- @inclui app.js -->
 </script>

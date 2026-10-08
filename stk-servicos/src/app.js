@@ -11,6 +11,7 @@ const APP={
   <p><b>Apps e funcionalidades.</b> Em Serviço › Apps, você cadastra os apps (aplicativo, serviço ou ferramenta) e, em cada um, as funcionalidades (módulo, micro-serviço ou ferramenta) e os grupos delas, para liberar várias de uma vez. O Cartão do serviço e o Cartão do app levam esse catálogo, para a pessoa ver o que pode pedir.</p>
   <p><b>Crachá.</b> A pessoa pede pela carteira, com a Identidade junto. O serviço confere, sem consultar a Governança, que a Identidade foi assinada por ela, é da mesma pessoa e está válida, e emite um crachá por app, com as funcionalidades liberadas e a validade, nunca além da aprovação do serviço. Cada funcionalidade confere o crachá sozinha. Cada pessoa tem um crachá ativo por app; para liberar outra funcionalidade, emita um crachá novo.</p>
   <p><b>Portaria.</b> O desafio é para um app ou para uma funcionalidade dele, vale 10 minutos e uma única vez. A portaria confere que quem responde é o dono do crachá, que o crachá foi emitido aqui, é do app certo, libera a funcionalidade pedida, não foi revogado e está válido, e que a aprovação do serviço continua vigente.</p>
+  <p><b>Filas.</b> Pedidos e respostas passam pelo Firestore, sem copiar e colar: cada pedido vai cifrado para a chave de quem atende e cada resposta volta cifrada para quem pediu. O banco só transporta; quem confere a assinatura é este aparelho. Sem login (prova de conceito): alguém pode gravar lixo na fila, mas não forjar nem ler.</p>
   <p><b>Limite.</b> O serviço não enxerga revogações feitas pela Governança: a proteção é a validade da Identidade e da aprovação de emissão.</p>`,
   async load(){
     const r=await DB.get('state');
@@ -32,12 +33,12 @@ const APP={
     }
     st.catalogo.forEach(a=>{if(!a.grupos)a.grupos=[]});
   },
-  enter(){$('#whoLabel').textContent=nomeServico();mountCommonSettings($('#commonSet'));setView('vPanel')},
-  onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps()},
+  enter(){$('#whoLabel').textContent=nomeServico();mountCommonSettings($('#commonSet'));setView('vPanel');iniciarFilas(sincronizarSrv)},
+  onView(v){if(v==='vPanel')renderPanel();if(v==='vSrv')renderSrv();if(v==='vGate')fillGateApps();if(v==='vBadge')renderEntrada()},
   onLock(){
-    st=null;pedido=null;
-    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued','#sApps'].forEach(s=>$(s).innerHTML='');
-    ['#cqT','#gaChalT','#gaPT'].forEach(s=>$(s).value='');
+    pararFilas();st=null;pedido=null;$('#cFilaV').hidden=false;
+    ['#pCred','#pAprov','#pOrgN','#pOrgG','#cPessoa','#pAtos','#pBook','#cWho','#cApps','#cOk','#cList','#gaOut','#sIssued','#sApps','#cFila','#cqH'].forEach(s=>$(s).innerHTML='');
+    ['#gaChalT','#gaPT'].forEach(s=>$(s).value='');
     ['#cForm','#cOut','#gaChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Serviços Systekna';
   },
@@ -74,7 +75,7 @@ const nomesFn=(a,ids)=>ids.map(id=>(a.funcoes.find(f=>f.id===id)||{nome:id}).nom
 const resumoApp=a=>[a.funcoes.length?`${a.funcoes.length} ${a.funcoes.length===1?'funcionalidade':'funcionalidades'}`:'Sem funcionalidades',a.grupos.length?`${a.grupos.length} ${a.grupos.length===1?'grupo':'grupos'}`:''].filter(Boolean).join(' · ');
 
 function credResumo(){
-  if(!st.gov)return verdictHtml(false,'Governança não informada','Em Serviço, informe o DID da Governança em que este serviço confia.');
+  if(!st.gov)return verdictHtml(false,'Governança não escolhida','Toque em + › Solicitar aprovação de emissão e escolha a Governança.');
   if(!credOk())return verdictHtml(false,st.aprovacoes.length?'Aprovação de emissão vencida':'Sem aprovação de emissão','Toque em + › Solicitar aprovação de emissão. Sem ela, o serviço não emite crachás.');
   if(!st.catalogo.length)return verdictHtml(false,'Nenhum app ainda','Em Serviço › Apps, cadastre os apps e as funcionalidades do serviço.');
   return '';
@@ -85,7 +86,7 @@ function cartaoApp(a){
   const ap=aprovServico()||maisLonga(st.aprovacoes),venc=!ap||!valida(ap),pill=!ap?'Sem aprovação':!ap.exp?'Sem validade':venc?'Vencida':'Até '+fmtDate(ap.exp*1000);
   return `<button class="cred g-ServiceAccreditationCredential ${venc?'dim':''}" data-app="${esc(a.nome)}" aria-label="Cartão do app ${esc(a.nome)}"><div class="r1"><b class="tipo">App: ${esc(a.nome)}</b>${ic('badge')}</div><div class="main">${esc(resumoApp(a))}</div><div class="did"><span class="mono" title="${esc(ses.did)}">${esc(shortDid(ses.did))}</span><span class="cp" role="button" tabindex="0" aria-label="Copiar DID" data-copydid="${esc(ses.did)}">${ic('copy')}</span></div><div class="r3"><span class="emissor">${esc(st.gov?st.gov.name:'Governança')}</span><span class="pill on-card">${pill}</span></div></button>`;
 }
-const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill warn">Aguardando aprovação</span></div><div class="v">${esc(nomeServico())}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
+const cartaoPendente=p=>`<div class="glass flat card pend" data-pend="${esc(p.nonce)}"><div class="kr" style="padding:0"><div class="h"><small>Aprovação de emissão</small><span class="pill ${p.recusa?'no':'warn'}">${p.recusa?'Recusado: '+esc(p.recusa):'Aguardando aprovação'}</span></div><div class="v">${esc(nomeServico())}</div><div class="v sub" style="margin-top:4px">Pedido em ${fmtDate(p.at)}</div></div></div>`;
 // Tocar no cartão do app abre o Cartão daquele app; o botão de copiar só copia o DID.
 $('#pAprov').onclick=e=>{
   const c=e.target.closest('[data-copydid]');if(c){e.preventDefault();copy(c.dataset.copydid,'DID copiado');return}
@@ -262,99 +263,170 @@ function gerenciarApp(nome){
 $('#dockAdd').onclick=()=>{
   const row=(k,icn,t,d)=>`<button class="tx" data-act="${k}"><span class="dot">${ic(icn)}</span><span class="t"><b>${t}</b><small>${d}</small></span>${ic('chev')}</button>`;
   openSheet(`<h3>O que você quer fazer?</h3><div class="list glass flat" style="margin-top:12px">
-    ${row('ask','send','Solicitar aprovação de emissão','Pede à Governança a emissão de crachás de apps')}
-    ${row('get','inbox','Receber aprovação de emissão','Cola a aprovação que a Governança emitiu')}
-    ${row('card','badge','Cartão do serviço','Mostra o cartão público para as carteiras')}</div>`);
-  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(b)({ask:solicitarEmissao,get:receberEmissao,card:cartaoServico})[b.dataset.act]()};
+    ${row('ask','send','Solicitar aprovação de emissão','Envia o pedido à Governança pela fila')}
+    ${row('get','inbox','Buscar respostas e pedidos','Aprovação da Governança e pedidos de crachá que chegaram')}
+    ${row('card','badge','Cartão do serviço','Publicado no diretório: é por ele que as carteiras encontram o serviço')}</div>`);
+  $('#sheetBody').onclick=e=>{const b=e.target.closest('[data-act]');if(b)({ask:solicitarEmissao,get:buscarAgora,card:cartaoServico})[b.dataset.act]()};
 };
 // Solicitar: a Governança aprova o serviço, não os apps. O pedido leva só o nome do serviço.
 function solicitarEmissao(){
   const ap=aprovServico();
   openSheet(`<h3>Solicitar aprovação de emissão</h3><p class="sub">A Governança aprova o serviço. Os apps e as funcionalidades são seus: cadastre em Serviço › Apps.</p>
     ${st.gov?`<div class="list glass flat"><div class="kr"><div class="h"><small>Governança</small></div><div class="v">${esc(st.gov.name)}</div><div class="v mono" style="margin-top:4px">${esc(shortDid(govDid()))}</div></div></div>`
-      :`<label class="f" id="saGF"><span>DID da Governança</span><input id="saG" class="mono" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="did:key:z6Mk…"></label><p class="hint">Informado uma vez, fica guardado.</p>`}
+      :`<label class="f" id="saGF"><span>Governança</span><select id="saG"><option value="">Buscando…</option></select></label><p class="hint">Escolhida uma vez, fica guardada.</p>`}
     <label class="f" id="saNF"><span>Nome do serviço</span><input id="saN" autocomplete="off" value="${esc(st.name)}" placeholder="Ex.: Academia Boa Forma"></label>
     ${ap?`<p class="note" id="saOk">O serviço já está aprovado${ap.exp?' até '+fmtDate(ap.exp*1000):', sem validade'}. Pedir de novo serve para renovar.</p>`:''}
     <p class="hint" id="saH"></p>
-    <button class="btn" id="saGo">Assinar pedido</button>
-    <div id="saOut" hidden><label class="f"><span>Pedido assinado, válido por 7 dias</span><textarea class="mono" id="saJ" rows="6" readonly></textarea></label><button class="btn ghost" id="saC">Copiar pedido</button></div>`);
+    <button class="btn" id="saGo">Enviar pedido</button>`);
   const H=$('#saH'),aviso=(m,bad)=>{H.textContent=m;H.classList.toggle('bad',!!bad)};
+  let govs=[];
+  lerDiretorio('governanca').then(l=>{
+    govs=l;if(!$('#saG'))return;
+    $('#saG').innerHTML=l.length?l.map(g=>`<option value="${esc(g.did)}">${esc(g.name||'Governança')} · ${esc(shortDid(g.did))}</option>`).join(''):'<option value="">Nenhuma Governança publicada</option>';
+  }).catch(e=>aviso(e.message,true));
   $('#saGo').onclick=async()=>{
     const name=$('#saN').value.trim();
     if(!name){shake($('#saNF'));return $('#saN').focus()}
     const pii=piiProblem({nome:name});if(pii)return aviso(pii,true);
-    if(!st.gov){
-      const did=$('#saG').value.trim();
-      try{await didToEdKey(did)}catch(e){shake($('#saGF'));return aviso(e.message,true)}
-      if(minhas().includes(did)){shake($('#saGF'));return aviso('Este é o DID do próprio serviço.',true)}
-      st.gov={name:GOVERNANCA_PADRAO.name,dids:[did]};
-      await ato('confianca',`${st.gov.name} definida como Governança do serviço`,did);
-    }
+    // A chave de cifragem da Governança vem do diretório, assinada por ela.
+    let gov;
+    try{gov=st.gov?(await lerDiretorio('governanca')).find(g=>g.did===govDid()):govs.find(g=>g.did===$('#saG').value)}catch(e){return aviso(e.message,true)}
+    if(!gov){if($('#saGF'))shake($('#saGF'));return aviso(st.gov?'A Governança deste serviço não está publicada no diretório.':'Escolha a Governança.',true)}
+    if(minhas().includes(gov.did))return aviso('Este é o DID do próprio serviço.',true);
     const iat=now(),nonce=b64u.enc(rnd(16));
-    const tok=embrulhar(await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:govDid(),name,wanted:'ServiceAccreditationCredential',note:'',nonce,iat,exp:iat+7*86400}));
+    const tok=await signJWT('pedido+jwt',{iss:ses.did,sub:ses.did,aud:gov.did,name,wanted:'ServiceAccreditationCredential',note:'',x:ses.xMb,nonce,iat,exp:iat+7*86400});
+    $('#saGo').disabled=true;
+    try{await enviarSolicitacao(gov,tok,nonce)}catch(e){$('#saGo').disabled=false;return aviso(e.message,true)}
+    if(!st.gov){st.gov={name:gov.name||GOVERNANCA_PADRAO.name,dids:[gov.did]};await ato('confianca',`${st.gov.name} definida como Governança do serviço`,gov.did)}
     st.name=name;
     st.pendentes.push({nonce,at:Date.now()});
     await ato('pedido',`Aprovação de emissão pedida para o serviço ${name}`,nonce);await save();
     $('#whoLabel').textContent=name;aviso('');
-    $('#saJ').value=tok;$('#saOut').hidden=false;$('#saGo').hidden=true;
-    $('#saC').onclick=()=>copy(tok,'Pedido copiado');toast('Pedido assinado');renderPanel();
+    closeSheet();toast(`Pedido enviado à ${st.gov.name}`);renderPanel();
   };
 }
-function receberEmissao(){
-  openSheet(`<h3>Receber aprovação de emissão</h3><p class="sub">Cole a aprovação que a Governança emitiu para este serviço.</p>
-    <label class="f" id="srF"><span>Aprovação de emissão</span><textarea class="mono" id="srT" rows="6" spellcheck="false" placeholder="SYSTEKNA:CREDENCIAMENTO:…"></textarea></label><p class="hint" id="srH"></p>
-    <button class="btn" id="srGo">Conferir e guardar</button>`);
-  $('#srGo').onclick=async()=>{
-    const H=$('#srH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#srF'))};
-    let r;try{r=await verifyJWT($('#srT').value)}catch(e){return fail(e.message)}
-    const p=r.payload;
-    if(r.header.typ!=='vc+jwt'||!p.vc||vcType(p)!=='ServiceAccreditationCredential')return fail('Isto não é uma aprovação de emissão.');
-    if(!r.ok)return fail('A assinatura não confere: a aprovação foi alterada.');
-    if(p.sub!==ses.did)return fail('Esta aprovação é de outro serviço.');
-    if(!st.gov)return fail('Informe antes a Governança deste serviço.');
-    if(!daGov(r.did))return fail('Esta aprovação não foi assinada pela Governança deste serviço.');
-    if(st.aprovacoes.some(a=>a.jti===p.jti))return fail('Esta aprovação já está guardada.');
-    const t0=now();
-    if(p.exp&&p.exp<=t0)return fail(`Esta aprovação venceu em ${fmtDate(p.exp*1000)}.`);
-    if(p.nbf&&p.nbf>t0+CLOCK_SKEW)return fail(`Esta aprovação só vale a partir de ${fmtDate(p.nbf*1000)}.`);
-    const cs=p.vc.credentialSubject||{};
-    st.aprovacoes.push({jwt:r.tok,jti:p.jti,iat:p.iat,exp:p.exp||0,servico:cs.servico||''});
-    // A aprovação atende os pedidos em aberto: o serviço inteiro está aprovado.
-    st.pendentes=[];
-    await ato('credenciamento',`Aprovação de emissão recebida da ${st.gov.name}${p.exp?', até '+fmtDate(p.exp*1000):', sem validade'}`,p.jti);await save();
-    closeSheet();setView('vPanel');toast('Aprovação de emissão guardada');
-  };
+// Aprovação de emissão que chegou pela fila (assinada pela Governança do serviço).
+async function aceitarAprovacao(tok){
+  const r=await verifyJWT(tok),p=r.payload;
+  if(r.header.typ!=='vc+jwt'||!p.vc||vcType(p)!=='ServiceAccreditationCredential')throw new Error('Isto não é uma aprovação de emissão.');
+  if(!r.ok)throw new Error('A assinatura não confere: a aprovação foi alterada.');
+  if(p.sub!==ses.did)throw new Error('Esta aprovação é de outro serviço.');
+  if(!st.gov)throw new Error('Escolha antes a Governança deste serviço.');
+  if(!daGov(r.did))throw new Error('Esta aprovação não foi assinada pela Governança deste serviço.');
+  if(st.aprovacoes.some(a=>a.jti===p.jti))throw new Error('Esta aprovação já está guardada.');
+  const t0=now();
+  if(p.exp&&p.exp<=t0)throw new Error(`Esta aprovação venceu em ${fmtDate(p.exp*1000)}.`);
+  if(p.nbf&&p.nbf>t0+CLOCK_SKEW)throw new Error(`Esta aprovação só vale a partir de ${fmtDate(p.nbf*1000)}.`);
+  const cs=p.vc.credentialSubject||{};
+  st.aprovacoes.push({jwt:r.tok,jti:p.jti,iat:p.iat,exp:p.exp||0,servico:cs.servico||''});
+  // A aprovação atende os pedidos em aberto: o serviço inteiro está aprovado.
+  st.pendentes=[];
+  await ato('credenciamento',`Aprovação de emissão recebida da ${st.gov.name}${p.exp?', até '+fmtDate(p.exp*1000):', sem validade'}`,p.jti);await save();
+  return 'Aprovação de emissão guardada';
 }
+// Recusa da Governança a um pedido de aprovação de emissão: o pedido sai de "aguardando" com o motivo.
+async function aceitarRecusaGov(tok){
+  const r=await verifyJWT(tok,'recusa+jwt'),p=r.payload;
+  if(!r.ok||!daGov(r.did)||p.sub!==ses.did)throw new Error('Recusa que não é da Governança deste serviço.');
+  const pd=st.pendentes.find(x=>x.nonce===p.nonce);if(!pd)throw new Error('Não há pedido com este número.');
+  pd.recusa=String(p.motivo||'Sem motivo');
+  await ato('recusa',`Aprovação de emissão recusada pela ${st.gov.name}: ${pd.recusa}`,p.nonce);await save();
+  return 'Recusa registrada';
+}
+
+/* ================= filas ================= */
+// O cartão do serviço vai para o diretório sempre que muda (nome, apps, funcionalidades ou aprovação).
+async function publicarSrv(forcar){
+  const ap=aprovServico();
+  if(!ap||!st.catalogo.length)return false;
+  const pl={iss:ses.did,name:nomeServico(),apps:appNomes(),catalogo:st.catalogo.map(catalogoPublico),aprovacoes:[ap.jwt],iat:now()};
+  if(ap.exp)pl.exp=ap.exp;
+  const marca=JSON.stringify([pl.name,pl.apps,pl.catalogo,ap.jti]);
+  if(st.publicado===marca&&!forcar)return true;
+  await publicarDiretorio('servico',nomeServico(),{cartao:await signJWT('cartao+jwt',pl)});
+  st.publicado=marca;await save();return true;
+}
+// Pedidos de crachá que chegaram: conferência leve aqui (assinatura e tipo); a completa é ao abrir o pedido.
+async function sincronizarSrv(manual){
+  if(!st)return;
+  let n=0,resp=0;const erros=[];
+  for(const pd of st.pendentes.filter(x=>!x.recusa)){
+    const toks=await buscarEmissao(pd.nonce);if(!toks)continue;
+    for(const t of toks){try{await(decodeJWT(t).header.typ==='recusa+jwt'?aceitarRecusaGov(t):aceitarAprovacao(t));resp++}catch(e){erros.push(e.message)}}
+    await fsApagar('fila-emissao',pd.nonce);
+  }
+  for(const d of await buscarSolicitacoes()){
+    if(!d.erro){
+      try{
+        const r=await verifyJWT(d.tok,'pedido+jwt'),p=r.payload;
+        if(!r.ok)throw new Error('A assinatura do pedido não confere.');
+        if(p.wanted!=='BadgeCredential')throw new Error('Este pedido não é de crachá.');
+        if(typeof p.x!=='string')throw new Error('O pedido não traz a chave de cifragem de quem pediu.');
+        parseXKey(p.x);
+        if(!st.entrada)st.entrada=[];
+        if(st.issued.some(i=>i.nonce===p.nonce))throw new Error('Este pedido já foi atendido. Peça um novo à pessoa.');
+        if((st.recusas||[]).some(x=>x.nonce===p.nonce))throw new Error('Este pedido já foi recusado. A pessoa pode enviar um pedido novo.');
+        if(!st.entrada.some(x=>x.nonce===p.nonce)){
+          st.entrada.push({nonce:p.nonce,tok:r.tok,did:r.did,x:p.x,nome:String(p.name||''),perfil:String(p.perfil||''),apps:Array.isArray(p.apps)?p.apps.map(String):[],recebido:Date.now()});n++;
+          await ato('pedido',`Pedido de crachá recebido: ${p.name||shortDid(r.did)}`,r.did);
+        }
+      }catch(e){erros.push(e.message)}
+    }
+    await fsApagar('fila-solicitacao',d.id);
+  }
+  if(n)await save();
+  try{await publicarSrv()}catch{}
+  const H=$('#cqH');
+  if(manual||n||resp||erros.length){
+    H.textContent=[n?`${n} ${n===1?'pedido novo':'pedidos novos'}.`:manual&&!erros.length?'Nenhum pedido novo.':'',...erros].filter(Boolean).join(' ');
+    H.classList.toggle('bad',!!erros.length);
+  }
+  renderEntrada();if($('#vPanel').classList.contains('on'))renderPanel();
+  if(n||resp)toast(resp?'Resposta da Governança recebida':n===1?'Pedido de crachá novo':`${n} pedidos de crachá novos`);
+  return n+resp;
+}
+async function buscarAgora(){
+  closeSheet();
+  try{const n=await sincronizarSrv(true);if(!n)toast('Nada novo nas filas')}catch(e){toast(e.message,true)}
+}
+function renderEntrada(){
+  if(!st)return;
+  const l=(st.entrada||[]).slice().reverse();
+  $('#cFila').innerHTML=l.length?l.map(x=>`<button class="tx" data-ent="${esc(x.nonce)}"><span class="dot">${ic('badge')}</span><span class="t"><b>${esc(x.nome||shortDid(x.did))}${x.perfil?' · '+esc(x.perfil):''}</b><small>${esc(x.apps.join(', ')||'Apps do serviço')} · ${fmtTime(x.recebido)}</small></span><span class="pill warn">Aguardando</span></button>`).join('')
+    :'<div class="empty">Nenhum pedido de crachá aguardando.</div>';
+}
+$('#cqGo').onclick=()=>sincronizarSrv(true).catch(e=>{$('#cqH').textContent=e.message;$('#cqH').classList.add('bad')});
+$('#cFila').onclick=e=>{const b=e.target.closest('[data-ent]');if(!b)return;const x=(st.entrada||[]).find(i=>i.nonce===b.dataset.ent);if(x)abrirPedido(x)};
+function voltarEntrada(){pedido=null;$('#cForm').hidden=true;$('#cOut').hidden=true;$('#cFilaV').hidden=false;renderEntrada()}
+$('#cBack').onclick=voltarEntrada;
+// Tira o pedido da entrada e responde a quem pediu, cifrado para a chave que veio no pedido.
+async function responderEntrada(nonce,toks){
+  const x=(st.entrada||[]).find(i=>i.nonce===nonce);
+  st.entrada=(st.entrada||[]).filter(i=>i.nonce!==nonce);await save();
+  if(x)await enviarEmissao(x.did,x.x,x.nonce,toks);
+}
+
 // Cartão do serviço: os apps com as funcionalidades e a aprovação do serviço pela Governança.
 async function cartaoServico(){
   const ap=aprovServico();
   if(!ap)return toast('Sem aprovação de emissão válida, o serviço não tem cartão.',true);
   if(!st.catalogo.length)return toast('O serviço ainda não tem apps. Crie em Serviço › Apps.',true);
-  const pl={iss:ses.did,name:nomeServico(),apps:appNomes(),catalogo:st.catalogo.map(catalogoPublico),aprovacoes:[ap.jwt],iat:now()};
-  if(ap.exp)pl.exp=ap.exp;
-  mostrarCartao('Cartão do serviço',await signJWT('cartao+jwt',pl));
+  closeSheet();
+  try{await publicarSrv(true);toast('Cartão do serviço publicado no diretório')}catch(e){toast(e.message,true)}
 }
-// Cartão de um app só: o app e o catálogo dele. A carteira já abre com ele marcado.
-async function cartaoDoApp(app){
-  const ap=aprovServico(),a=appDe(app);
-  if(!ap)return toast('O serviço está sem aprovação de emissão válida.',true);
-  const pl={iss:ses.did,name:nomeServico(),app,apps:[app],catalogo:[catalogoPublico(a)],aprovacoes:[ap.jwt],iat:now()};
-  if(ap.exp)pl.exp=ap.exp;
-  mostrarCartao(`Cartão do app ${esc(app)}`,await signJWT('cartao+jwt',pl));
-}
-function mostrarCartao(titulo,jwt){
-  const tok=embrulhar(jwt);
-  openSheet(`<h3>${titulo}</h3><p class="sub">É público: a carteira lê o cartão, mostra os apps e as funcionalidades e confere que a Governança aprovou o serviço antes de pedir o crachá.</p>
-    <label class="f"><span>Cartão assinado</span><textarea class="mono" id="scJ" rows="6" readonly>${tok}</textarea></label><button class="btn" id="scC">Copiar cartão</button>`);
-  $('#scC').onclick=()=>copy(tok,'Cartão copiado');
+// Cartão do app: o que a carteira vê do app (funcionalidades e grupos) quando escolhe o serviço no diretório.
+function cartaoDoApp(app){
+  const a=appDe(app);if(!a)return;
+  openSheet(`<h3>App ${esc(app)}</h3><p class="sub">Publicado no diretório com o cartão do serviço: a carteira escolhe o serviço, vê os apps e pede o crachá.</p>
+    <div class="list glass flat">${a.funcoes.map(f=>`<div class="kr"><div class="v">${esc(f.nome)}</div><div class="h"><small class="mono">${esc(f.id)}</small></div></div>`).join('')||'<div class="empty">Acesso ao app, sem funcionalidades.</div>'}</div>`);
 }
 
 /* ================= crachás ================= */
 let pedido=null;
-$('#cqGo').onclick=async()=>{
-  const H=$('#cqH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#cqF'));$('#cForm').hidden=true;pedido=null};
+async function abrirPedido(x){
+  const H=$('#cqH'),fail=m=>{H.textContent=m;H.classList.add('bad');voltarEntrada()};
   H.textContent='';H.classList.remove('bad');$('#cOut').hidden=true;$('#cForm').hidden=true;$('#cWho').innerHTML='';
-  let r;try{r=await verifyJWT($('#cqT').value)}catch(e){return fail(e.message)}
+  let r;try{r=await verifyJWT(x.tok)}catch(e){return fail(e.message)}
   const p=r.payload;
   if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira, a pessoa gera o pedido de crachá.');
   if(!r.ok)return fail('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
@@ -387,24 +459,25 @@ $('#cqGo').onclick=async()=>{
     <div class="kr"><div class="h"><small>Nome</small></div><div class="v" id="cNome">${esc(nome)}</div></div>
     <div class="kr"><div class="h"><small>Identidade</small></div><div class="v" id="cPerfil">${esc(p.perfil||'Identidade')}</div></div>
     <div class="kr"><div class="h"><small>DID</small></div><div class="v mono">${esc(r.did)}</div></div></div>`;
-  $('#cForm').hidden=false;
-};
+  $('#cFilaV').hidden=true;$('#cForm').hidden=false;
+}
 // Recusa: assinada pelo serviço e entregue ao cliente (a carteira mostra "Recusado: motivo"); fica também no livro.
 $('#cRec').onclick=()=>{
   if(!pedido)return;
   const pd=pedido,p=pd.r.payload;
-  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa vai assinada para a pessoa, com o motivo, e fica registrada no livro.</p>
+  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa volta assinada pela fila para a pessoa, com o motivo, e fica registrada no livro.</p>
     <label class="f"><span>Motivo</span><select id="rxM"><option>Não é cliente</option><option>Dados não conferem</option><option>App não disponível</option><option>Outro</option></select></label>
     <button class="btn danger" id="rxGo">Recusar</button>`);
   $('#rxGo').onclick=async()=>{
     const motivo=$('#rxM').value,iat=now();
-    const tok=embrulhar(await signJWT('recusa+jwt',{iss:ses.did,sub:pd.r.did,nonce:p.nonce,apps:Array.isArray(p.apps)?p.apps:[],motivo,servico:nomeServico(),iat}));
+    const tok=await signJWT('recusa+jwt',{iss:ses.did,sub:pd.r.did,nonce:p.nonce,apps:Array.isArray(p.apps)?p.apps:[],motivo,servico:nomeServico(),iat});
     st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:pd.r.did,nome:pd.nome,motivo,at:Date.now()}];
     await ato('recusa',`Acesso de ${pd.nome||shortDid(pd.r.did)} recusado: ${motivo}`,pd.r.did);await save();
     closeSheet();pedido=null;$('#cForm').hidden=true;
-    $('#cOk').innerHTML=verdictHtml(false,'Pedido recusado',`${esc(motivo)}. Entregue a recusa à pessoa: ela aparece na carteira como recusada.`);
-    $('#cList').innerHTML=`<label class="f"><span>Recusa assinada</span><textarea class="mono" rows="4" readonly data-recusa>${tok}</textarea></label><button class="btn ghost" id="rxCp">Copiar recusa</button>`;
-    $('#rxCp').onclick=()=>copy(tok,'Recusa copiada');
+    let env='A recusa foi enviada pela fila: ela aparece na carteira como recusada.';
+    try{await responderEntrada(p.nonce,[tok])}catch(e){env=`A recusa não foi enviada: ${esc(e.message)}`}
+    $('#cOk').innerHTML=verdictHtml(false,'Pedido recusado',`${esc(motivo)}. ${env}`);
+    $('#cList').innerHTML='';
     $('#cOut').hidden=false;toast('Pedido recusado');
   };
 };
@@ -450,14 +523,15 @@ $('#cGo').onclick=async()=>{
   // A validade escolhida nunca passa a da aprovação de emissão do serviço (DP-07).
   const exp=ap.exp?(pedido_?Math.min(pedido_,ap.exp):ap.exp):pedido_;
   const toks=[];
-  for(const app of apps)toks.push([app,embrulhar(await emitirCracha(pedido.r.did,app,iat,exp,pedido.nome,pedido.r.payload.nonce,fnsDe(app)))]);
+  for(const app of apps)toks.push([app,await emitirCracha(pedido.r.did,app,iat,exp,pedido.nome,pedido.r.payload.nonce,fnsDe(app))]);
   await save();
-  $('#cOk').innerHTML=verdictHtml(true,apps.length>1?'Crachás emitidos':'Crachá emitido',`${esc(apps.join(', '))} para ${esc(pedido.nome||shortDid(pedido.r.did))}${exp?', até '+fmtDate(exp*1000):', sem validade'}. Entregue cada crachá à pessoa.`);
-  $('#cList').innerHTML=toks.map(([app,t],i)=>`<label class="f"><span>Crachá ${esc(app)}</span><textarea class="mono" rows="4" readonly data-cracha="${i}">${t}</textarea></label><button class="btn ghost" data-cp="${i}">Copiar crachá ${esc(app)}</button>`).join('');
-  $('#cList').onclick=e=>{const b=e.target.closest('[data-cp]');if(b)copy(toks[+b.dataset.cp][1],'Crachá copiado')};
+  let env='Enviados pela fila: a carteira recebe sozinha.';
+  try{await responderEntrada(pedido.r.payload.nonce,toks.map(t=>t[1]))}catch(e){env=`Não foi possível enviar agora: ${esc(e.message)}`}
+  $('#cOk').innerHTML=verdictHtml(true,apps.length>1?'Crachás emitidos':'Crachá emitido',`${esc(apps.join(', '))} para ${esc(pedido.nome||shortDid(pedido.r.did))}${exp?', até '+fmtDate(exp*1000):', sem validade'}. ${env}`);
+  $('#cList').innerHTML=toks.map(([app,t],i)=>`<textarea class="mono" hidden readonly data-cracha="${i}">${t}</textarea>`).join('');
   $('#cForm').hidden=true;$('#cOut').hidden=false;pedido=null;toast(apps.length>1?'Crachás emitidos':'Crachá emitido');
 };
-$('#cNew').onclick=()=>{$('#cqT').value='';$('#cOut').hidden=true;$('#cqH').textContent='';$('#cqT').focus()};
+$('#cNew').onclick=()=>{$('#cqH').textContent='';voltarEntrada()};
 
 /* ================= portaria ================= */
 // A portaria confere a entrada no app ou uma funcionalidade dele (ela tem de estar liberada no crachá).

@@ -27,6 +27,8 @@
 | RN-12 | A aprovação leva **só o nome**; a validade é escolhida pela STK (30 dias, 1 ano — padrão —, 5 anos ou sem validade) |
 | RN-13 | Uma identidade aprovada ativa por DID: aprovar de novo substitui a anterior (revogada no livro) |
 | RN-14 | A recusa (reprovação) tem motivo e fica **só no livro** da STK; a carteira continua "aguardando" |
+| RN-83 | **Filas (1.2):** pedido e resposta passam pelas filas, cifrados para quem recebe; ninguém copia nem cola. A resposta só é aceita de quem foi pedido: a aprovação de identidade, da Governança escolhida; o crachá, do serviço escolhido |
+| RN-84 | A recusa volta assinada para quem pediu, com o motivo (antes ficava só no livro da STK) |
 | RN-82 | **Fila de pedidos (1.1):** todo pedido que chega à STK, de identidade ou de serviço, entra numa fila única e fica **Aguardando** até o gestor aprovar ou reprovar. Um pedido não entra duas vezes na fila. Pedido que vence na fila (7 dias) só pode ser reprovado |
 
 ## 4. Aprovação de emissão (STK → Serviço)
