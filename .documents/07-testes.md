@@ -26,7 +26,7 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 | `stk-governanca/tests/rotacao.spec.js` | Troca de chave da STK e importação do aviso |
 | `stk-governanca/tests/fila.spec.js` | Fila de pedidos da STK alimentada pela fila-solicitacao: Aguardando · Aprovados · Reprovados, vencido, bloqueio, resposta cifrada (1.1/1.2) |
 | `compartilhado/tests/filas.spec.js` | Ciclo completo pelas filas nos 3 apps: identidade, aprovação de emissão, cartão no diretório, crachá e recusas (1.2); lista do Solicitar, cancelar, pedido vencido, Governança desativada (1.2.1) |
-| `stk-servicos/tests/servicos.spec.js` | Crachás e portaria (versão anterior das telas — ver §4) |
+| `stk-servicos/tests/servicos.spec.js` | Recusas do serviço (1.2): aprovação de emissão falsa, de outro serviço, vencida ou repetida; pedido de crachá sem Identidade válida, repetido, vencido ou para outro serviço; um crachá ativo por app; portaria negando outro app, outro emissor, crachá revogado e prova reaproveitada |
 | `compartilhado/tests/dominio.spec.js` | Um DID por app a partir das mesmas 12 palavras |
 | `stk-governanca/tests/criterios-de-aceite.spec.js` | Fluxo base: pedido, emissão, apresentação, revogação, livro |
 | `compartilhado/tests/cobertura.spec.js` | PIN fraco, espera, apagamento, backups, mensagens, bloqueio, prazos |
@@ -52,17 +52,17 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 
 Os testes não usam o Firestore de verdade. `helpers.js` liga, em cada página preparada, um Firestore falso em memória (um por arquivo de teste) que responde à API REST (criar, gravar, ler, apagar, consulta por campo). `ultimoPedidoPara(page)` abre o último pedido enviado a quem tem a página; `buscarRespostas(page)` faz o mesmo que + › Buscar respostas; `receberPedido(gov, tok)` põe o pedido na fila da Governança, se ainda não está, e abre o cartão dele. As regras do Firestore foram conferidas no projeto real com `curl` (formato certo passa, lixo leva 403, `fila-emissao` não lista).
 
-## 4. Situação da suíte completa (08/10/2026, código 1.2.0)
+## 4. Situação da suíte completa (08/10/2026, código 1.2.1)
 
-**189 passaram · 4 falharam · 37 não rodaram** (dependiam dos que falharam, no mesmo arquivo), em 12,6 min. São as mesmas 4 falhas da 0.22.1, pelos mesmos motivos; nenhuma nova. Na 1.0.0 eram 177 aprovados. Na 0.23.0, `recuperacao.spec.js` (9 testes) passou, e os arquivos afetados pela recuperação rodaram com 80 aprovados e só a falha antiga de `identidades.spec.js`.
+**231 passaram · 0 falharam · 1 pulado** (232 testes, ~12,5 min). As 4 falhas antigas (testes escritos para telas que mudaram depois deles) foram atualizadas para as telas atuais, sem mudar o app:
 
-As 4 falhas são de **testes antigos que esperam telas que mudaram depois deles** — os testes de cada entrega nova passaram:
-
-| Teste | Por que falha |
+| Teste | O que mudou no teste |
 |---|---|
-| `identidades.spec.js` › "o menu + tem as três ações…" | Escrito na 0.18 (3 ações); a 0.20 tem 5 (o `acesso.spec.js` já confere as 5) |
-| `dados-pessoais.spec.js` › "o pedido de identidade abre o cartão…" | Espera o perfil "Pessoal" da 0.17; desde a 0.18 o perfil é "Identidade" |
-| `governanca.spec.js` › grupo "credenciamento de serviços" | Usa o formulário técnico da STK, substituído pelo cartão de Aprovar emissão na 0.19 (e, na 0.22, sem apps) |
-| `servicos.spec.js` › "antes do credenciamento" (e os seguintes) | Usa os botões Pedir/Receber credenciamento da aba Serviço, que foram para o menu + na 0.19 |
+| `identidades.spec.js` | Menu + com as quatro ações da 1.2; as identidades já enviadas saem da lista do Solicitar (1.2.1), então a nova Personalizada é criada como identidade nova e a aprovação usa o pedido guardado; o cartão é conferido na aba Credenciais |
+| `dados-pessoais.spec.js` | Perfil padrão "Identidade"; o pedido Personalizado leva a chave de cifragem (`x`); a contagem do livro começa depois de receber o pedido (desde a 1.1, receber já é ato) |
+| `governanca.spec.js` › aprovação de emissão | Cartão de Aprovar emissão, só o serviço (0.22); aprovar de novo renova |
+| `servicos.spec.js` | Reescrito sobre as filas e Serviço › Apps (o caminho feliz já está em `emissao.spec.js`): ficaram as recusas de segurança — ver §2 |
 
-**Ação pendente:** atualizar esses quatro pontos para as telas atuais (sem mudar o app). Até lá, rodar a suíte completa vai mostrar essas falhas.
+Também ficou mais firme `filas.spec.js` › "crachá…": a busca automática (a cada 30 s) às vezes pegava o pedido antes do clique em Buscar; o teste confere a lista, não o aviso.
+
+**Pulado (`test.fixme`):** `servicos.spec.js` › "a troca de chave da Governança é importada…". O botão Serviço › Governança › **Importar troca de chave** (`#sGovRot`) está sem ação desde a 0.22.0 — o handler saiu na reescrita do `app.js` do Serviços. O teste volta a valer quando o botão for religado.

@@ -179,7 +179,8 @@ test('crachá: a carteira escolhe o serviço, pede pela fila, o serviço aprova 
 
   await aba(srv, 'vBadge');
   await srv.click('#cqGo');
-  await expect(srv.locator('#cqH')).toHaveText('1 pedido novo.');
+  // A busca automática (a cada 30 s) pode ter pego o pedido antes do clique: confere a lista, não o aviso.
+  await expect(srv.locator('#cFila [data-ent]')).toHaveCount(1);
   await srv.click('#cFila [data-ent]');
   await expect(srv.locator('#cNome')).toHaveText('Maria Fila');
   await srv.click('#cGo');

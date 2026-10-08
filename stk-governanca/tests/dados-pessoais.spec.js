@@ -27,7 +27,7 @@ async function pedir(nome) {
 async function pedirPersonalizada(nome) {
   return carteira.evaluate(async n => {
     const iat = now();
-    return embrulhar(await signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: 'emissor', name: n, wanted: 'CustomCredential', note: '', nonce: b64u.enc(rnd(16)), iat, exp: iat + 3600 }));
+    return embrulhar(await signJWT('pedido+jwt', { iss: ses.did, sub: ses.did, aud: 'emissor', name: n, wanted: 'CustomCredential', note: '', x: ses.xMb, nonce: b64u.enc(rnd(16)), iat, exp: iat + 3600 }));
   }, nome);
 }
 
@@ -97,7 +97,8 @@ test('piiProblem acha CPF válido no valor, mas não em hash, chave ou número q
 test('o pedido de identidade abre o cartão de aprovação e a credencial traz só o nome', async () => {
   await conferirPedido(await pedir('Maria Teste'));
   await expect(emissor.locator('#iIdNome')).toHaveText('Maria Teste');
-  await expect(emissor.locator('#iIdApelido')).toHaveText('Pessoal');
+  // Desde a 0.18 o perfil padrão é "Identidade" (era "Pessoal" na 0.17).
+  await expect(emissor.locator('#iIdApelido')).toHaveText('Identidade');
   await expect(emissor.locator('#iClaims')).toBeHidden();
   await expect(emissor.locator('#iTypeF')).toBeHidden();
   await expect(emissor.locator('#iGo')).toHaveText('Aprovar identidade');
@@ -115,8 +116,9 @@ test('a Identidade recusa qualquer outro campo, inclusive kycValidado, e nome va
 });
 
 test('emissão com campo cpf é recusada e nada vai para o livro', async () => {
-  const antes = await contagem();
+  // Desde a 1.1 receber o pedido já é ato no livro: a contagem vale a partir daí.
   await conferirPedido(await pedirPersonalizada('Maria Teste'));
+  const antes = await contagem();
   await emissor.fill('#iClaims [data-ck]', 'cpf');
   await emissor.fill('#iClaims [data-cv]', CPF_VALIDO);
   await emissor.click('#iGo');
@@ -142,8 +144,8 @@ test('CPF escondido no valor de um campo comum também é recusado', async () =>
 });
 
 test('nome do titular com CPF no pedido é recusado', async () => {
-  const antes = await contagem();
   await conferirPedido(await pedirPersonalizada(`Maria ${CPF_VALIDO}`));
+  const antes = await contagem();
   await emissor.fill('#iClaims [data-cv]', 'x');
   await emissor.click('#iGo');
   await expect(toast(emissor)).toHaveText('O campo “titular” parece conter um CPF, que não entra em credencial.');

@@ -10,6 +10,8 @@ test.describe.configure({ mode: 'serial' });
 /** @type {import('@playwright/test').Page} */ let carteira;
 /** @type {import('@playwright/test').Page} */ let gov;
 /** @type {string[]} */ const violacoesCsp = [];
+/** Pedido da identidade nº 2, guardado para a STK aprovar depois: desde a 1.2.1 a enviada sai da lista do Solicitar. */
+let pedidoProf2 = '';
 const DID_ZERO = 'did:key:z6MkuKwMejuU5tavPVP5ZVWg9W1z28SY62DNXp3aBzyMsLXr';
 const DIA = 86_400;
 
@@ -28,6 +30,8 @@ async function solicitar(n, { nome, perfil, rotulo } = {}) {
   if (rotulo !== undefined) await carteira.fill('#aqR', rotulo);
   await carteira.selectOption('#aqE', await gov.evaluate(() => ses.did));
   await carteira.click('#aqGo');
+  // A folha só fecha depois do envio; o toast pode ainda ser o do pedido anterior.
+  await expect(carteira.locator('#sheet')).not.toHaveClass(/open/);
   await expect(toast(carteira)).toHaveText(/^Pedido enviado/);
   const tok = await ultimoPedidoPara(gov);
   return tok;
@@ -46,9 +50,9 @@ test.afterAll(async () => {
   for (const p of [carteira, gov]) await p?.context().close();
 });
 
-test('o menu + tem as três ações, e a aba Identidade não gerencia identidades', async () => {
+test('o menu + tem as quatro ações (1.2: sem colar), e a aba Identidade não gerencia identidades', async () => {
   await carteira.click('#dockAdd');
-  await expect(carteira.locator('#sheetBody [data-act] b')).toHaveText(['Solicitar aprovação de identidade', 'Receber aprovação de identidade', 'Apresentar credencial']);
+  await expect(carteira.locator('#sheetBody [data-act] b')).toHaveText(['Solicitar aprovação de identidade', 'Solicitar acesso a um app', 'Buscar respostas', 'Apresentar credencial']);
   await fecharSheet(carteira);
   await aba(carteira, 'vId');
   await expect(carteira.locator('#idList')).toHaveCount(0);
@@ -82,7 +86,8 @@ test('a identidade nº 0 é a de sempre e já aparece para solicitar', async () 
 
 test('várias identidades, inclusive do mesmo perfil, cada uma com DID próprio derivado da semente', async () => {
   const prof1 = payloadDe(await solicitar('novo', { nome: 'Maria Silva', perfil: 'profissional' }));
-  const prof2 = payloadDe(await solicitar('novo', { nome: 'Maria S. Consultora', perfil: 'profissional' }));
+  pedidoProf2 = await solicitar('novo', { nome: 'Maria S. Consultora', perfil: 'profissional' });
+  const prof2 = payloadDe(pedidoProf2);
   const clube = payloadDe(await solicitar('novo', { nome: 'Maria', perfil: 'personalizada', rotulo: 'Clube' }));
   expect([prof1.perfil, prof2.perfil, clube.perfil, clube.perfilNome, clube.apelido]).toEqual(['profissional', 'profissional', 'personalizada', 'Clube', 'Personalizada: Clube']);
 
@@ -100,7 +105,7 @@ test('várias identidades, inclusive do mesmo perfil, cada uma com DID próprio 
   expect(recalc).toBe(ids[3].did);
 });
 
-test('Personalizada exige o nome do perfil, que pode ser editado', async () => {
+test('Personalizada exige o nome do perfil; as já enviadas não aparecem para pedir de novo', async () => {
   await abrirSolicitar();
   await carteira.click('#aqL [data-n="novo"]');
   await carteira.fill('#aqN', 'Maria');
@@ -111,14 +116,19 @@ test('Personalizada exige o nome do perfil, que pode ser editado', async () => {
   await fecharSheet(carteira);
   expect((await identidades()).length).toBe(4);
 
-  const p = payloadDe(await solicitar(3, { rotulo: 'Associação' }));
+  // 1.2.1: as quatro já foram enviadas (aguardando), então só sobra + Nova identidade.
+  await abrirSolicitar();
+  await expect(carteira.locator('#aqL [data-n]')).toHaveCount(1);
+  await expect(carteira.locator('#aqL [data-n="novo"]')).toHaveAttribute('aria-pressed', 'true');
+  await fecharSheet(carteira);
+
+  const p = payloadDe(await solicitar('novo', { nome: 'Maria', perfil: 'personalizada', rotulo: 'Associação' }));
   expect(p.apelido).toBe('Personalizada: Associação');
-  expect((await identidades())[3].rotulo).toBe('Associação');
+  expect((await identidades())[4].rotulo).toBe('Associação');
 });
 
 test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa', async () => {
-  const pedido = await solicitar(2, {});
-  await receberPedido(gov, pedido);
+  await receberPedido(gov, pedidoProf2);
   await expect(gov.locator('#iIdNome')).toHaveText('Maria S. Consultora');
   await expect(gov.locator('#iIdApelido')).toHaveText('Profissional');
   await gov.click('#iGo');
@@ -129,7 +139,8 @@ test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa',
   expect(p.exp - p.iat).toBe(365 * DIA);
 
   expect(await entregarNaCarteira(carteira, aprovacao)).toBe('Credencial guardada');
-  // Cartão: perfil, nome, emissora + validade.
+  // Cartão: perfil, nome, emissora + validade. Pela fila a carteira não troca de aba sozinha.
+  await aba(carteira, 'vCreds');
   const card = carteira.locator('#cList .cred').filter({ hasText: 'Maria S. Consultora' });
   await expect(card.locator('.r1 .tipo')).toHaveText('Profissional');
   await expect(card.locator('.main')).toHaveText('Maria S. Consultora');
@@ -149,16 +160,17 @@ test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa',
   }));
   expect(new Set(cores).size).toBe(3);
 
+  // 1.2.1: aprovada (nº 2) e aguardando (nº 1) ficam fora da lista do Solicitar.
   await abrirSolicitar();
-  await expect(carteira.locator('#aqL [data-n="2"]')).toContainText('aprovada');
-  await expect(carteira.locator('#aqL [data-n="1"]')).toContainText('aguardando');
+  await expect(carteira.locator('#aqL [data-n="2"]')).toHaveCount(0);
+  await expect(carteira.locator('#aqL [data-n="1"]')).toHaveCount(0);
   await fecharSheet(carteira);
 });
 
 test('as identidades continuam depois de bloquear e voltam pelo backup', async ({ browser }) => {
   await bloquearEDesbloquear(carteira);
   const antes = await identidades();
-  expect(antes).toHaveLength(4);
+  expect(antes).toHaveLength(5);
 
   await aba(carteira, 'vSet');
   await carteira.click('#commonSet [data-cs="export"]');

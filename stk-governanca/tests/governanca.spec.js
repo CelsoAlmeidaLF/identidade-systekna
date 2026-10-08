@@ -131,54 +131,36 @@ test('uma Identidade ativa por DID: a nova revoga a anterior, com ato no livro',
   expect(await gov.evaluate(() => st.book.at(-1).text)).toContain('Substituída por nova Identidade');
 });
 
-test.describe('credenciamento de serviços', () => {
-  test('o pedido do serviço já chega como Credenciamento, com o nome e os apps', async () => {
+test.describe('aprovação de emissão de serviços (0.22: só o serviço, sem apps)', () => {
+  test('o pedido do serviço chega como Aprovação de emissão, com o nome e sem apps', async () => {
     await conferirPedido(await pedidoDeCredenciamento(['Portaria', 'Aulas']));
     await expect(gov.locator('#iWho')).toContainText('Pedido conferido');
     await expect(gov.locator('#iType')).toHaveValue('ServiceAccreditationCredential');
-    await expect(gov.locator('#iClaims [data-ck]')).toHaveCount(2);
-    await expect(gov.locator('#iClaims [data-cv]').nth(0)).toHaveValue('Academia Boa Forma');
-    await expect(gov.locator('#iClaims [data-cv]').nth(1)).toHaveValue('Portaria, Aulas');
+    await expect(gov.locator('#iSrvNome')).toHaveText('Academia Boa Forma');
+    await expect(gov.locator('#iClaims')).toBeHidden();
+    await expect(gov.locator('#iGo')).toHaveText('Aprovar emissão');
 
     const tok = await emitir();
     expect(tok).toMatch(/^SYSTEKNA:CREDENCIAMENTO:ey/);
     const p = payloadDe(tok);
-    expect(p.sub).toBe(didServico);
-    expect(p.iss).toBe(didGov);
+    expect([p.sub, p.iss]).toEqual([didServico, didGov]);
     expect(p.vc.type).toEqual(['VerifiableCredential', 'ServiceAccreditationCredential']);
-    expect(p.vc.credentialSubject).toEqual({ id: didServico, servico: 'Academia Boa Forma', apps: ['Portaria', 'Aulas'] });
+    // Os apps do pedido não entram: são do serviço.
+    expect(p.vc.credentialSubject).toEqual({ id: didServico, servico: 'Academia Boa Forma' });
   });
 
-  test('apps repetidos ou com espaços são limpos; sem app nenhum é recusado', async () => {
+  test('aprovar de novo renova: o serviço passa a ter mais de uma aprovação ativa', async () => {
     await conferirPedido(await pedidoDeCredenciamento([]));
-    await gov.locator('#iClaims [data-cv]').nth(1).fill(' Portaria ,, Portaria, Loja ');
-    const p = payloadDe(await emitir());
-    expect(p.vc.credentialSubject.apps).toEqual(['Portaria', 'Loja']);
-
-    const antes = (await registro()).length;
-    await conferirPedido(await pedidoDeCredenciamento([]));
-    await gov.locator('#iClaims [data-cv]').nth(1).fill(' , ');
-    await gov.click('#iGo');
-    await expect(toast(gov)).toHaveText('Informe ao menos um app que o serviço vai proteger.');
-    expect((await registro()).length).toBe(antes);
-  });
-
-  test('um credenciamento ativo por serviço: o novo revoga o anterior', async () => {
+    await expect(gov.locator('#iSrvAtiva')).toContainText('Este serviço já está aprovado');
+    await emitir();
     const ativos = (await registro()).filter(i => i.type === 'ServiceAccreditationCredential' && i.sub === didServico && !i.revoked);
-    expect(ativos).toHaveLength(1);
-    const revogados = (await registro()).filter(i => i.type === 'ServiceAccreditationCredential' && i.revoked);
-    expect(revogados.every(i => i.reason === 'Substituído por novo credenciamento')).toBe(true);
-    expect(revogados.length).toBeGreaterThanOrEqual(1);
+    expect(ativos).toHaveLength(2);
   });
 
-  test('o credenciamento leva só serviço e apps', async () => {
+  test('a aprovação de emissão leva só o serviço', async () => {
     const antes = (await registro()).length;
-    await conferirPedido(await pedidoDeCredenciamento(['Portaria']));
-    await gov.click('#iAdd');
-    await gov.locator('#iClaims [data-ck]').nth(2).fill('papel');
-    await gov.locator('#iClaims [data-cv]').nth(2).fill('admin');
-    await gov.click('#iGo');
-    await expect(toast(gov)).toHaveText('O credenciamento leva só servico e apps. Tire o campo “papel”.');
+    const erro = await gov.evaluate(d => issue(d, 'ServiceAccreditationCredential', { servico: 'X', papel: 'admin' }, 365, 'X', `n-${Math.random()}`).then(() => null, e => e.message), didServico);
+    expect(erro).toBe('O credenciamento leva só servico. Tire o campo “papel”.');
     expect((await registro()).length).toBe(antes);
   });
 
@@ -186,7 +168,7 @@ test.describe('credenciamento de serviços', () => {
     const iat = agora();
     const proprio = await assinar(gov, 'pedido+jwt', {
       iss: didGov, sub: didGov, aud: 'emissor', name: 'Governança', wanted: 'ServiceAccreditationCredential',
-      apps: ['Painel'], note: '', nonce: 'proprio', iat, exp: iat + 3600,
+      note: '', x: await gov.evaluate(() => ses.xMb), nonce: 'proprio-000000000000', iat, exp: iat + 3600,
     });
     await conferirPedido(proprio);
     await gov.click('#iGo');
