@@ -85,17 +85,15 @@
 | CA-103 | Livro adulterado sai no PDF como "NÃO CONFERE", com o ato onde a corrente se rompe |
 | CA-103a | Intervalo sem datas é recusado; a Carteira não tem livro para exportar |
 
-## 5C. Cofre (`stk-carteira/tests/cofre.spec.js`, 0.26)
+## 5C. Cofre de anotações (`stk-carteira/tests/cofre.spec.js`, 0.28)
 
 | CA | Critério |
 |---|---|
-| CA-104 | Senha guardada fica cifrada no armazenamento, velada na tela e é copiada sem aparecer |
-| CA-105 | Cartão com número errado ou validade fora de MM/AA é recusado; o certo mostra a bandeira e só o final; "Outro" não passa pela conferência |
-| CA-105a | Conta bancária e anotação aparecem com o resumo; a busca não olha segredos; editar e apagar funcionam |
-| CA-106 | Documento: anexo que não é foto nem PDF, ou maior que 2 MB, é recusado; validade antes da emissão é recusada; a foto aparece na tela e o anexo baixado é igual ao original |
-| CA-106a | Documento perto de vencer (10 dias) e vencido (ontem) aparecem como aviso em Credenciais; tirar o anexo funciona |
-| CA-107 | Backup com PDF anexo sai como arquivo (sem texto para copiar) e volta em outro aparelho pelo arquivo, com o anexo inteiro |
-| CA-105b | Bloquear esconde o cofre; desbloquear traz de volta; o backup restaurado em outro aparelho traz todo o cofre |
+| CA-104 | O cofre só oferece **Nova anotação**; título e texto são obrigatórios |
+| CA-105 | A anotação fica cifrada no armazenamento, aparece com o texto, é copiada e entra na busca; editar e apagar (com confirmação) funcionam |
+| CA-105a | Itens de outros tipos (0.26 e 0.27) ficam guardados, mas não aparecem nem contam |
+| CA-105b | Bloquear esconde o cofre; desbloquear traz de volta |
+| CA-107 | O backup baixado como arquivo é igual ao texto copiado e, escolhido em outro aparelho, traz as anotações |
 
 ## 6. Recuperação pelo código e PDF (`compartilhado/tests/recuperacao.spec.js`, 0.23)
 

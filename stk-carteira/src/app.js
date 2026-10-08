@@ -2,8 +2,7 @@
 // A versão básica guarda só credenciais. Itens de outros tipos (cofre, contatos, emissores confiáveis da versão
 // completa) ficam intactos no aparelho e no backup, mas não aparecem aqui.
 const KEPT_TYPES=['cred','perfil','acesso','cofre'];
-// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup. Os cartões de
-// crédito e débito de hoje ficam no cofre (tipo "cofre", 0.26).
+// Tipo "cartao" da versão 0.6 (antigo, sem uso): é apagado ao abrir e ignorado ao restaurar backup.
 const REMOVED_TYPES=['cartao'];
 
 const APP={
@@ -35,10 +34,10 @@ const APP={
   exportData:async()=>(await DB.get('items'))||[],
   async importData(recs){
     let n=0,k=0;
-    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre')k++;else if(KEPT_TYPES.includes(d.type))n++}catch{}}
+    for(const r of recs||[]){try{const d=await unseal(ses.vaultKey,r,r.id);if(REMOVED_TYPES.includes(d.type))continue;const i=ses.items.findIndex(x=>x.rec.id===r.id);if(i>=0)ses.items[i]={rec:r,data:d};else ses.items.push({rec:r,data:d});if(d.type==='cofre'){if(d.kind==='anotacao')k++}else if(KEPT_TYPES.includes(d.type))n++}catch{}}
     for(const it of perfilItens())if(it.data.n>0&&!ses.ids[it.data.n])ses.ids[it.data.n]=await derivarPerfil(it.data.n);
     await persistItems();renderCreds();renderCofre();
-    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'item':'itens'} do cofre`:''}`;
+    return `${n} ${n===1?'credencial restaurada':'credenciais restauradas'}${k?` e ${k} ${k===1?'anotação':'anotações'} do cofre`:''}`;
   }
 };
 async function persistItems(){await DB.set('items',ses.items.map(i=>i.rec))}
@@ -138,16 +137,12 @@ function renderCreds(){
   if(!ses)return;
   const list=creds(),peds=acessos();
   $('#cNote').hidden=!list.length;
-  // Documentos do cofre perto de vencer (30 dias) ou vencidos.
-  const av=avisosCofre();
-  $('#cAvisos').innerHTML=av.length?`<div class="list glass flat" style="margin-bottom:14px">${av.map(({it,n})=>`<button class="tx" data-cfav="${esc(it.rec.id)}"><span class="dot" style="color:${n<0?'var(--out)':'var(--warn)'}">${ic('alert')}</span><span class="t"><b>${esc(it.data.titulo)}</b><small>Documento ${vencimentoTxt(n)} · ${dataBr(it.data.campos.validade)}</small></span>${ic('chev')}</button>`).join('')}</div>`:'';
   $('#cList').innerHTML=list.length||peds.length?`<div class="creds">${peds.map(acessoCard).join('')}${list.map(i=>credCard(i)).join('')}</div>`
     :`<div class="glass flat card"><b>A carteira ainda não tem credenciais</b><ol class="steps">
       <li><span>Toque em <b>+</b> e escolha <b>Solicitar aprovação de identidade</b>. O pedido é assinado e prova que você controla o DID.</span></li>
       <li><span>Envie o pedido à <b>Governança Systekna</b>, que confere e aprova a identidade.</span></li>
       <li><span>Cole a aprovação em <b>+</b> › <b>Receber aprovação de identidade</b>. Ela fica cifrada aqui.</span></li></ol></div>`;
 }
-$('#cAvisos').onclick=e=>{const b=e.target.closest('[data-cfav]');if(b)verCofre(b.dataset.cfav)};
 $('#cList').onclick=e=>{if(copiarDidDoCartao(e))return;const b=e.target.closest('[data-cid]');if(b)showCred(b.dataset.cid)};
 $('#cList').addEventListener('keydown',e=>{if(e.target.closest('[data-copydid]'))copiarDidDoCartao(e)});
 

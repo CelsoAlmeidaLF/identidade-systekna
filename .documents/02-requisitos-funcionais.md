@@ -73,18 +73,14 @@
 | RF-CT-40 | Mensagens cifradas `smsg1` (cifrar e abrir) | ✅ |
 | RF-CT-41 | Pedido endereçado a um DID de Governança (opcional) | ✅ |
 
-### 2.6 Cofre (aba Identidade, 0.26)
+### 2.6 Cofre de anotações (aba Identidade)
 
 | ID | Requisito | Sit. |
 |---|---|---|
-| RF-CT-50 | **Cofre** na aba Identidade (o rodapé não muda): lista com contagem, busca e **Novo item** | 🟢 |
-| RF-CT-51 | Tipos: **senha** (site, usuário, senha, anotação), **anotação** (texto), **cartão** (crédito, débito, crédito e débito ou outros como plano de saúde e fidelidade: nome, número, validade, CVV, anotação) e **conta bancária** (banco, agência, conta, tipo, titular, chave Pix, anotação) | 🟢 |
-| RF-CT-52 | Segredos (senha, número do cartão, CVV) **velados**; botão de mostrar; **copiar sem mostrar**, com tentativa de limpar a área de transferência em 30 s | 🟢 |
-| RF-CT-53 | Cartão de pagamento: número conferido (Luhn), validade MM/AA, **bandeira** reconhecida (Visa, Mastercard, Elo, American Express, Hipercard), na lista só o final (•••• 1234) | 🟢 |
-| RF-CT-54 | Editar e apagar (com confirmação); a busca olha o título e os campos que não são segredo | 🟢 |
+| RF-CT-50 | **Cofre** na aba Identidade (o rodapé não muda): lista de anotações com contagem, busca e **Nova anotação** | 🟢 |
+| RF-CT-51 | **Só anotações** (título e texto), cifradas no aparelho; ver, copiar o texto, editar e apagar com confirmação; a busca olha título e texto (0.28) | 🟢 |
 | RF-CT-55 | O cofre vai no **backup cifrado** e volta ao restaurar | 🟢 |
-| RF-CT-56 | **Documento** (0.27): tipo (RG, CNH, passaporte, CPF, título, carteira de trabalho, outro), número, titular, órgão emissor, emissão e validade; **anexo** foto ou PDF até 2 MB, com prévia da foto e botão de baixar | 🟢 |
-| RF-CT-57 | **Aviso de vencimento** na tela Credenciais para documentos que vencem em até 30 dias ou já venceram; tocar abre o documento | 🟢 |
+| RF-CT-58 | ⏸ Senhas, cartões, contas bancárias e documentos com anexo (0.26 e 0.27) foram **retirados na 0.28** por decisão do PO; os itens já guardados ficam ocultos, sem ser apagados | ⏸ |
 
 ## 3. Governança Systekna (STK)
 
@@ -134,5 +130,5 @@
 | RF-F-09 | Vários serviços por organização | ⬜ próximo passo combinado |
 | RF-F-04 | Lista pública de revogação | ⬜ |
 | RF-F-05 | Remover identidade da carteira | ⬜ não pedido |
-| RF-F-06 | Cofre (senhas, notas, documentos) | 🟢 senhas, anotações, cartões e contas na 0.26 (RF-CT-50 a 55); documentos na 0.27 |
+| RF-F-06 | Cofre (senhas, notas, documentos) | 🟢 só anotações (RF-CT-50 a 55); outros tipos retirados na 0.28 |
 | RF-F-07 | Divulgação seletiva (SD-JWT), OpenID4VC, VC 2.0 | ⬜ |

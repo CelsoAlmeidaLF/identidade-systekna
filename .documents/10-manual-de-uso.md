@@ -1,6 +1,6 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **0.27.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Passo a passo nas telas, versão **0.28.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
 > Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
 
 ## Links
@@ -74,18 +74,14 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | 1 | Serviços → **Painel** → Relatório de uso | Escolha **7 dias** ou **30 dias** e, se quiser, um **app** |
 | 2 | | Veja os acessos **liberados** (verde) e **negados** (vermelho) por dia, as listas **Por app**, **Por funcionalidade** e **Por que negou**, e a **Gestão no período** (crachás emitidos, pedidos recusados, crachás revogados) |
 
-## 5B. Cofre (Carteira)
+## 5B. Cofre de anotações (Carteira)
 
 | Passo | Onde | O que fazer |
 |---|---|---|
-| 1 | Carteira → **Identidade** → Cofre → **Novo item** | Escolha **Senha**, **Anotação**, **Cartão** ou **Conta**, dê um título, preencha e toque em **Salvar** |
-| 2 | Toque no item | Veja os campos; segredos aparecem como •••••• (toque no olho para mostrar). **Copiar** copia sem mostrar e tenta limpar em 30 s |
+| 1 | Carteira → **Identidade** → Cofre (abaixo do cartão do DID) → **Nova anotação** | Dê um título, escreva o texto e toque em **Salvar** |
+| 2 | Toque na anotação | Veja o texto; **Copiar** copia o texto |
 | 3 | Mesma tela | **Editar** ou **Apagar** (pede confirmação) |
-| — | Cofre → Buscar | Busca pelo título, site, usuário, banco… (não busca dentro de senhas) |
-| 4 | Novo item → **Documento** | Tipo, número, titular, órgão, emissão e validade. Em **Foto ou PDF**, escolha o arquivo (até 2 MB). A foto aparece no documento; o PDF abre pelo botão de baixar |
-| 5 | Carteira → **Credenciais** | Documentos que vencem em até 30 dias ou já venceram aparecem no alto; toque para abrir |
-
-> Ambiente de teste: não guarde cartões e senhas reais.
+| — | Cofre → Buscar | Busca no título e no texto |
 
 ## 6. Recuperar a conta (cada app)
 
