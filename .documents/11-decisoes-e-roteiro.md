@@ -39,6 +39,7 @@
 | 08/10/2026 | **Cofre da Carteira só com anotações ("por enquanto")**: o PO não gostou do modelo com senhas, cartões, contas e documentos; ficam só texto e anotações (0.28). O backup em arquivo continua |
 | 08/10/2026 | **Recuperação pelo código STK1-… ou pelas 12 palavras**, com **PDF** (QR code, código e palavras) nos 3 apps. O responsável aceitou que o PDF é uma cópia completa da conta; orientação: imprimir e apagar. Sem senha no PDF por enquanto (0.23) |
 | 08/10/2026 | **Versão 1.0.0**: os 3 apps homologados (pré-aprovados) pelo responsável: carteira de did:key e cv:key, mensagens cifradas, cofre de anotações, emissão de credenciais e de crachás pelos serviços |
+| 08/10/2026 | **Fila de pedidos na Governança** (cenário do gestor da STK): uma fila **única** para identidades (did:key) e serviços, com etiqueta em cada cartão (opção B); aprovar ou reprovar cada pedido (1.1) |
 
 ## 2. Versões publicadas
 
@@ -63,13 +64,14 @@
 | 0.27.0 | Documentos no cofre (foto ou PDF, aviso de vencimento) e backup baixado como arquivo |
 | 0.28.0 | Cofre da Carteira só com anotações (senhas, cartões, contas e documentos retirados) |
 | 0.28.1 | Mensagens cifradas: o texto original sai da caixa ao cifrar |
-| **1.0.0** | **Primeira versão homologada dos 3 apps** (sem mudança nas telas desde a 0.28.1) |
+| 1.0.0 | Primeira versão homologada dos 3 apps (sem mudança nas telas desde a 0.28.1) |
+| **1.1.0** | **Governança: fila de pedidos (Aguardando · Aprovados · Reprovados), receber vários pedidos de uma vez** |
 
 ## 3. Branches
 
 | Branch | Conteúdo |
 |---|---|
-| `main` | Versão vigente (1.0.0) |
+| `main` | Versão vigente (1.1.0) |
 | `bkp/avancado` | Cofre, contatos, grupos, registro de documentos (antigo) |
 | `bkp/cracha` | Primeira tentativa de acesso/crachá (0.9–0.12.3), substituída |
 

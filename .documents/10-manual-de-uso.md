@@ -1,6 +1,6 @@
 # 10 · Manual de Uso
 
-> Passo a passo nas telas, versão **1.0.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
+> Passo a passo nas telas, versão **1.1.0**. Serve para uso e para a homologação ([12](12-homologacao.md)).
 > Os pacotes passam de um app para o outro **copiando e colando** (WhatsApp, e-mail ou na mesma tela).
 
 ## Links
@@ -27,8 +27,8 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | Passo | Onde | O que fazer |
 |---|---|---|
 | 1 | Carteira → **+** → Solicitar aprovação de identidade | Escolha a identidade ou **+ Nova identidade** (nome, perfil e, na Personalizada, o nome do perfil). Toque em **Assinar pedido** e **Copiar pedido** |
-| 2 | STK → **Aprovar** | Cole o pedido e toque em **Conferir pedido**. O cartão mostra nome, perfil e DID |
-| 3 | STK | Escolha a validade e toque em **Aprovar identidade** e **Copiar**. Ou **Recusar pedido** com motivo (fica só no livro) |
+| 2 | STK → **Fila** | Cole o pedido (ou vários de uma vez) e toque em **Receber pedidos**. Ele entra em **Aguardando**. Toque no cartão **Identidade: nome**: aparecem nome, perfil e DID |
+| 3 | STK | Escolha a validade e toque em **Aprovar identidade** e **Copiar**. Ou **Reprovar pedido** com motivo (fica só no livro). O pedido vai para **Aprovados** ou **Reprovados**; um aprovado, tocado, mostra a aprovação para copiar de novo |
 | 4 | Carteira → **+** → Receber aprovação de identidade | Cole. Aparece o cartão: perfil · nome · did:key · Governança + validade |
 
 ## 2. Aprovação do serviço (Serviços ↔ STK)
@@ -36,8 +36,8 @@ Confira a versão no rodapé de cada app. Se aparecer uma versão anterior, fech
 | Passo | Onde | O que fazer |
 |---|---|---|
 | 1 | Serviços → **+** → Solicitar aprovação de emissão | Na 1ª vez, cole o DID da STK (STK → aba Governança → DID). Informe o **nome do serviço**. **Assinar pedido** e **Copiar**. O pedido não leva apps |
-| 2 | STK → **Aprovar** | Cole e confira. O cartão mostra o serviço e o DID, sem lista de apps (se já aprovado, avisa que aprovar de novo renova) |
-| 3 | STK | Escolha a validade e toque em **Aprovar emissão** e **Copiar**. Ou **Recusar pedido** |
+| 2 | STK → **Fila** | Cole em **Receber pedidos** e toque no cartão **Serviço: nome**. O cartão mostra o serviço e o DID, sem lista de apps (se já aprovado, avisa que aprovar de novo renova) |
+| 3 | STK | Escolha a validade e toque em **Aprovar emissão** e **Copiar**. Ou **Reprovar pedido** |
 | 4 | Serviços → **+** → Receber aprovação de emissão | Cole. O serviço fica aprovado |
 
 ## 3. Apps e funcionalidades do serviço (Serviços)

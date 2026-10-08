@@ -2,7 +2,7 @@
 
 > Convenção: **RF-XX-nn** — `CM` comum aos 3 apps, `CT` Carteira, `GV` Governança, `SV` Serviços, `F` futuro.
 > Situação: ✅ homologado pelo responsável (pré-aprovado na 1.0.0) · 🟢 com teste automatizado, ainda não homologado · 🟡 sem teste automatizado · ⬜ planejado · ⏸ adiado.
-> Versão de referência: **1.0.0**.
+> Versão de referência: **1.1.0**.
 
 ## 1. Comuns aos 3 apps
 
@@ -86,12 +86,15 @@
 
 | ID | Requisito | Sit. |
 |---|---|---|
-| RF-GV-01 | Painel: credenciais ativas, revogadas, emissores confiáveis, verificações, últimos atos, integridade do livro | ✅ |
+| RF-GV-01 | Painel: **pedidos aguardando na fila** (toque abre a Fila, 1.1), credenciais ativas, revogadas, emissores confiáveis, verificações, últimos atos, integridade do livro | ✅ |
 | RF-GV-02 | Livro completo com conferência de integridade (cada ato conferido com a chave da época) | ✅ |
-| RF-GV-03 | Aba **Aprovar**: cola o pedido; confere assinatura, prazo, uso único, destinatário | ✅ |
-| RF-GV-04 | **Cartão de aprovação de identidade**: nome, perfil, DID, validade (padrão 1 ano), Aprovar identidade, Recusar | ✅ |
+| RF-GV-03 | Aba **Fila** (era Aprovar até a 1.0): **Receber pedidos** aceita um ou vários pedidos colados de uma vez; cada um é conferido (assinatura, prazo, uso único, destinatário, já na fila) e entra na fila; os que não entram mostram o motivo | 🟢 (1.1) |
+| RF-GV-13 | **Fila única** de pedidos de identidade (did:key) e de serviço, com etiqueta **Identidade**, **Serviço** ou **Personalizada**; filtros **Aguardando · Aprovados · Reprovados** com contagem; cada cartão mostra nome, perfil, DID e quando chegou | 🟢 (1.1) |
+| RF-GV-14 | Tocar num pedido **aguardando** abre o cartão de aprovação; num **aprovado**, mostra a aprovação para copiar de novo; pedido **vencido** na fila só pode ser reprovado | 🟢 (1.1) |
+| RF-GV-15 | A fila fica **cifrada** com o estado da Governança: continua depois de bloquear e vai no backup; cada pedido recebido entra no livro | 🟢 (1.1) |
+| RF-GV-04 | **Cartão de aprovação de identidade**: nome, perfil, DID, validade (padrão 1 ano), Aprovar identidade, Reprovar | ✅ |
 | RF-GV-05 | **Cartão de aprovação de emissão**: serviço, DID, aviso de serviço já aprovado (aprovar de novo renova), validade, Aprovar emissão, Recusar. **Sem apps desde a 0.22**: os apps são do serviço | ✅ (0.22) |
-| RF-GV-06 | Recusa com motivo, **registrada no livro**; o mesmo pedido não volta | ✅ |
+| RF-GV-06 | Reprovação com motivo, **registrada no livro**; o pedido vai para Reprovados e não volta | ✅ |
 | RF-GV-07 | Uma identidade ativa por DID (a nova substitui); **várias aprovações de emissão** ativas por serviço (a renovação soma uma nova) | ✅ |
 | RF-GV-08 | Aba Verificar: desafio e conferência de apresentação em até 11 pontos | ✅ |
 | RF-GV-09 | Governança: nome público, DID, emissores confiáveis, política de status não verificável, credenciais emitidas e revogação com motivo | ✅ |

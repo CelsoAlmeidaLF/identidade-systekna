@@ -3,7 +3,7 @@
 // uma identidade ou cria uma nova com nome e perfil (Identidade, Profissional ou Personalizada com nome do perfil).
 // Pode haver várias, inclusive do mesmo perfil, todas derivadas da semente das 12 palavras, cada uma com DID próprio.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -118,9 +118,7 @@ test('Personalizada exige o nome do perfil, que pode ser editado', async () => {
 
 test('a STK vê nome e perfil, aprova, e a carteira guarda na identidade certa', async () => {
   const pedido = await solicitar(2, {});
-  await aba(gov, 'vIssue');
-  await gov.fill('#iqT', pedido);
-  await gov.click('#iqGo');
+  await receberPedido(gov, pedido);
   await expect(gov.locator('#iIdNome')).toHaveText('Maria S. Consultora');
   await expect(gov.locator('#iIdApelido')).toHaveText('Profissional');
   await gov.click('#iGo');

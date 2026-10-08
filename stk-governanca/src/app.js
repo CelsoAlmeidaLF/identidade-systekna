@@ -16,10 +16,10 @@ const APP={
     if(!st){st={name:'Governança Systekna',issued:[],trust:[],book:[],challenges:[],seq:0,verifs:0};await ato('abertura','Livro aberto e Governança criada',ses.did);await save()}
   },
   enter(){$('#whoLabel').textContent=st.name;fillTypeSelects();mountCommonSettings($('#commonSet'));setView('vPanel')},
-  onView(v){if(v==='vPanel')renderPanel();if(v==='vGov')renderGov()},
+  onView(v){if(v==='vPanel')renderPanel();if(v==='vIssue')renderFila();if(v==='vGov')renderGov()},
   onLock(){
-    st=null;pedido=null;
-    ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#gTrust','#gIssued','#iOk'].forEach(s=>$(s).innerHTML='');
+    st=null;pedido=null;itemFila=null;$('#iFilaV').hidden=false;
+    ['#pAtos','#pBook','#iWho','#iClaims','#vpOut','#gTrust','#gIssued','#iOk','#iFila','#iqRes','#iqH'].forEach(s=>$(s).innerHTML='');
     ['#iqT','#iJwt','#vChalT','#vpT'].forEach(s=>$(s).value='');
     ['#iForm','#iOut','#vChal'].forEach(s=>$(s).hidden=true);
     $('#whoLabel').textContent='Governança Systekna';
@@ -46,7 +46,7 @@ async function renderPanel(){
   $('#pName').textContent=st.name;
   $('#sA').textContent=st.issued.filter(i=>issStatus(i)[0]==='ok').length;
   $('#sR').textContent=st.issued.filter(i=>i.revoked).length;
-  $('#sT').textContent=st.trust.length;$('#sV').textContent=st.verifs;
+  $('#sT').textContent=st.trust.length;$('#sV').textContent=st.verifs;renderFila();
   $('#pAtos').innerHTML=st.book.slice(-6).reverse().map(e=>atoRow(e)).join('');
   const c=await checkBook();
   $('#pBook').innerHTML=c.ok?verdictHtml(true,'Livro íntegro',`${c.n} ${c.n===1?'ato encadeado e assinado':'atos encadeados e assinados'} pelo emissor.`)
@@ -75,32 +75,94 @@ function drawClaims(){
 $('#iType').onchange=drawClaims;
 $('#iClaims').onclick=e=>{const b=e.target.closest('[data-rm]');if(b)b.closest('.claim').remove()};
 $('#iAdd').onclick=()=>{$('#iClaims').insertAdjacentHTML('beforeend',claimRow('',''));$('#iClaims').lastElementChild.querySelector('input').focus()};
-$('#iqGo').onclick=async()=>{
-  const H=$('#iqH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#iqF'));$('#iForm').hidden=true;pedido=null};
-  // Limpa a conferência anterior: o formulário só reaparece com o pedido novo.
-  H.textContent='';H.classList.remove('bad');$('#iOut').hidden=true;$('#iForm').hidden=true;$('#iWho').innerHTML='';
-  let r;try{r=await verifyJWT($('#iqT').value)}catch(e){return fail(e.message)}
-  if(r.header.typ!=='pedido+jwt')return fail('Isto não é um pedido. Na carteira: + › Solicitar aprovação de identidade. No Serviços: + › Solicitar aprovação de emissão.');
-  if(!r.ok)return fail('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
-  if(r.payload.exp&&r.payload.exp<now())return fail('Este pedido expirou. Peça um novo ao titular.');
+/* ================= fila de pedidos ================= */
+// Os pedidos colados (um ou vários) são conferidos e entram na fila, guardada cifrada no estado.
+// Cada um espera a decisão do gestor: aprovar (emite a credencial) ou reprovar (com motivo, no livro).
+let filtro='aguardando',itemFila=null;
+const fila=()=>st.fila||(st.fila=[]);
+const ROTULO={IdentityCredential:'Identidade',ServiceAccreditationCredential:'Serviço',CustomCredential:'Personalizada'};
+const PACOTES=/SYSTEKNA:[A-Z-]+:[A-Za-z0-9_.-]+|eyJ[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*\.[A-Za-z0-9_-]*/g;
+const vencido=f=>f.status==='aguardando'&&!!f.exp&&f.exp<now();
+async function conferirPedido(tok){
+  const r=await verifyJWT(tok),p=r.payload;
+  if(r.header.typ!=='pedido+jwt')throw new Error('Isto não é um pedido. Na carteira: + › Solicitar aprovação de identidade. No Serviços: + › Solicitar aprovação de emissão.');
+  if(!r.ok)throw new Error('A assinatura do pedido não confere: ele foi alterado ou não foi assinado por este DID.');
+  if(p.exp&&p.exp<now())throw new Error('Este pedido expirou. Peça um novo ao titular.');
   // Pedido endereçado a um DID: só o emissor com esse DID atende. "emissor" (sem DID) vale para qualquer um.
-  if(r.payload.aud&&r.payload.aud!=='emissor'&&r.payload.aud!==ses.did)return fail('Este pedido foi feito para outro emissor. Peça ao titular um pedido para este emissor.');
-  if(st.issued.some(i=>i.nonce&&i.nonce===r.payload.nonce))return fail('Este pedido já foi atendido. Peça um novo ao titular.');
-  if((st.recusas||[]).some(x=>x.nonce===r.payload.nonce))return fail('Este pedido já foi recusado. A pessoa pode enviar um pedido novo.');
-  pedido=r;
-  const ap=r.payload.apelido?` (${esc(r.payload.apelido)})`:'';
-  $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')}${ap} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`);
+  if(p.aud&&p.aud!=='emissor'&&p.aud!==ses.did)throw new Error('Este pedido foi feito para outro emissor. Peça ao titular um pedido para este emissor.');
   // Pedido de crachá é para o app Serviços, não para a Governança.
-  if(VC_TYPES[r.payload.wanted]&&VC_TYPES[r.payload.wanted].servicos)return fail('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
-  if(VC_TYPES[r.payload.wanted])$('#iType').value=r.payload.wanted;
-  modoCartao($('#iType').value);
-  drawClaims();$('#iForm').hidden=false;
+  if(VC_TYPES[p.wanted]&&VC_TYPES[p.wanted].servicos)throw new Error('Este é um pedido de crachá. Ele vai para o serviço que dá o acesso, não para a Governança.');
+  if(!p.nonce)throw new Error('O pedido não tem número único. Peça um novo ao titular.');
+  if(st.issued.some(i=>i.nonce&&i.nonce===p.nonce))throw new Error('Este pedido já foi atendido. Peça um novo ao titular.');
+  if((st.recusas||[]).some(x=>x.nonce===p.nonce))throw new Error('Este pedido já foi recusado. A pessoa pode enviar um pedido novo.');
+  if(fila().some(f=>f.nonce===p.nonce))throw new Error('Este pedido já está na fila.');
+  return r;
+}
+const quemFila=f=>`${f.nome||shortDid(f.did)}${f.apelido?' ('+f.apelido+')':''}`;
+$('#iqGo').onclick=async()=>{
+  const H=$('#iqH'),txt=$('#iqT').value;
+  H.textContent='';H.classList.remove('bad');$('#iqRes').innerHTML='';
+  const toks=txt.match(PACOTES)||(txt.trim()?[txt]:[]);
+  if(!toks.length)return shake($('#iqF'));
+  const erros=[];let n=0;
+  for(const t of toks){
+    try{
+      const r=await conferirPedido(t),p=r.payload;
+      const f={nonce:p.nonce,tok:r.tok,did:r.did,tipo:VC_TYPES[p.wanted]?p.wanted:'IdentityCredential',nome:p.name||'',apelido:p.apelido||'',exp:p.exp||0,recebido:Date.now(),status:'aguardando'};
+      fila().push(f);n++;
+      await ato('pedido',`Pedido de ${ROTULO[f.tipo]||vcLabel(f.tipo)} recebido: ${quemFila(f)}`,r.did);
+    }catch(e){erros.push(e.message)}
+  }
+  if(n)await save();
+  if(toks.length===1&&erros.length){H.textContent=erros[0];H.classList.add('bad');shake($('#iqF'));return}
+  if(!erros.length)$('#iqT').value='';
+  H.textContent=`${n} ${n===1?'pedido entrou':'pedidos entraram'} na fila${erros.length?`; ${erros.length} não ${erros.length===1?'entrou':'entraram'}`:''}.`;
+  if(erros.length){H.classList.add('bad');$('#iqRes').innerHTML=erros.map(m=>verdictHtml(false,'Pedido não entrou',esc(m))).join('')}
+  filtro='aguardando';setSeg($('#iSeg'),0);renderFila();
+  if(n)toast(n===1?'Pedido na fila':`${n} pedidos na fila`);
+};
+function renderFila(){
+  if(!st)return;
+  const conta=k=>fila().filter(f=>f.status===k).length,ag=conta('aguardando');
+  $('#pFilaN').textContent=ag?`${ag} ${ag===1?'pedido aguardando':'pedidos aguardando'}`:'Fila vazia';
+  $('#iSeg').querySelectorAll('button').forEach(b=>{const k=b.dataset.f,c=conta(k);b.textContent=`${{aguardando:'Aguardando',aprovado:'Aprovados',reprovado:'Reprovados'}[k]}${c?' ('+c+')':''}`});
+  const l=fila().filter(f=>f.status===filtro).slice().reverse();
+  $('#iFila').innerHTML=l.length?l.map(f=>{
+    const[c,lbl]=f.status==='aprovado'?['ok','Aprovado']:f.status==='reprovado'?['no','Reprovado']:vencido(f)?['no','Vencido']:['warn','Aguardando'];
+    return `<button class="tx" data-fila="${esc(f.nonce)}"><span class="dot">${ic(f.tipo==='ServiceAccreditationCredential'?'gov':'badge')}</span><span class="t"><b>${esc(ROTULO[f.tipo]||vcLabel(f.tipo))}: ${esc(quemFila(f))}</b><small><span class="mono">${esc(shortDid(f.did))}</span> · ${fmtTime(f.recebido)}${f.motivo?' · '+esc(f.motivo):''}</small></span><span class="pill ${c}">${lbl}</span></button>`;
+  }).join(''):`<div class="empty">${{aguardando:'Nenhum pedido aguardando.',aprovado:'Nenhum pedido aprovado.',reprovado:'Nenhum pedido reprovado.'}[filtro]}</div>`;
+}
+wireSeg($('#iSeg'),b=>{filtro=b.dataset.f;renderFila()});
+function voltarFila(){
+  pedido=null;itemFila=null;$('#iForm').hidden=true;$('#iOut').hidden=true;$('#iWho').innerHTML='';$('#iFilaV').hidden=false;renderFila();
+}
+$('#iBack').onclick=voltarFila;
+$('#pFila').onclick=()=>setView('vIssue');
+$('#iFila').onclick=async e=>{
+  const b=e.target.closest('[data-fila]');if(!b)return;
+  const f=fila().find(x=>x.nonce===b.dataset.fila);if(!f)return;
+  if(f.status==='reprovado')return toast(`Reprovado: ${f.motivo}`);
+  if(f.status==='aprovado'){
+    $('#iJwt').value=f.aprovacao||'';
+    $('#iOk').innerHTML=verdictHtml(true,f.tipo==='ServiceAccreditationCredential'?'Emissão aprovada':'Identidade aprovada',`${esc(quemFila(f))}, em ${fmtTime(f.decidido)}. Copie a aprovação para entregar de novo.`);
+    $('#iFilaV').hidden=true;$('#iOut').hidden=false;return;
+  }
+  let r;try{r=await verifyJWT(f.tok)}catch(e){return toast(e.message,true)}
+  pedido=r;itemFila=f;
+  const ap=r.payload.apelido?` (${esc(r.payload.apelido)})`:'';
+  $('#iWho').innerHTML=verdictHtml(true,'Pedido conferido',`${esc(r.payload.name||'Titular sem nome')}${ap} controla ${esc(shortDid(r.did))}.${r.payload.note?' Observação: '+esc(r.payload.note):''}`)
+    +(vencido(f)?verdictHtml(false,'Pedido vencido',`Venceu em ${fmtDate(f.exp*1000)}. Reprove ou peça um pedido novo.`):'');
+  $('#iType').value=f.tipo;
+  modoCartao(f.tipo);
+  drawClaims();
+  $('#iGo').disabled=vencido(f);
+  $('#iFilaV').hidden=true;$('#iForm').hidden=false;
 };
 // Pedido de identidade: um cartão de aprovação, sem tipo nem campos para editar. A identidade leva só o nome.
 // Pedido de serviço: cartão de aprovação de emissão do serviço. Os apps são do serviço e não entram aqui.
 function modoCartao(type){
   const ident=type==='IdentityCredential',srv=type==='ServiceAccreditationCredential',cartao=ident||srv;
-  $('#iTypeF').hidden=cartao;$('#iClaims').hidden=cartao;$('#iAdd').hidden=cartao;$('#iRec').hidden=!cartao;
+  $('#iTypeF').hidden=cartao;$('#iClaims').hidden=cartao;$('#iAdd').hidden=cartao;$('#iRec').hidden=false;
   $('#iIdent').hidden=!ident;$('#iSrv').hidden=!srv;
   $('#iGo').textContent=ident?'Aprovar identidade':srv?'Aprovar emissão':'Emitir credencial';
   if(ident)modoIdentidade();
@@ -160,30 +222,33 @@ $('#iGo').onclick=async()=>{
   else if(srv)claims={servico:String(pedido.payload.name||'').trim()};
   else $('#iClaims').querySelectorAll('.claim').forEach(c=>{const k=c.querySelector('[data-ck]').value.trim().replace(/\s+/g,'_'),v=c.querySelector('[data-cv]').value.trim();if(k&&v)claims[k]=v==='true'?true:v==='false'?false:v});
   if(!Object.values(claims).some(Boolean)){toast(ident?'O pedido não traz o nome da pessoa':'Preencha ao menos um campo com valor',true);return}
+  if(pedido.payload.exp&&pedido.payload.exp<now()){toast('Este pedido venceu. Reprove ou peça um novo.',true);return}
   try{$('#iJwt').value=embrulhar(await issue(pedido.did,type,claims,+$('#iDays').value,pedido.payload.name,pedido.payload.nonce,ident?pedido.payload.apelido:''))}catch(e){toast(e.message,true);return}
+  if(itemFila){Object.assign(itemFila,{status:'aprovado',decidido:Date.now(),aprovacao:$('#iJwt').value});await save();itemFila=null}
   const quem=`${esc(pedido.payload.name||shortDid(pedido.did))}${ident&&pedido.payload.apelido?' ('+esc(pedido.payload.apelido)+')':''}`;
   $('#iOk').innerHTML=ident?verdictHtml(true,'Identidade aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação à pessoa.`)
     :srv?verdictHtml(true,'Emissão aprovada',`Credencial emitida para ${quem}, registrada no livro. Entregue a aprovação ao serviço.`)
     :verdictHtml(true,'Credencial emitida',`${esc(vcLabel(type))} para ${quem}, registrada no livro.`);
-  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;toast('Credencial emitida');
+  $('#iForm').hidden=true;$('#iOut').hidden=false;pedido=null;renderFila();toast('Credencial emitida');
 };
 $('#iCopy').onclick=()=>copy($('#iJwt').value,'Credencial copiada');
 // Recusa: fica só no livro, com o motivo (a carteira continua aguardando). O pedido recusado não volta.
 $('#iRec').onclick=async()=>{
   if(!pedido)return;
   const p=pedido.payload,did=pedido.did,srv=$('#iType').value==='ServiceAccreditationCredential';
-  openSheet(`<h3>Recusar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise ${srv?'o serviço':'a pessoa'} por fora; ${srv?'ele':'ela'} pode enviar um pedido novo.</p>
+  openSheet(`<h3>Reprovar pedido</h3><p class="sub">A recusa fica registrada no livro, com o motivo. Avise ${srv?'o serviço':'a pessoa'} por fora; ${srv?'ele':'ela'} pode enviar um pedido novo.</p>
     <label class="f"><span>Motivo</span><select id="rcM">${(srv?['Serviço não identificado','Serviço não autorizado','Pedido duplicado','Outro']:['Pessoa não identificada','Dados não conferem','Pedido duplicado','Outro']).map(m=>`<option>${m}</option>`).join('')}</select></label>
-    <button class="btn danger" id="rcGo">Recusar</button>`);
+    <button class="btn danger" id="rcGo">Reprovar</button>`);
   $('#rcGo').onclick=async()=>{
     const motivo=$('#rcM').value;
     st.recusas=[...(st.recusas||[]),{nonce:p.nonce,sub:did,nome:p.name||'',apelido:p.apelido||'',motivo,at:Date.now()}];
+    if(itemFila)Object.assign(itemFila,{status:'reprovado',decidido:Date.now(),motivo});
     await ato('recusa',srv?`Aprovação de emissão de ${p.name||shortDid(did)} recusada: ${motivo}`:`Identidade de ${p.name||shortDid(did)}${p.apelido?' ('+p.apelido+')':''} recusada: ${motivo}`,did);await save();
-    closeSheet();pedido=null;$('#iForm').hidden=true;$('#iWho').innerHTML='';$('#iqT').value='';
+    closeSheet();voltarFila();
     $('#iqH').textContent=`Pedido recusado: ${motivo}. Registrado no livro.`;$('#iqH').classList.remove('bad');toast('Pedido recusado');
   };
 };
-$('#iNew').onclick=()=>{$('#iqT').value='';$('#iOut').hidden=true;$('#iqH').textContent='';$('#iqT').focus()};
+$('#iNew').onclick=()=>{$('#iqH').textContent='';voltarFila()};
 
 /* ================= verificação ================= */
 $('#vGen').onclick=async()=>{

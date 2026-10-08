@@ -4,7 +4,7 @@
 // uma ou mais funcionalidades (o grupo é só atalho); o crachá leva as funcionalidades liberadas, sem grupo nem plano,
 // e a portaria confere a funcionalidade pedida no próprio crachá.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe, bloquearEDesbloquear } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -23,10 +23,7 @@ async function menu(acao) {
 }
 
 async function conferirNaStk(tok) {
-  await aba(gov, 'vIssue');
-  if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
-  await gov.fill('#iqT', tok);
-  await gov.click('#iqGo');
+  await receberPedido(gov, tok);
   await expect(gov.locator('#iWho')).toContainText('Pedido conferido');
 }
 

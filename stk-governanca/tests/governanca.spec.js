@@ -3,7 +3,7 @@
 // credenciamento ativos por DID, e o envelope SYSTEKNA:<TIPO>:<JWT> em todo pacote copiado.
 // O app Serviços ainda não existe: o pedido de credenciamento é assinado direto na página de um serviço simulado.
 const { test, expect } = require('@playwright/test');
-const { WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
+const { receberPedido, WORDS, vigiarCsp, preparar, aba, toast, fecharSheet, payloadDe } = require('../../compartilhado/tests/helpers');
 
 test.describe.configure({ mode: 'serial' });
 
@@ -38,10 +38,7 @@ async function pedirIdentidade(nome = 'Maria Teste') {
 }
 
 async function conferirPedido(tok) {
-  await aba(gov, 'vIssue');
-  if (await gov.locator('#iOut').isVisible()) await gov.click('#iNew');
-  await gov.fill('#iqT', tok);
-  await gov.click('#iqGo');
+  await receberPedido(gov, tok);
 }
 
 /** Emite e devolve o pacote novo. O resultado anterior fica no elemento escondido: espera o valor mudar. */
