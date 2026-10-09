@@ -42,6 +42,7 @@
 | 08/10/2026 | **Fila de pedidos na Governança** (cenário do gestor da STK): uma fila **única** para identidades (did:key) e serviços, com etiqueta em cada cartão (opção B); aprovar ou reprovar cada pedido (1.1) |
 | 08/10/2026 | **Fim do copiar e colar: filas no Firebase** (`fila-solicitacao` e `fila-emissao`) nos três fluxos (identidade, aprovação de emissão, crachá). Projeto novo `systekna-identidade`. O responsável queria login pelo DID, mas sem faturamento ("é só prova de conceito, não é para PRD"): plano gratuito, sem login, Firestore pela API REST; segurança pelas assinaturas e pela cifra do conteúdo (1.2) |
 | 08/10/2026 | **Lista do Solicitar só com identidades ainda não validadas** (falha relatada pelo responsável: identidades aprovadas e aguardando não saíam da lista; depois ele pediu tirar também as reprovadas). Renovar uma aprovada pela carteira deixa de existir. Aguardando vira cartão em Credenciais, com Cancelar; pedido vence em 7 dias; Governança antiga sai do diretório (1.2.1). Limpeza: apagados o registro da Governança `z6MkqFzUDb…`, que não era mais usada, e um pedido parado para ela |
+| 08/10/2026 | **Importar troca de chave no Serviços religado (1.2.2).** O botão Serviço › Governança › Importar troca de chave estava sem ação desde a 0.22.0 (o código saiu sem querer na reescrita do Serviços); achado ao atualizar os testes antigos. Os 4 testes que falhavam desde a 0.19–0.22 foram atualizados às telas atuais: suíte completa sem falhas |
 
 ## 2. Versões publicadas
 

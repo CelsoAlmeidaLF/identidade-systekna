@@ -2,7 +2,7 @@
 
 > Convenção: **RF-XX-nn** — `CM` comum aos 3 apps, `CT` Carteira, `GV` Governança, `SV` Serviços, `F` futuro.
 > Situação: ✅ homologado pelo responsável (pré-aprovado na 1.0.0) · 🟢 com teste automatizado, ainda não homologado · 🟡 sem teste automatizado · ⬜ planejado · ⏸ adiado.
-> Versão de referência: **1.2.1**.
+> Versão de referência: **1.2.2**.
 
 ## 1. Comuns aos 3 apps
 

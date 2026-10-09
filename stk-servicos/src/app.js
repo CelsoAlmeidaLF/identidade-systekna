@@ -181,6 +181,24 @@ function renderSrv(){
     :'<div class="empty">Nenhum crachá emitido ainda.</div>';
 }
 $('#sIssued').onclick=e=>{const b=e.target.closest('[data-iss]');if(b)showIssued(+b.dataset.iss,renderSrv)};
+// Troca de chave da Governança: o aviso assinado pelas duas chaves faz a nova valer também; o que a antiga
+// assinou (Identidades e aprovações de emissão) continua valendo.
+$('#sGovRot').onclick=()=>{
+  openSheet(`<h3>Importar troca de chave</h3><p class="sub">Cole o aviso de troca de chave da Governança. Identidades e aprovações de emissão da chave antiga continuam valendo.</p>
+    <label class="f" id="irF"><span>Aviso de troca</span><textarea class="mono" id="irT" rows="5" spellcheck="false" placeholder="SYSTEKNA:ROTACAO:…"></textarea></label><p class="hint" id="irH"></p>
+    <button class="btn" id="irGo">Conferir e importar</button>`);
+  $('#irGo').onclick=async()=>{
+    const H=$('#irH'),fail=m=>{H.textContent=m;H.classList.add('bad');shake($('#irF'))};
+    if(!st.gov)return fail('Escolha antes a Governança deste serviço.');
+    let r;try{r=await avisoValido($('#irT').value)}catch(e){return fail(e.message)}
+    const p=r.payload;
+    if(daGov(p.novo))return fail('Esta troca já foi importada.');
+    if(!daGov(p.iss))return fail('O aviso não é da Governança deste serviço.');
+    st.gov.dids.push(p.novo);
+    await ato('confianca',`${st.gov.name} trocou de chave: ${shortDid(p.iss)} → ${shortDid(p.novo)}`,p.novo);await save();
+    closeSheet();renderSrv();toast('Troca de chave importada');
+  };
+};
 $('#sApps').onclick=e=>{const b=e.target.closest('[data-app]');if(b)gerenciarApp(b.dataset.app)};
 $('#sAppNovo').onclick=novoApp;
 function novoApp(){

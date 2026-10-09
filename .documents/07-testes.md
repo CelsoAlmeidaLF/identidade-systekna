@@ -52,9 +52,9 @@ Cada teste fica na pasta do projeto que ele exercita; os que valem para os 3 app
 
 Os testes não usam o Firestore de verdade. `helpers.js` liga, em cada página preparada, um Firestore falso em memória (um por arquivo de teste) que responde à API REST (criar, gravar, ler, apagar, consulta por campo). `ultimoPedidoPara(page)` abre o último pedido enviado a quem tem a página; `buscarRespostas(page)` faz o mesmo que + › Buscar respostas; `receberPedido(gov, tok)` põe o pedido na fila da Governança, se ainda não está, e abre o cartão dele. As regras do Firestore foram conferidas no projeto real com `curl` (formato certo passa, lixo leva 403, `fila-emissao` não lista).
 
-## 4. Situação da suíte completa (08/10/2026, código 1.2.1)
+## 4. Situação da suíte completa (08/10/2026, código 1.2.2)
 
-**231 passaram · 0 falharam · 1 pulado** (232 testes, ~12,5 min). As 4 falhas antigas (testes escritos para telas que mudaram depois deles) foram atualizadas para as telas atuais, sem mudar o app:
+**232 passaram · 0 falharam** (suíte completa de ~12,5 min; `filas.spec.js` e os testes do Serviços rodados de novo depois das últimas correções). As 4 falhas antigas (testes escritos para telas que mudaram depois deles) foram atualizadas para as telas atuais:
 
 | Teste | O que mudou no teste |
 |---|---|
@@ -65,4 +65,4 @@ Os testes não usam o Firestore de verdade. `helpers.js` liga, em cada página p
 
 Também ficou mais firme `filas.spec.js` › "crachá…": a busca automática (a cada 30 s) às vezes pegava o pedido antes do clique em Buscar; o teste confere a lista, não o aviso.
 
-**Pulado (`test.fixme`):** `servicos.spec.js` › "a troca de chave da Governança é importada…". O botão Serviço › Governança › **Importar troca de chave** (`#sGovRot`) está sem ação desde a 0.22.0 — o handler saiu na reescrita do `app.js` do Serviços. O teste volta a valer quando o botão for religado.
+**Bug achado nessa atualização:** o botão Serviço › Governança › **Importar troca de chave** (`#sGovRot`) estava sem ação desde a 0.22.0 (o código saiu na reescrita do Serviços). Religado na 1.2.2; o teste da troca de chave em `servicos.spec.js` volta a valer.

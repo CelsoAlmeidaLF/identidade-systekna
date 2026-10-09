@@ -331,9 +331,8 @@ test.describe('portaria', () => {
   });
 });
 
-// O botão Serviço › Governança › "Importar troca de chave" ficou sem ação desde a 0.22.0 (o handler saiu na
-// reescrita do app). Este teste volta a valer quando o botão for religado.
-test.fixme('a troca de chave da Governança é importada e as Identidades antigas continuam valendo', async () => {
+// O botão Serviço › Governança › "Importar troca de chave" ficou sem ação da 0.22.0 à 1.2.1; religado na 1.2.2.
+test('a troca de chave da Governança é importada e as Identidades antigas continuam valendo', async () => {
   const aviso = await gov.evaluate(async palavras => {
     const novo = await deriveIdentity(await wordsToSeed(palavras.split(' ')));
     const aceite = b64u.enc(await S.sign({ name: 'Ed25519' }, novo.edPriv, te.encode(`${ses.did}>${novo.did}`)));
